@@ -1,10 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
-import { User } from '../user/models/user.model';
 import { ConfigService } from '@nestjs/config';
-import { Invitation } from '../invitation/models/invitation.model';
-import { AddressModel } from '../../common/models';
-import { UserRole } from '../user/models/user-role.model';
-import { Role } from '../user/models/role.model';
 import { SEQUELIZE } from '../../common/constants';
 import { getSSMParameterValue } from 'src/utils/ssmGetParameter';
 
@@ -20,7 +15,7 @@ export const databaseProviders = [
         config.password = password;
       }
       const sequelize = new Sequelize(config);
-      sequelize.addModels([User, Invitation, AddressModel, Role, UserRole]);
+      sequelize.addModels([]);
       // sequelize.addModels([__dirname + '../**/models/*.model{.ts,.js}']);
       await sequelize.sync();
       return sequelize;

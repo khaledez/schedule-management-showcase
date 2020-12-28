@@ -1,12 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { registerApp, CustomLoggerService } from '@mon-medic/common';
+import { registerApp } from '@mon-medic/common';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    // logger: new CustomLoggerService(),
-  });
+  const app = await NestFactory.create(AppModule);
 
   const serviceName = 'user-management';
   registerApp(app, serviceName);

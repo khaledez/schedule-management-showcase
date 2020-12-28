@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const AWS = require('aws-sdk');
 
 export const getSSMParameterValue = async (paramName: string) => {

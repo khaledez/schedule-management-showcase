@@ -9,6 +9,7 @@ let currentConfig = null;
 const filePath = `config.${env}`;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { config } = require(`./${filePath}`);
   currentConfig = config;
 } catch (error) {
