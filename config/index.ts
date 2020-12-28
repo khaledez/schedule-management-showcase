@@ -1,0 +1,20 @@
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+import { config as defaultConfig } from './config.development';
+
+const env = process.env.NODE_ENV;
+let currentConfig = null;
+const filePath = `config.${env}`;
+
+try {
+  const { config } = require(`./${filePath}`);
+  currentConfig = config;
+} catch (error) {
+  console.log(error);
+}
+
+const current = currentConfig || defaultConfig;
+
+export default current;
