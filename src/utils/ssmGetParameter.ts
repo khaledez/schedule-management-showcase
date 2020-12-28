@@ -3,10 +3,10 @@ import { BadRequestException } from '@nestjs/common';
 const AWS = require('aws-sdk');
 
 export const getSSMParameterValue = async (paramName: string) => {
-  const ssm = new AWS.SSM({ apiVersion: '2014-11-06', region: 'us-east-1' });
+  const ssm = new AWS.SSM({ apiVersion: '2014-11-06' });
   const options = {
     Name: paramName,
-    WithDecryption: false,
+    WithDecryption: true,
   };
   try {
     const request = await ssm.getParameter(options).promise();
