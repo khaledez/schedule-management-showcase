@@ -1,0 +1,121 @@
+stages:
+ - build
+ - DEV
+ - QA
+ - demo
+ - staging
+ - production
+#=========
+# Build
+#=========
+
+test-api:
+  stage: build
+  image: docker:18-git
+  only:
+    - "merge_requests"
+  services:
+    - docker:18-dind
+  variables:
+    DOCKER_DRIVER: "overlay"
+  script:
+    - "apk add --no-cache curl"
+    - "apk add py-pip"
+    - "pip install awscli --upgrade --user"
+    - "export PATH=~/.local/bin:$PATH"
+    - "aws --version"
+    - echo $apigatewayIdTest;
+    - sed 's/${stageVariables.cognitouserpoolarn}/${apigatewayCognitoUserPoolArnTest}/g' ./swagger/api-definition.yaml >tmp-api-definition.yaml
+    - aws apigateway put-rest-api --rest-api-id "${apigatewayIdTest}" --mode overwrite --body file://./tmp-api-definition.yaml
+build:
+  stage: build
+  image: docker:18-git
+  only:
+    - "master"
+    - "development"
+    - "prod"
+    - "gitlab"
+    - "devops"
+  services:
+    - docker:18-dind
+  before_script:
+    - "apk add --no-cache curl"
+    - "apk add py-pip"
+    - "pip install awscli --upgrade --user"
+    - "export PATH=~/.local/bin:$PATH"
+  script:
+    - pip install ecs-deploy
+    - echo "Login to  ECR Repository"
+    - eval $(aws ecr get-login --no-include-email --region ca-central-1)
+    - echo "Preparation task"
+    - echo "Build Docker Image"
+    - docker build -t master .
+    - echo "Push to ECR Repository"
+    - service_lower_name=$(echo "$service_name" | tr '[:upper:]' '[:lower:]')
+    - export AWS_ECR_REPOSITORY="${accountID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${service_lower_name}"
+    - echo $AWS_ECR_REPOSITORY
+    - docker tag master:latest "${AWS_ECR_REPOSITORY}:${CI_COMMIT_SHA}"
+    - docker push "${AWS_ECR_REPOSITORY}:${CI_COMMIT_SHA}"
+#=========
+# Deploy
+#=========
+deploy:
+  stage: DEV
+  image: python:3.7.3
+  environment:
+    name: development
+    url: http://api.dev.leansprintinc.tk
+  only:
+    - "master"
+    - "development"
+    - "gitlab"
+    - "devops"
+  before_script:
+    - "pip install awscli --upgrade --user"
+    - "export PATH=~/.local/bin:$PATH"
+  script:
+    - export clusterName=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='clusterName'].OutputValue" )
+    - export DB_HOST=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='dbClusterEndpoint'].OutputValue" )
+    - export MYSQL_PASSWORD_PARAMETER=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='MYSQLPASSWORDPARAMETER'].OutputValue" )
+    - export restApiId=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='restApiId${service_name}'].OutputValue" )
+    - sed -e "s;%BUILD_VERSION%;${CI_COMMIT_SHA};g" task-definition-base/task-definition-base-dev.json > task-definition.json
+    - sed -i "s/%accountID%/${accountID}/g" task-definition.json
+    - sed -i "s/%DB_HOST%/${DB_HOST}/g" task-definition.json
+    - sed -i 's/%MYSQL_PASSWORD_PARAMETER%/${MYSQL_PASSWORD_PARAMETER}/g' task-definition.json
+    - sed -i "s/%AWS_DEFAULT_REGION%/${AWS_DEFAULT_REGION}/g" task-definition.json
+    - sed -i "s/%service_name%/${service_name}/g" task-definition.json
+    - service_lower_name=$(echo "$service_name" | tr '[:upper:]' '[:lower:]')
+    - sed -i "s/%service_lower_name%/${service_lower_name}/g" task-definition.json
+    - cat task-definition.json
+    - aws ecs register-task-definition --family "DEV-${service_name}" --cli-input-json "file://task-definition.json"
+    - aws ecs update-service --cluster $clusterName --service "${service_name}" --desired-count 1 --task-definition "DEV-${service_name}"  --force-new-deployment
+    - echo $restApiId
+    - aws apigateway put-rest-api --rest-api-id "${restApiId}" --mode overwrite --body file://./swagger/api-definition.yaml
+    - "aws apigateway update-rest-api --rest-api-id $restApiId --patch-operations op=replace,path=/name,value=\"DEV-$service_name\" "
+    - "aws apigateway create-deployment --region  ${AWS_DEFAULT_REGION} --rest-api-id $restApiId --stage-name DEV --description \"auto deployment $CI_COMMIT_SHA\" "
+
+#=========
+# QA
+#=========
+QA:
+  stage: QA
+  when: manual
+  image: python:3.7.3
+  environment:
+      name: qa
+      url: http://api.qa.leansprintinc.tk
+  only:
+    - "master"
+    - "development"
+    - "gitlab"
+    - "devops"
+
+  before_script:
+    - "pip install awscli --upgrade --user"
+    - "export PATH=~/.local/bin:$PATH"
+    - "aws --version"
+  script:
+    - sed -e "s;%BUILD_VERSION%;${CI_COMMIT_SHA};g" task-definition-base/task-definition-base-qa.json > task-definition-${CI_COMMIT_SHA}.json
+    - aws ecs register-task-definition --family "fr-qa-api" --cli-input-json "file://task-definition-${CI_COMMIT_SHA}.json"
+    - aws ecs update-service --cluster "fr-qa" --service "${service_name_qa}" --desired-count 1 --task-definition "fr-qa-api"  --force-new-deployment
+    - aws ecs wait services-stable  --cluster fr-qa --service "${service_name_qa}"
