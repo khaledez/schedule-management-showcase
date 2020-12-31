@@ -8,6 +8,7 @@ info:
     name: Emad Darabeh
     email: e.darabeh@dash.ps
 tags:
+  - name: Appointment
   - name: Slot
     description: Slots management.
   - name: WIP
@@ -16,10 +17,162 @@ tags:
 security:
   - bearerAuth: []
 paths:
+  /appointments:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+        - $ref: '#/components/parameters/appointment_type'
+        - $ref: '#/components/parameters/patient_ramq'
+        - $ref: '#/components/parameters/patient_name'
+        - $ref: '#/components/parameters/appointment_status'
+      tags:
+        - Appointment
+      summary: find the appointments
+      operationId: getAppointmentsOpId
+      description: |
+        get appointments of current clinic
+      responses:
+        200:
+          $ref: '#/components/responses/GetAppointmentsResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
+    options:
+      tags:
+        - Appointment
+      responses:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: 'https://${stageVariables.apihost}/registration'
+        responses:
+          default:
+            statusCode: '200'
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
+  /appointments/{id}/date-extension:
+    put:
+      parameters:
+        - $ref: '#/components/parameters/appointment_id'
+      tags:
+        - Appointment
+      summary: extend provisional date
+      description: |
+        update an appointment
+        <br>extend the provisional date of an appointment (in waitlist)
+      operationId: extendAppointmentOpId
+      requestBody:
+        description: update appointment requestBody
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendAppointmentBody'
+      responses:
+        200:
+          $ref: '#/components/responses/AppointmentResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
+  /appointments/{id}/cancellation:
+    put:
+      parameters:
+        - $ref: '#/components/parameters/appointment_id'
+      tags:
+        - Appointment
+      summary: cancel an appointment
+      description: |
+        update an appointment
+        <br>cancel appointment and set it to a new provisional date (in waitlist)
+      operationId: cancelAppointmentOpId
+      requestBody:
+        description: update appointment requestBody
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelAppointmentBody'
+      responses:
+        200:
+          $ref: '#/components/responses/AppointmentResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
+  /appointments/{id}/doctor-assignment:
+    put:
+      parameters:
+        - $ref: '#/components/parameters/appointment_id'
+      tags:
+        - Appointment
+      summary: assign a doctor to an appointment
+      description: |
+        update an appointment
+        <br>assign a doctor to an appointment, or change the existing assigned doctor
+      operationId: assignAppointmentDoctorOpId
+      requestBody:
+        description: update appointment requestBody
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignAppointmentDoctorBody'
+      responses:
+        200:
+          $ref: '#/components/responses/AppointmentResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
+  /appointments/{id}/type-changing:
+    put:
+      parameters:
+        - $ref: '#/components/parameters/appointment_id'
+      tags:
+        - Appointment
+      summary: change the type of an appointment
+      description: |
+        update an appointment
+        <br>change the type of an appointment
+      operationId: changeAppointmentTypeOpId
+      requestBody:
+        description: update appointment requestBody
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignAppointmentDoctorBody'
+      responses:
+        200:
+          $ref: '#/components/responses/AppointmentResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/slots:
     post:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
+        - $ref: '#/components/parameters/clinic_id'
       tags:
         - Slot
       summary: create clinic availabilty slots
@@ -32,22 +185,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateSlotBody"
+              $ref: '#/components/schemas/CreateSlotBody'
       responses:
         201:
-          $ref: "#/components/responses/SlotResponse"
+          $ref: '#/components/responses/SlotResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     get:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
-        - $ref: "#/components/parameters/doctor_id_query"
-        - $ref: "#/components/parameters/appointment_type"
-        - $ref: "#/components/parameters/day"
-        - $ref: "#/components/parameters/from"
-        - $ref: "#/components/parameters/to"
+        - $ref: '#/components/parameters/clinic_id'
+        - $ref: '#/components/parameters/doctor_id_query'
+        - $ref: '#/components/parameters/appointment_type'
+        - $ref: '#/components/parameters/day'
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
       tags:
         - Slot
       summary: get clinic availabilty slots
@@ -56,18 +209,18 @@ paths:
         get clinic availabilty slots
       responses:
         200:
-          $ref: "#/components/responses/FindSlotsResponse"
+          $ref: '#/components/responses/FindSlotsResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/slots-days:
     get:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
-        - $ref: "#/components/parameters/doctor_id_query"
-        - $ref: "#/components/parameters/from"
-        - $ref: "#/components/parameters/to"
+        - $ref: '#/components/parameters/clinic_id'
+        - $ref: '#/components/parameters/doctor_id_query'
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
       tags:
         - Slot
       summary: find the days of slots at current month
@@ -76,16 +229,16 @@ paths:
         find the days of slots at current month or the secertray can find to any month.
       responses:
         200:
-          $ref: "#/components/responses/FindSlotsDaysResponse"
+          $ref: '#/components/responses/FindSlotsDaysResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/slots/{slotId}:
     get:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
-        - $ref: "#/components/parameters/slot_id"
+        - $ref: '#/components/parameters/clinic_id'
+        - $ref: '#/components/parameters/slot_id'
       tags:
         - Slot
       summary: get clinic availabilty slot by id
@@ -94,15 +247,15 @@ paths:
         get clinic availabilty slot by id
       responses:
         200:
-          $ref: "#/components/responses/GetSlotResponse"
+          $ref: '#/components/responses/GetSlotResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     put:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
-        - $ref: "#/components/parameters/slot_id"
+        - $ref: '#/components/parameters/clinic_id'
+        - $ref: '#/components/parameters/slot_id'
       tags:
         - Slot
       summary: update clinic availabilty slots
@@ -115,18 +268,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateSlotBody"
+              $ref: '#/components/schemas/UpdateSlotBody'
       responses:
         200:
-          $ref: "#/components/responses/SlotResponse"
+          $ref: '#/components/responses/SlotResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     delete:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
-        - $ref: "#/components/parameters/slot_id"
+        - $ref: '#/components/parameters/clinic_id'
+        - $ref: '#/components/parameters/slot_id'
       tags:
         - Slot
       summary: delete clinic availabilty slots
@@ -135,15 +288,15 @@ paths:
         delete clinic availabilty slot
       responses:
         200:
-          $ref: "#/components/responses/SlotResponse"
+          $ref: '#/components/responses/SlotResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/appointment-types:
     get:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
+        - $ref: '#/components/parameters/clinic_id'
       tags:
         - Lookup
       summary: get clinic appointment types
@@ -152,14 +305,14 @@ paths:
         get clinic appointment types
       responses:
         200:
-          $ref: "#/components/responses/GetAppointmentTypesResponse"
+          $ref: '#/components/responses/GetAppointmentTypesResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/scheduling:
     parameters:
-      - $ref: "#/components/parameters/clinic_id"
+      - $ref: '#/components/parameters/clinic_id'
     post:
       tags:
         - Slot
@@ -172,17 +325,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Scheduling"
+              $ref: '#/components/schemas/Scheduling'
       responses:
-        "201":
-          $ref: "#/components/responses/SchedulingResponse"
-        "401":
-          $ref: "#/components/responses/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/ErrorResponse"
+        '201':
+          $ref: '#/components/responses/SchedulingResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/rescheduling:
     parameters:
-      - $ref: "#/components/parameters/clinic_id"
+      - $ref: '#/components/parameters/clinic_id'
     post:
       tags:
         - Slot
@@ -195,19 +348,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Rescheduling"
+              $ref: '#/components/schemas/Rescheduling'
       responses:
-        "201":
-          $ref: "#/components/responses/ReschedulingResponse"
-        "401":
-          $ref: "#/components/responses/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/ErrorResponse"
+        '201':
+          $ref: '#/components/responses/ReschedulingResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
 
   /clinics/{clinicId}/slots/{slotId}/cancel:
     parameters:
-      - $ref: "#/components/parameters/clinic_id"
-      - $ref: "#/components/parameters/slot_id"
+      - $ref: '#/components/parameters/clinic_id'
+      - $ref: '#/components/parameters/slot_id'
     post:
       tags:
         - Slot
@@ -220,18 +373,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EmptyObject"
+              $ref: '#/components/schemas/EmptyObject'
       responses:
-        "201":
-          $ref: "#/components/responses/Created"
-        "401":
-          $ref: "#/components/responses/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/ErrorResponse"
+        '201':
+          $ref: '#/components/responses/Created'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/patients/{patientId}/assign-doctor:
     parameters:
-      - $ref: "#/components/parameters/clinic_id"
-      - $ref: "#/components/parameters/patient_id"
+      - $ref: '#/components/parameters/clinic_id'
+      - $ref: '#/components/parameters/patient_id'
     post:
       tags:
         - WIP
@@ -244,14 +397,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AssignDoctor"
+              $ref: '#/components/schemas/AssignDoctor'
       responses:
-        "201":
-          $ref: "#/components/responses/AssignDoctorResponse"
-        "401":
-          $ref: "#/components/responses/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/ErrorResponse"
+        '201':
+          $ref: '#/components/responses/AssignDoctorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
   /scheduler-times:
     get:
       tags:
@@ -261,13 +414,13 @@ paths:
       operationId: schecilerTimesOpId
       responses:
         200:
-          $ref: "#/components/responses/SchedulerTimesResponse"
+          $ref: '#/components/responses/SchedulerTimesResponse'
         400:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     options:
       tags:
         - Lookup
@@ -285,10 +438,10 @@ paths:
               schema:
                 type: string
       x-amazon-apigateway-integration:
-        uri: "https://${stageVariables.apihost}/registration"
+        uri: 'https://${stageVariables.apihost}/registration'
         responses:
           default:
-            statusCode: "200"
+            statusCode: '200'
             responseParameters:
               method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
               method.response.header.Access-Control-Allow-Headers: >-
@@ -301,7 +454,7 @@ paths:
   /clinics/{clinicId}/doctors:
     get:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
+        - $ref: '#/components/parameters/clinic_id'
       tags:
         - Lookup
       summary: get clinic doctors
@@ -310,21 +463,21 @@ paths:
         get clinic doctors
       responses:
         200:
-          $ref: "#/components/responses/GetDoctorsResponse"
+          $ref: '#/components/responses/GetDoctorsResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
   /clinics/{clinicId}/patients:
     get:
       parameters:
-        - $ref: "#/components/parameters/clinic_id"
-        - $ref: "#/components/parameters/patient_status"
-        - $ref: "#/components/parameters/patient_phone_number"
-        - $ref: "#/components/parameters/patient_dob"
-        - $ref: "#/components/parameters/patient_name"
-        - $ref: "#/components/parameters/patient_ramq"
-        - $ref: "#/components/parameters/patient_provisional_date"
+        - $ref: '#/components/parameters/clinic_id'
+        - $ref: '#/components/parameters/patient_status'
+        - $ref: '#/components/parameters/patient_phone_number'
+        - $ref: '#/components/parameters/patient_dob'
+        - $ref: '#/components/parameters/patient_name'
+        - $ref: '#/components/parameters/patient_ramq'
+        - $ref: '#/components/parameters/patient_provisional_date'
       tags:
         - Lookup
       summary: get clinic patients
@@ -333,11 +486,11 @@ paths:
         get clinic patients
       responses:
         200:
-          $ref: "#/components/responses/GetPatientsResponse"
+          $ref: '#/components/responses/GetPatientsResponse'
         401:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
         500:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 components:
   securitySchemes:
     bearerAuth:
@@ -352,6 +505,14 @@ components:
       required: true
       schema:
         type: number
+    appointment_id:
+      name: id
+      in: path
+      description: appointement id
+      required: true
+      schema:
+        type: number
+
     availability_id:
       name: avId
       in: path
@@ -403,6 +564,12 @@ components:
       description: patient status
       schema:
         type: string
+    appointment_status:
+      name: status
+      in: query
+      description: appointment status
+      schema:
+        type: string
     patient_phone_number:
       name: phone_number
       in: query
@@ -436,13 +603,13 @@ components:
     from:
       name: from
       in: query
-      description: start dateTime slot
+      description: start dateTime
       schema:
         type: string
     to:
       name: to
       in: query
-      description: end dateTime slot
+      description: end dateTime
       schema:
         type: string
   schemas:
@@ -482,9 +649,9 @@ components:
         - error
       properties:
         statusCode:
-          $ref: "#/components/schemas/StatusCode"
+          $ref: '#/components/schemas/StatusCode'
         message:
-          $ref: "#/components/schemas/Message"
+          $ref: '#/components/schemas/Message'
         error:
           type: string
     ClinicName:
@@ -564,64 +731,64 @@ components:
         - timezone
       properties:
         place_id:
-          $ref: "#/components/schemas/PlaceId"
+          $ref: '#/components/schemas/PlaceId'
         timezone_id:
-          $ref: "#/components/schemas/TimezoneId"
+          $ref: '#/components/schemas/TimezoneId'
         first_line:
-          $ref: "#/components/schemas/FirstLine"
+          $ref: '#/components/schemas/FirstLine'
         last_line:
-          $ref: "#/components/schemas/SecoundLine"
+          $ref: '#/components/schemas/SecoundLine'
         country:
-          $ref: "#/components/schemas/Country"
+          $ref: '#/components/schemas/Country'
         state:
-          $ref: "#/components/schemas/State"
+          $ref: '#/components/schemas/State'
         city:
-          $ref: "#/components/schemas/City"
+          $ref: '#/components/schemas/City'
         timezone:
-          $ref: "#/components/schemas/Timezone"
+          $ref: '#/components/schemas/Timezone'
     Timestamps:
       allOf:
-        - $ref: "#/components/schemas/CreateProps"
-        - $ref: "#/components/schemas/UpdateProps"
-        - $ref: "#/components/schemas/DeleteProps"
+        - $ref: '#/components/schemas/CreateProps'
+        - $ref: '#/components/schemas/UpdateProps'
+        - $ref: '#/components/schemas/DeleteProps'
     CreateProps:
       type: object
       properties:
         created_at:
-          $ref: "#/components/schemas/CreatedAtDatetime"
+          $ref: '#/components/schemas/CreatedAtDatetime'
         created_by:
-          $ref: "#/components/schemas/UserId"
+          $ref: '#/components/schemas/UserId'
     UpdateProps:
       type: object
       properties:
         updated_at:
-          $ref: "#/components/schemas/UpdatedAtDatetime"
+          $ref: '#/components/schemas/UpdatedAtDatetime'
         updated_by:
-          $ref: "#/components/schemas/UserId"
+          $ref: '#/components/schemas/UserId'
     DeleteProps:
       type: object
       properties:
         deleted_at:
-          $ref: "#/components/schemas/DeletedAtDatetime"
+          $ref: '#/components/schemas/DeletedAtDatetime'
         deleted_by:
-          $ref: "#/components/schemas/UserId"
+          $ref: '#/components/schemas/UserId'
     Clinic:
       allOf:
         - type: object
           properties:
             id:
-              $ref: "#/components/schemas/ClinicId"
+              $ref: '#/components/schemas/ClinicId'
             clinic_name:
-              $ref: "#/components/schemas/ClinicName"
+              $ref: '#/components/schemas/ClinicName'
             clinic_phone_no:
-              $ref: "#/components/schemas/PhoneNumber"
+              $ref: '#/components/schemas/PhoneNumber'
             clinic_address:
-              $ref: "#/components/schemas/AddressObject"
+              $ref: '#/components/schemas/AddressObject'
             logo_ref:
-              $ref: "#/components/schemas/LogoRef"
+              $ref: '#/components/schemas/LogoRef'
             admin_info:
-              $ref: "#/components/schemas/User"
-        - $ref: "#/components/schemas/Timestamps"
+              $ref: '#/components/schemas/User'
+        - $ref: '#/components/schemas/Timestamps'
     EmptyObject:
       type: object
     AssignDoctor:
@@ -640,11 +807,11 @@ components:
             new_slot_ids:
               type: array
               items:
-                $ref: "#/components/schemas/SlotId"
+                $ref: '#/components/schemas/SlotId'
             reason:
-              $ref: "#/components/schemas/Reason"
+              $ref: '#/components/schemas/Reason'
             delete_availability_slot:
-              $ref: "#/components/schemas/DeleteAvailabilitySlot"
+              $ref: '#/components/schemas/DeleteAvailabilitySlot'
             patient_id:
               type: number
             doctor_id:
@@ -652,14 +819,14 @@ components:
             clinic_id:
               type: number
 
-        - $ref: "#/components/schemas/Timestamps"
+        - $ref: '#/components/schemas/Timestamps'
     Scheduling:
       type: object
       properties:
         slot_ids:
           type: array
           items:
-            $ref: "#/components/schemas/SlotId"
+            $ref: '#/components/schemas/SlotId'
         patient_ids:
           type: array
           items:
@@ -671,46 +838,46 @@ components:
       readOnly: true
       properties:
         id:
-          $ref: "#/components/schemas/UserId"
+          $ref: '#/components/schemas/UserId'
         cognito_id:
-          $ref: "#/components/schemas/CognitoId"
+          $ref: '#/components/schemas/CognitoId'
         clinic_id:
-          $ref: "#/components/schemas/ClinicId"
+          $ref: '#/components/schemas/ClinicId'
         address_id:
-          $ref: "#/components/schemas/AddressId"
+          $ref: '#/components/schemas/AddressId'
         address:
-          $ref: "#/components/schemas/AddressObject"
+          $ref: '#/components/schemas/AddressObject'
         phone_no:
-          $ref: "#/components/schemas/PhoneNumber"
+          $ref: '#/components/schemas/PhoneNumber'
         profile_picture:
-          $ref: "#/components/schemas/LogoRef"
+          $ref: '#/components/schemas/LogoRef'
         dob:
-          $ref: "#/components/schemas/DateOfBirth"
+          $ref: '#/components/schemas/DateOfBirth'
         practicioner_type:
-          $ref: "#/components/schemas/PracticionerType"
+          $ref: '#/components/schemas/PracticionerType'
         email:
-          $ref: "#/components/schemas/EmailAddress"
+          $ref: '#/components/schemas/EmailAddress'
         first_name:
-          $ref: "#/components/schemas/FirstName"
+          $ref: '#/components/schemas/FirstName'
         last_name:
-          $ref: "#/components/schemas/LastName"
+          $ref: '#/components/schemas/LastName'
     PublicUserData:
       type: object
       properties:
         id:
-          $ref: "#/components/schemas/UserId"
+          $ref: '#/components/schemas/UserId'
         clinic_id:
-          $ref: "#/components/schemas/ClinicId"
+          $ref: '#/components/schemas/ClinicId'
         first_name:
-          $ref: "#/components/schemas/FirstName"
+          $ref: '#/components/schemas/FirstName'
         last_name:
-          $ref: "#/components/schemas/LastName"
+          $ref: '#/components/schemas/LastName'
         profile_picture:
-          $ref: "#/components/schemas/ProfilePictureRef"
+          $ref: '#/components/schemas/ProfilePictureRef'
         address:
-          $ref: "#/components/schemas/AddressObject"
+          $ref: '#/components/schemas/AddressObject'
         rmaq:
-          $ref: "#/components/schemas/RAMQ"
+          $ref: '#/components/schemas/RAMQ'
     SchedulerTimes:
       allOf:
         - type: object
@@ -719,24 +886,24 @@ components:
               type: number
             label:
               type: string
-              example: "morning"
+              example: 'morning'
             start_time:
               type: string
-              example: "08:00"
+              example: '08:00'
             end_time:
               type: string
-              example: "11:00"
+              example: '11:00'
             clinic_id:
-              $ref: "#/components/schemas/ClinicId"
+              $ref: '#/components/schemas/ClinicId'
             doctor_id:
-              $ref: "#/components/schemas/UserId"
-        - $ref: "#/components/schemas/Timestamps"
+              $ref: '#/components/schemas/UserId'
+        - $ref: '#/components/schemas/Timestamps'
     DoctorId:
       type: number
     Date:
       type: string
       format: date
-      pattern: "YYYY-MM-DD"
+      pattern: 'YYYY-MM-DD'
     AppointmentTypeId:
       type: number
     TimeSlot:
@@ -745,9 +912,11 @@ components:
       type: object
       properties:
         id:
-          $ref: "#/components/schemas/DoctorId"
+          $ref: '#/components/schemas/DoctorId'
         name:
           type: string
+    Duration:
+      type: number
     AppointmentType:
       type: string
       # properties:
@@ -778,28 +947,61 @@ components:
           type: integer
           format: int32
           description: Total number of records
+    AppointmentStatus:
+      type: string
+      enum:
+        - waitlist
+        - confirmation_1_pending
+        - confirmation_2_pending
+        - confirmed
+        - arrived
+        - ready
+    AppointmentPriority:
+      type: string
+      enum:
+        - a
+        - b
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: number
+        patient:
+          $ref: '#/components/schemas/PublicUserData'
+        doctor:
+          $ref: '#/components/schemas/PublicDoctorData'
+        appointment_type:
+          $ref: '#/components/schemas/AppointmentType'
+        date:
+          $ref: '#/components/schemas/Datetime'
+        duration:
+          $ref: '#/components/schemas/Duration'
+        status:
+          $ref: '#/components/schemas/AppointmentStatus'
+        priority:
+          $ref: '#/components/schemas/AppointmentPriority'
     Slot:
       type: object
       properties:
         id:
           type: number
         from:
-          $ref: "#/components/schemas/Datetime"
+          $ref: '#/components/schemas/Datetime'
         to:
-          $ref: "#/components/schemas/Datetime"
+          $ref: '#/components/schemas/Datetime'
         timeSlot:
-          $ref: "#/components/schemas/TimeSlot"
+          $ref: '#/components/schemas/TimeSlot'
         appointmentType:
-          $ref: "#/components/schemas/AppointmentType"
+          $ref: '#/components/schemas/AppointmentType'
     PublicDoctorData:
       type: object
       properties:
         id:
-          $ref: "#/components/schemas/DoctorId"
+          $ref: '#/components/schemas/DoctorId'
         first_name:
-          $ref: "#/components/schemas/FirstName"
+          $ref: '#/components/schemas/FirstName'
         last_name:
-          $ref: "#/components/schemas/LastName"
+          $ref: '#/components/schemas/LastName'
     SlotWithPatientData:
       type: object
       properties:
@@ -807,32 +1009,42 @@ components:
           type: array
           items:
             allOf:
-              - $ref: "#/components/schemas/Slot"
+              - $ref: '#/components/schemas/Slot'
               - type: object
                 properties:
                   doctor:
-                    $ref: "#/components/schemas/PublicDoctorData"
+                    $ref: '#/components/schemas/PublicDoctorData'
                   patient:
-                    $ref: "#/components/schemas/PublicUserData"
+                    $ref: '#/components/schemas/PublicUserData'
+    AppointmentsWithPatientData:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Appointment'
+        - type: object
+          properties:
+            doctor:
+              $ref: '#/components/schemas/PublicDoctorData'
+            patient:
+              $ref: '#/components/schemas/PublicUserData'
     SlotWithPatientDataObject:
       type: object
       properties:
         data:
           type: object
           allOf:
-            - $ref: "#/components/schemas/Slot"
-            - $ref: "#/components/schemas/PublicDoctorData"
+            - $ref: '#/components/schemas/Slot'
+            - $ref: '#/components/schemas/PublicDoctorData'
             - type: object
               properties:
                 patient:
-                  $ref: "#/components/schemas/PublicUserData"
+                  $ref: '#/components/schemas/PublicUserData'
     SlotsDaysDataObject:
       type: object
       properties:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/Date"
+            $ref: '#/components/schemas/Date'
     CreateSlotBody:
       allOf:
         - type: object
@@ -844,13 +1056,13 @@ components:
             - appointment_type
           properties:
             doctor_id:
-              $ref: "#/components/schemas/DoctorId"
+              $ref: '#/components/schemas/DoctorId'
             from:
-              $ref: "#/components/schemas/Datetime"
+              $ref: '#/components/schemas/Datetime'
             to:
-              $ref: "#/components/schemas/Datetime"
+              $ref: '#/components/schemas/Datetime'
             timeSlot:
-              $ref: "#/components/schemas/TimeSlot"
+              $ref: '#/components/schemas/TimeSlot'
             appointment_type:
               type: string
     UpdateSlotBody:
@@ -858,12 +1070,46 @@ components:
         - type: object
           properties:
             from:
-              $ref: "#/components/schemas/Datetime"
+              $ref: '#/components/schemas/Datetime'
             to:
-              $ref: "#/components/schemas/Datetime"
+              $ref: '#/components/schemas/Datetime'
             timeSlot:
-              $ref: "#/components/schemas/TimeSlot"
+              $ref: '#/components/schemas/TimeSlot'
             appointment_type:
+              type: string
+    UpdateAppointmentBody:
+      allOf:
+        - type: object
+          properties:
+            doctor_id:
+              type: number
+            date:
+              type: string
+            appointment_type:
+              type: string
+    ExtendAppointmentBody:
+      allOf:
+        - type: object
+          properties:
+            provisional_date:
+              type: string
+            reason_message:
+              type: string
+    CancelAppointmentBody:
+      allOf:
+        - type: object
+          properties:
+            provisional_date:
+              type: string
+            reason_message:
+              type: string
+    AssignAppointmentDoctorBody:
+      allOf:
+        - type: object
+          properties:
+            doctor_id:
+              type: number
+            reason_message:
               type: string
   responses:
     SchedulerTimesResponse:
@@ -873,25 +1119,25 @@ components:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/SchedulerTimes"
+              $ref: '#/components/schemas/SchedulerTimes'
     ReschedulingResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Rescheduling"
+            $ref: '#/components/schemas/Rescheduling'
     SchedulingResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/SlotWithPatientData"
+            $ref: '#/components/schemas/SlotWithPatientData'
     ErrorResponse:
-      description: ""
+      description: ''
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     Created:
       description: Success
     SlotResponse:
@@ -900,32 +1146,32 @@ components:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/Slot"
+              - $ref: '#/components/schemas/Slot'
               - type: object
                 properties:
                   clinic_id:
                     type: string
-              - $ref: "#/components/schemas/Timestamps"
+              - $ref: '#/components/schemas/Timestamps'
     FindSlotsResponse:
       description: Success
       content:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/PaginatedResult"
-              - $ref: "#/components/schemas/SlotWithPatientData"
+              - $ref: '#/components/schemas/PaginatedResult'
+              - $ref: '#/components/schemas/SlotWithPatientData'
     FindSlotsDaysResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/SlotsDaysDataObject"
+            $ref: '#/components/schemas/SlotsDaysDataObject'
     GetSlotResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/SlotWithPatientDataObject"
+            $ref: '#/components/schemas/SlotWithPatientDataObject'
     GetDoctorsResponse:
       description: Success
       content:
@@ -933,7 +1179,7 @@ components:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/PublicDoctorData"
+              $ref: '#/components/schemas/PublicDoctorData'
     GetPatientsResponse:
       description: Success
       content:
@@ -941,7 +1187,7 @@ components:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/Doctor"
+              $ref: '#/components/schemas/Doctor'
     GetAppointmentTypesResponse:
       description: Success
       content:
@@ -949,7 +1195,26 @@ components:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/AppointmentType"
+              $ref: '#/components/schemas/AppointmentType'
+    AppointmentResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/AppointmentsWithPatientData'
+    GetAppointmentsResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/PaginatedResult'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AppointmentsWithPatientData'
+
     AssignDoctorResponse:
       description: Assigned success
       content:
@@ -959,10 +1224,10 @@ components:
               - type: object
                 properties:
                   doctor_id:
-                    $ref: "#/components/schemas/DoctorId"
+                    $ref: '#/components/schemas/DoctorId'
                   patient_id:
-                    $ref: "#/components/schemas/UserId"
+                    $ref: '#/components/schemas/UserId'
                   clinic_id:
-                    $ref: "#/components/schemas/ClinicId"
-              - $ref: "#/components/schemas/CreateProps"
-              - $ref: "#/components/schemas/DeleteProps"
+                    $ref: '#/components/schemas/ClinicId'
+              - $ref: '#/components/schemas/CreateProps'
+              - $ref: '#/components/schemas/DeleteProps'
