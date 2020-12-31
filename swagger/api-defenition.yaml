@@ -385,7 +385,7 @@ paths:
         - $ref: '#/components/parameters/availability_id'
       tags:
         - Availability
-      summary: delete clinic availabilty Availabilitys
+      summary: delete clinic availabilty by id
       operationId: deleteAvaAvailabilitysOpId
       description: |
         delete clinic availabilty Availability
