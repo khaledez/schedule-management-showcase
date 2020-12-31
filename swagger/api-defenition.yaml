@@ -9,7 +9,6 @@ info:
     email: e.darabeh@dash.ps
 tags:
   - name: Appointment
-  - name: Slot
     description: Slots management.
   - name: Availability
     description: Availability management.
@@ -178,7 +177,7 @@ paths:
       summary: create doctor's availabilties
       operationId: createAvaOpId
       description: |
-        create clinic availabilty Availabilitys for a doctor
+        create clinic availabilty for a doctor
       requestBody:
         description: autheticate user object
         required: true
@@ -205,7 +204,7 @@ paths:
       summary: get doctor's availabilities
       operationId: getAvaOpId
       description: |
-        get clinic availabilty Availabilitys
+        get doctor's availabilties
       responses:
         200:
           $ref: '#/components/responses/FindAvailabilitysResponse'
@@ -1021,7 +1020,7 @@ components:
       pattern: 'YYYY-MM-DD'
     AppointmentTypeId:
       type: number
-    time_availability:
+    time_slot:
       type: number
     Doctor:
       type: object
@@ -1104,8 +1103,8 @@ components:
           $ref: '#/components/schemas/Datetime'
         to:
           $ref: '#/components/schemas/Datetime'
-        time_availability:
-          $ref: '#/components/schemas/time_availability'
+        time_slot:
+          $ref: '#/components/schemas/time_slot'
         appointmentType:
           $ref: '#/components/schemas/AppointmentType'
     PublicDoctorData:
@@ -1167,7 +1166,7 @@ components:
             - doctor_id
             - from
             - to
-            - time_availability
+            - time_slot
             - appointment_type
           properties:
             doctor_id:
@@ -1176,8 +1175,8 @@ components:
               $ref: '#/components/schemas/Datetime'
             to:
               $ref: '#/components/schemas/Datetime'
-            time_availability:
-              $ref: '#/components/schemas/time_availability'
+            time_slot:
+              $ref: '#/components/schemas/time_slot'
             appointment_type:
               type: string
     UpdateAvailabilityBody:
@@ -1188,8 +1187,8 @@ components:
               $ref: '#/components/schemas/Datetime'
             to:
               $ref: '#/components/schemas/Datetime'
-            time_availability:
-              $ref: '#/components/schemas/time_availability'
+            time_slot:
+              $ref: '#/components/schemas/time_slot'
             appointment_type:
               type: string
     UpdateAppointmentBody:
