@@ -411,6 +411,21 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
+  /time-slots:
+    get:
+      tags:
+        - Lookup
+      summary: get clinic's time slot steps
+      operationId: getClinicTimeSlotsOpId
+      description: |
+        get clinic time slot steps
+      responses:
+        200:
+          $ref: '#/components/responses/GetAppointmentTypesResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
   /scheduling:
     post:
       tags:
@@ -1013,6 +1028,23 @@ components:
             doctor_id:
               $ref: '#/components/schemas/UserId'
         - $ref: '#/components/schemas/Timestamps'
+    TimeSlotLookup:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: number
+            label:
+              type: string
+              example: '15'
+            value:
+              type: string
+              example: '15 min'
+            clinic_id:
+              $ref: '#/components/schemas/ClinicId'
+            doctor_id:
+              $ref: '#/components/schemas/UserId'
+        - $ref: '#/components/schemas/Timestamps'
     DoctorId:
       type: number
     Date:
@@ -1261,6 +1293,15 @@ components:
             $ref: '#/components/schemas/Error'
     Created:
       description: Success
+
+    GetAppointmentTypesResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/TimeSlotLookup'
     AvailabilityResponse:
       description: Success
       content:
@@ -1309,7 +1350,7 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/Doctor'
-    GetAppointmentTypesResponse:
+    TimeSlotsLookupResponse:
       description: Success
       content:
         application/json:
