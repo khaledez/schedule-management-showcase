@@ -1,0 +1,968 @@
+openapi: 3.0.0
+servers: []
+info:
+  description: This swagger explain schedule management services.
+  version: 1.0.0
+  title: Schedule Management Service
+  contact:
+    name: Emad Darabeh
+    email: e.darabeh@dash.ps
+tags:
+  - name: Slot
+    description: Slots management.
+  - name: WIP
+  - name: Lookup
+    description: lookups apis required to schedule
+security:
+  - bearerAuth: []
+paths:
+  /clinics/{clinicId}/slots:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+      tags:
+        - Slot
+      summary: create clinic availabilty slots
+      operationId: createAvaSlotsOpId
+      description: |
+        create clinic availabilty slot for a doctor
+      requestBody:
+        description: autheticate user object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSlotBody"
+      responses:
+        201:
+          $ref: "#/components/responses/SlotResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    get:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+        - $ref: "#/components/parameters/doctor_id_query"
+        - $ref: "#/components/parameters/appointment_type"
+        - $ref: "#/components/parameters/day"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      tags:
+        - Slot
+      summary: get clinic availabilty slots
+      operationId: getAvaSlotsOpId
+      description: |
+        get clinic availabilty slots
+      responses:
+        200:
+          $ref: "#/components/responses/FindSlotsResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+  /clinics/{clinicId}/slots-days:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+        - $ref: "#/components/parameters/doctor_id_query"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      tags:
+        - Slot
+      summary: find the days of slots at current month
+      operationId: getSlotsDaysOpId
+      description: |
+        find the days of slots at current month or the secertray can find to any month.
+      responses:
+        200:
+          $ref: "#/components/responses/FindSlotsDaysResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+  /clinics/{clinicId}/slots/{slotId}:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+        - $ref: "#/components/parameters/slot_id"
+      tags:
+        - Slot
+      summary: get clinic availabilty slot by id
+      operationId: getAvaSlotOpId
+      description: |
+        get clinic availabilty slot by id
+      responses:
+        200:
+          $ref: "#/components/responses/GetSlotResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+        - $ref: "#/components/parameters/slot_id"
+      tags:
+        - Slot
+      summary: update clinic availabilty slots
+      operationId: updateAvaSlotsOpId
+      description: |
+        update clinic availabilty slot
+      requestBody:
+        description: autheticate user object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSlotBody"
+      responses:
+        200:
+          $ref: "#/components/responses/SlotResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+        - $ref: "#/components/parameters/slot_id"
+      tags:
+        - Slot
+      summary: delete clinic availabilty slots
+      operationId: deleteAvaSlotsOpId
+      description: |
+        delete clinic availabilty slot
+      responses:
+        200:
+          $ref: "#/components/responses/SlotResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+  /clinics/{clinicId}/appointment-types:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+      tags:
+        - Lookup
+      summary: get clinic appointment types
+      operationId: getAppointTypesOpId
+      description: |
+        get clinic appointment types
+      responses:
+        200:
+          $ref: "#/components/responses/GetAppointmentTypesResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+  /clinics/{clinicId}/scheduling:
+    parameters:
+      - $ref: "#/components/parameters/clinic_id"
+    post:
+      tags:
+        - Slot
+      summary: schedule an appointement
+      description: schedule an appointement
+      operationId: schedulingOpId
+      requestBody:
+        description: reschedule object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Scheduling"
+      responses:
+        "201":
+          $ref: "#/components/responses/SchedulingResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /clinics/{clinicId}/rescheduling:
+    parameters:
+      - $ref: "#/components/parameters/clinic_id"
+    post:
+      tags:
+        - Slot
+      summary: reschedule an appointement
+      description: reschedule an appointement
+      operationId: reschedulingOpId
+      requestBody:
+        description: reschedule object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Rescheduling"
+      responses:
+        "201":
+          $ref: "#/components/responses/ReschedulingResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /clinics/{clinicId}/slots/{slotId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/clinic_id"
+      - $ref: "#/components/parameters/slot_id"
+    post:
+      tags:
+        - Slot
+      summary: cancel an appointement
+      description: cancel an appointement
+      operationId: cancelScheduleOpId
+      requestBody:
+        description: cancel object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/Created"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /clinics/{clinicId}/patients/{patientId}/assign-doctor:
+    parameters:
+      - $ref: "#/components/parameters/clinic_id"
+      - $ref: "#/components/parameters/patient_id"
+    post:
+      tags:
+        - WIP
+      summary: WIP! Assign doctor to a patient
+      description: assign doctor to the patient without scheduling an appointment, WIP! this api exits in patient-mngt-service.
+      operationId: assignDoctorToPatientOpId
+      requestBody:
+        description: assign a doctor to a patient
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignDoctor"
+      responses:
+        "201":
+          $ref: "#/components/responses/AssignDoctorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /scheduler-times:
+    get:
+      tags:
+        - Lookup
+      summary: get scheduler times
+      description: list of schduler times
+      operationId: schecilerTimesOpId
+      responses:
+        200:
+          $ref: "#/components/responses/SchedulerTimesResponse"
+        400:
+          $ref: "#/components/responses/ErrorResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    options:
+      tags:
+        - Lookup
+      responses:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: "https://${stageVariables.apihost}/registration"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
+  /clinics/{clinicId}/doctors:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+      tags:
+        - Lookup
+      summary: get clinic doctors
+      operationId: getDoctorsOpId
+      description: |
+        get clinic doctors
+      responses:
+        200:
+          $ref: "#/components/responses/GetDoctorsResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+  /clinics/{clinicId}/patients:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/clinic_id"
+        - $ref: "#/components/parameters/patient_status"
+        - $ref: "#/components/parameters/patient_phone_number"
+        - $ref: "#/components/parameters/patient_dob"
+        - $ref: "#/components/parameters/patient_name"
+        - $ref: "#/components/parameters/patient_ramq"
+        - $ref: "#/components/parameters/patient_provisional_date"
+      tags:
+        - Lookup
+      summary: get clinic patients
+      operationId: getPatientsOpId
+      description: |
+        get clinic patients
+      responses:
+        200:
+          $ref: "#/components/responses/GetPatientsResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    clinic_id:
+      name: clinicId
+      in: path
+      description: clinic id
+      required: true
+      schema:
+        type: number
+    availability_id:
+      name: avId
+      in: path
+      description: availability id
+      required: true
+      schema:
+        type: number
+    slot_id:
+      name: slotId
+      in: path
+      description: slot's identifier
+      required: true
+      schema:
+        type: number
+    patient_id:
+      name: patientId
+      in: path
+      required: true
+      schema:
+        type: number
+    doctor_id_path:
+      name: id
+      in: path
+      description: doctor's identifier
+      required: true
+      schema:
+        type: string
+    doctor_id_query:
+      name: doctor_id
+      in: query
+      description: doctor's identifier
+      schema:
+        type: string
+    appointment_type:
+      name: appointment_type
+      in: query
+      description: appointment type
+      schema:
+        type: string
+    day:
+      name: day
+      in: query
+      description: date string
+      schema:
+        type: string
+    patient_status:
+      name: status
+      in: query
+      description: patient status
+      schema:
+        type: string
+    patient_phone_number:
+      name: phone_number
+      in: query
+      description: patient phone number
+      schema:
+        type: string
+    patient_dob:
+      name: dob
+      in: query
+      description: dob
+      schema:
+        type: string
+    patient_ramq:
+      name: ramq
+      in: query
+      description: patient ramq
+      schema:
+        type: string
+    patient_provisional_date:
+      name: provisional_date
+      in: query
+      description: patient provisional date
+      schema:
+        type: string
+    patient_name:
+      name: name
+      in: query
+      description: patient name
+      schema:
+        type: string
+    from:
+      name: from
+      in: query
+      description: start dateTime slot
+      schema:
+        type: string
+    to:
+      name: to
+      in: query
+      description: end dateTime slot
+      schema:
+        type: string
+  schemas:
+    EmailAddress:
+      type: string
+      format: email
+    Datetime:
+      type: string
+      format: date-time
+      nullable: true
+    CreatedAtDatetime:
+      type: string
+      format: date-time
+      nullable: true
+      readOnly: true
+    UpdatedAtDatetime:
+      type: string
+      format: date-time
+      nullable: true
+      default: null
+      readOnly: true
+    DeletedAtDatetime:
+      type: string
+      format: date-time
+      nullable: true
+      default: null
+      readOnly: true
+    StatusCode:
+      type: string
+    Message:
+      type: string
+    Error:
+      type: object
+      required:
+        - statusCode
+        - message
+        - error
+      properties:
+        statusCode:
+          $ref: "#/components/schemas/StatusCode"
+        message:
+          $ref: "#/components/schemas/Message"
+        error:
+          type: string
+    ClinicName:
+      type: string
+    CognitoId:
+      type: string
+    PhoneNumber:
+      type: string
+      minProperties: 11
+      maxProperties: 11
+    FirstLine:
+      type: string
+    SecoundLine:
+      type: string
+      nullable: true
+    FirstName:
+      type: string
+    LastName:
+      type: string
+      nullable: true
+    PlaceId:
+      type: number
+      nullable: true
+      default: null
+    TimezoneId:
+      type: number
+      nullable: true
+      default: null
+    Country:
+      type: string
+    State:
+      type: string
+    City:
+      type: string
+    Timezone:
+      type: string
+    LogoRef:
+      type: string
+    ProfilePictureRef:
+      type: string
+    ClinicId:
+      type: number
+      readOnly: true
+    UserId:
+      type: number
+      readOnly: true
+    SlotId:
+      type: number
+      readOnly: true
+    AddressId:
+      type: string
+      readOnly: true
+    Reason:
+      type: string
+    DateOfBirth:
+      type: string
+      format: date
+    DeleteAvailabilitySlot:
+      type: boolean
+      writeOnly: true
+    PracticionerType:
+      type: string
+      nullable: false
+      enum:
+        - doctor
+        - nurse
+        - admin_billing
+        - secertary
+        - admin
+    AddressObject:
+      type: object
+      required:
+        - line_1
+        - country
+        - state
+        - city
+        - timezone
+      properties:
+        place_id:
+          $ref: "#/components/schemas/PlaceId"
+        timezone_id:
+          $ref: "#/components/schemas/TimezoneId"
+        first_line:
+          $ref: "#/components/schemas/FirstLine"
+        last_line:
+          $ref: "#/components/schemas/SecoundLine"
+        country:
+          $ref: "#/components/schemas/Country"
+        state:
+          $ref: "#/components/schemas/State"
+        city:
+          $ref: "#/components/schemas/City"
+        timezone:
+          $ref: "#/components/schemas/Timezone"
+    Timestamps:
+      allOf:
+        - $ref: "#/components/schemas/CreateProps"
+        - $ref: "#/components/schemas/UpdateProps"
+        - $ref: "#/components/schemas/DeleteProps"
+    CreateProps:
+      type: object
+      properties:
+        created_at:
+          $ref: "#/components/schemas/CreatedAtDatetime"
+        created_by:
+          $ref: "#/components/schemas/UserId"
+    UpdateProps:
+      type: object
+      properties:
+        updated_at:
+          $ref: "#/components/schemas/UpdatedAtDatetime"
+        updated_by:
+          $ref: "#/components/schemas/UserId"
+    DeleteProps:
+      type: object
+      properties:
+        deleted_at:
+          $ref: "#/components/schemas/DeletedAtDatetime"
+        deleted_by:
+          $ref: "#/components/schemas/UserId"
+    Clinic:
+      allOf:
+        - type: object
+          properties:
+            id:
+              $ref: "#/components/schemas/ClinicId"
+            clinic_name:
+              $ref: "#/components/schemas/ClinicName"
+            clinic_phone_no:
+              $ref: "#/components/schemas/PhoneNumber"
+            clinic_address:
+              $ref: "#/components/schemas/AddressObject"
+            logo_ref:
+              $ref: "#/components/schemas/LogoRef"
+            admin_info:
+              $ref: "#/components/schemas/User"
+        - $ref: "#/components/schemas/Timestamps"
+    EmptyObject:
+      type: object
+    AssignDoctor:
+      type: object
+      properties:
+        doctor_id:
+          type: number
+    RAMQ:
+      type: string
+    Rescheduling:
+      allOf:
+        - type: object
+          properties:
+            old_slot_id:
+              type: number
+            new_slot_ids:
+              type: array
+              items:
+                $ref: "#/components/schemas/SlotId"
+            reason:
+              $ref: "#/components/schemas/Reason"
+            delete_availability_slot:
+              $ref: "#/components/schemas/DeleteAvailabilitySlot"
+            patient_id:
+              type: number
+            doctor_id:
+              type: number
+            clinic_id:
+              type: number
+
+        - $ref: "#/components/schemas/Timestamps"
+    Scheduling:
+      type: object
+      properties:
+        slot_ids:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlotId"
+        patient_ids:
+          type: array
+          items:
+            type: number
+        doctor_id:
+          type: number
+    User:
+      type: object
+      readOnly: true
+      properties:
+        id:
+          $ref: "#/components/schemas/UserId"
+        cognito_id:
+          $ref: "#/components/schemas/CognitoId"
+        clinic_id:
+          $ref: "#/components/schemas/ClinicId"
+        address_id:
+          $ref: "#/components/schemas/AddressId"
+        address:
+          $ref: "#/components/schemas/AddressObject"
+        phone_no:
+          $ref: "#/components/schemas/PhoneNumber"
+        profile_picture:
+          $ref: "#/components/schemas/LogoRef"
+        dob:
+          $ref: "#/components/schemas/DateOfBirth"
+        practicioner_type:
+          $ref: "#/components/schemas/PracticionerType"
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        first_name:
+          $ref: "#/components/schemas/FirstName"
+        last_name:
+          $ref: "#/components/schemas/LastName"
+    PublicUserData:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UserId"
+        clinic_id:
+          $ref: "#/components/schemas/ClinicId"
+        first_name:
+          $ref: "#/components/schemas/FirstName"
+        last_name:
+          $ref: "#/components/schemas/LastName"
+        profile_picture:
+          $ref: "#/components/schemas/ProfilePictureRef"
+        address:
+          $ref: "#/components/schemas/AddressObject"
+        rmaq:
+          $ref: "#/components/schemas/RAMQ"
+    SchedulerTimes:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: number
+            label:
+              type: string
+              example: "morning"
+            start_time:
+              type: string
+              example: "08:00"
+            end_time:
+              type: string
+              example: "11:00"
+            clinic_id:
+              $ref: "#/components/schemas/ClinicId"
+            doctor_id:
+              $ref: "#/components/schemas/UserId"
+        - $ref: "#/components/schemas/Timestamps"
+    DoctorId:
+      type: number
+    Date:
+      type: string
+      format: date
+      pattern: "YYYY-MM-DD"
+    AppointmentTypeId:
+      type: number
+    TimeSlot:
+      type: number
+    Doctor:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/DoctorId"
+        name:
+          type: string
+    AppointmentType:
+      type: string
+      # properties:
+      #   id:
+      #     $ref: "#/components/schemas/AppointmentTypeId"
+      #   name:
+      #     type: string
+    PaginatedResult:
+      type: object
+      required:
+        - limit
+        - size
+        - offset
+      properties:
+        limit:
+          type: integer
+          format: int32
+          description: Max number of items per page
+        size:
+          type: integer
+          format: int32
+          description: The size of current page
+        skip:
+          type: integer
+          format: int32
+          description: Number of skipped items
+        total:
+          type: integer
+          format: int32
+          description: Total number of records
+    Slot:
+      type: object
+      properties:
+        id:
+          type: number
+        from:
+          $ref: "#/components/schemas/Datetime"
+        to:
+          $ref: "#/components/schemas/Datetime"
+        timeSlot:
+          $ref: "#/components/schemas/TimeSlot"
+        appointmentType:
+          $ref: "#/components/schemas/AppointmentType"
+    PublicDoctorData:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/DoctorId"
+        first_name:
+          $ref: "#/components/schemas/FirstName"
+        last_name:
+          $ref: "#/components/schemas/LastName"
+    SlotWithPatientData:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Slot"
+              - type: object
+                properties:
+                  doctor:
+                    $ref: "#/components/schemas/PublicDoctorData"
+                  patient:
+                    $ref: "#/components/schemas/PublicUserData"
+    SlotWithPatientDataObject:
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/Slot"
+            - $ref: "#/components/schemas/PublicDoctorData"
+            - type: object
+              properties:
+                patient:
+                  $ref: "#/components/schemas/PublicUserData"
+    SlotsDaysDataObject:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Date"
+    CreateSlotBody:
+      allOf:
+        - type: object
+          required:
+            - doctor_id
+            - from
+            - to
+            - timeSlot
+            - appointment_type
+          properties:
+            doctor_id:
+              $ref: "#/components/schemas/DoctorId"
+            from:
+              $ref: "#/components/schemas/Datetime"
+            to:
+              $ref: "#/components/schemas/Datetime"
+            timeSlot:
+              $ref: "#/components/schemas/TimeSlot"
+            appointment_type:
+              type: string
+    UpdateSlotBody:
+      allOf:
+        - type: object
+          properties:
+            from:
+              $ref: "#/components/schemas/Datetime"
+            to:
+              $ref: "#/components/schemas/Datetime"
+            timeSlot:
+              $ref: "#/components/schemas/TimeSlot"
+            appointment_type:
+              type: string
+  responses:
+    SchedulerTimesResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/SchedulerTimes"
+    ReschedulingResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Rescheduling"
+    SchedulingResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SlotWithPatientData"
+    ErrorResponse:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Created:
+      description: Success
+    SlotResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Slot"
+              - type: object
+                properties:
+                  clinic_id:
+                    type: string
+              - $ref: "#/components/schemas/Timestamps"
+    FindSlotsResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/PaginatedResult"
+              - $ref: "#/components/schemas/SlotWithPatientData"
+    FindSlotsDaysResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SlotsDaysDataObject"
+    GetSlotResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SlotWithPatientDataObject"
+    GetDoctorsResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/PublicDoctorData"
+    GetPatientsResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Doctor"
+    GetAppointmentTypesResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/AppointmentType"
+    AssignDoctorResponse:
+      description: Assigned success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - type: object
+                properties:
+                  doctor_id:
+                    $ref: "#/components/schemas/DoctorId"
+                  patient_id:
+                    $ref: "#/components/schemas/UserId"
+                  clinic_id:
+                    $ref: "#/components/schemas/ClinicId"
+              - $ref: "#/components/schemas/CreateProps"
+              - $ref: "#/components/schemas/DeleteProps"
