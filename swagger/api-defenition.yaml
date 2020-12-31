@@ -294,6 +294,7 @@ paths:
     get:
       parameters:
         - $ref: '#/components/parameters/doctor_id_query'
+        - $ref: '#/components/parameters/clinic_id'
         - $ref: '#/components/parameters/from'
         - $ref: '#/components/parameters/to'
       tags:
@@ -343,6 +344,7 @@ paths:
     get:
       parameters:
         - $ref: '#/components/parameters/availability_id'
+        - $ref: '#/components/parameters/clinic_id'
       tags:
         - Availability
       summary: get doctor's availabilty by id
@@ -359,6 +361,7 @@ paths:
     put:
       parameters:
         - $ref: '#/components/parameters/availability_id'
+        - $ref: '#/components/parameters/clinic_id'
       tags:
         - Availability
       summary: update doctor's availability
@@ -587,6 +590,25 @@ components:
       scheme: bearer
       bearerFormat: JWT
   parameters:
+    x_congnito_cognito_id:
+      name: x-congnito-congnito-id
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/headers/X-congnito-cognito-id'
+    clinic_id:
+      name: x-congnito-clinic-id
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/headers/X-congnito-clinic-id'
+    user_id:
+      name: x-congnito-user-id
+      description: practitioner id
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/headers/X-congnito-user-id'
     availability_id:
       name: id
       in: path
@@ -684,6 +706,19 @@ components:
       name: to
       in: query
       description: end dateTime
+      schema:
+        type: string
+  headers:
+    X-congnito-cognito-id:
+      description: Extracted from JWT and injected by API Gateway
+      schema:
+        type: string
+    X-congnito-clinic-id:
+      description: Extracted from JWT and injected by API Gateway
+      schema:
+        type: string
+    X-congnito-user-id:
+      description: Extracted from JWT and injected by API Gateway
       schema:
         type: string
   schemas:
@@ -892,7 +927,7 @@ components:
                 $ref: '#/components/schemas/AvailabilityId'
             reason:
               $ref: '#/components/schemas/Reason'
-            delete_availability_Availability:
+            delete_availability:
               $ref: '#/components/schemas/DeleteAvailabilityAvailability'
             patient_id:
               type: number
@@ -905,12 +940,10 @@ components:
     Scheduling:
       type: object
       properties:
-        Availability_ids:
-          type: array
-          items:
-            $ref: '#/components/schemas/AvailabilityId'
-        patient_ids:
-          type: array
+        availability_id:
+          type: string
+        patient_id:
+          type: string
           items:
             type: number
         doctor_id:
