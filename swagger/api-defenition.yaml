@@ -178,6 +178,9 @@ paths:
       operationId: createAvaOpId
       description: |
         create clinic availabilty for a doctor
+      parameters:
+        - $ref: '#/components/parameters/clinic_id'
+
       requestBody:
         description: autheticate user object
         required: true
@@ -249,6 +252,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/doctor_id_query'
         - $ref: '#/components/parameters/day'
+        - $ref: '#/components/parameters/clinic_id'
       summary: get periiod of doctor's availability
       responses:
         200:
