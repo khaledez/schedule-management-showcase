@@ -178,6 +178,9 @@ paths:
       operationId: createAvaOpId
       description: |
         create clinic availabilty for a doctor
+      parameters:
+        - $ref: '#/components/parameters/clinic_id'
+
       requestBody:
         description: autheticate user object
         required: true
@@ -242,6 +245,25 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
+    put:
+      tags:
+        - Availability
+      summary: update doctor's availabilities
+      operationId: updateAvaOpId
+      requestBody:
+        description: autheticate user object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAvailabilityBody'
+      responses:
+        200:
+          $ref: '#/components/responses/AvailabilityResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
   /avaliabilities-doctor:
     get:
       tags:
@@ -249,6 +271,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/doctor_id_query'
         - $ref: '#/components/parameters/day'
+        - $ref: '#/components/parameters/clinic_id'
       summary: get periiod of doctor's availability
       responses:
         200:
@@ -356,33 +379,12 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
-    put:
-      parameters:
-        - $ref: '#/components/parameters/availability_id'
-      tags:
-        - Availability
-      summary: update doctor's availability
-      operationId: updateAvaOpId
-      requestBody:
-        description: autheticate user object
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateAvailabilityBody'
-      responses:
-        200:
-          $ref: '#/components/responses/AvailabilityResponse'
-        401:
-          $ref: '#/components/responses/ErrorResponse'
-        500:
-          $ref: '#/components/responses/ErrorResponse'
     delete:
       parameters:
         - $ref: '#/components/parameters/availability_id'
       tags:
         - Availability
-      summary: delete clinic availabilty Availabilitys
+      summary: delete clinic availabilty by id
       operationId: deleteAvaAvailabilitysOpId
       description: |
         delete clinic availabilty Availability
@@ -579,6 +581,25 @@ components:
       scheme: bearer
       bearerFormat: JWT
   parameters:
+    x_congnito_cognito_id:
+      name: x-congnito-congnito-id
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/headers/X-congnito-cognito-id'
+    clinic_id:
+      name: x-congnito-clinic-id
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/headers/X-congnito-clinic-id'
+    user_id:
+      name: x-congnito-user-id
+      description: practitioner id
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/headers/X-congnito-user-id'
     availability_id:
       name: id
       in: path
@@ -678,6 +699,19 @@ components:
       description: end dateTime
       schema:
         type: string
+  headers:
+    X-congnito-cognito-id:
+      description: Extracted from JWT and injected by API Gateway
+      schema:
+        type: string
+    X-congnito-clinic-id:
+      description: Extracted from JWT and injected by API Gateway
+      schema:
+        type: string
+    X-congnito-user-id:
+      description: Extracted from JWT and injected by API Gateway
+      schema:
+        type: string
   schemas:
     EmailAddress:
       type: string
@@ -690,16 +724,12 @@ components:
               $ref: '#/components/schemas/Time'
             end_time:
               $ref: '#/components/schemas/Time'
-            day_date:
+            date:
               $ref: '#/components/schemas/Date'
     Datetime:
       type: string
       format: date-time
       pattern: 'YYYY-MM-DD'
-      nullable: true
-    Time:
-      type: string
-      example: '13:17:49'
       nullable: true
     CreatedAtDatetime:
       type: string
@@ -891,7 +921,7 @@ components:
                 $ref: '#/components/schemas/AvailabilityId'
             reason:
               $ref: '#/components/schemas/Reason'
-            delete_availability_Availability:
+            delete_availability:
               $ref: '#/components/schemas/DeleteAvailabilityAvailability'
             patient_id:
               type: number
@@ -904,12 +934,10 @@ components:
     Scheduling:
       type: object
       properties:
-        Availability_ids:
-          type: array
-          items:
-            $ref: '#/components/schemas/AvailabilityId'
-        patient_ids:
-          type: array
+        availability_id:
+          type: string
+        patient_id:
+          type: string
           items:
             type: number
         doctor_id:
@@ -1017,11 +1045,10 @@ components:
       type: number
     AppointmentType:
       type: string
-      # properties:
-      #   id:
-      #     $ref: "#/components/schemas/AppointmentTypeId"
-      #   name:
-      #     type: string
+      enum:
+        - FUQ
+        - NEW/FUQ
+        - NEW
     PaginatedResult:
       type: object
       required:
@@ -1087,7 +1114,7 @@ components:
           $ref: '#/components/schemas/Time'
         end_time:
           $ref: '#/components/schemas/Time'
-        day_date:
+        date:
           $ref: '#/components/schemas/Date'
         time_slot:
           $ref: '#/components/schemas/time_slot'
@@ -1150,8 +1177,9 @@ components:
         - type: object
           required:
             - doctor_id
-            - from
-            - to
+            - start_time
+            - end_time
+            - date
             - time_slot
             - appointment_type
           properties:
@@ -1161,26 +1189,38 @@ components:
               $ref: '#/components/schemas/Time'
             end_time:
               $ref: '#/components/schemas/Time'
-            day_date:
+            date:
               $ref: '#/components/schemas/Date'
             time_slot:
               $ref: '#/components/schemas/time_slot'
             appointment_type:
-              type: string
+              $ref: '#/components/schemas/AppointmentType'
+    Time:
+      type: string
+      example: '20:00:00'
     UpdateAvailabilityBody:
       allOf:
         - type: object
           properties:
-            start_time:
-              $ref: '#/components/schemas/Time'
-            end_time:
-              $ref: '#/components/schemas/Time'
-            day_date:
-              $ref: '#/components/schemas/Date'
-            time_slot:
-              $ref: '#/components/schemas/time_slot'
-            appointment_type:
-              type: string
+            to_add:
+              type: array
+              items:
+                type: object
+                properties:
+                  start_time:
+                    $ref: '#/components/schemas/Time'
+                  end_time:
+                    $ref: '#/components/schemas/Time'
+                  date:
+                    $ref: '#/components/schemas/Date'
+                  time_slot:
+                    $ref: '#/components/schemas/time_slot'
+                  appointment_type:
+                    $ref: '#/components/schemas/AppointmentType'
+            to_delete:
+              type: array
+              items:
+                type: number
     UpdateAppointmentBody:
       allOf:
         - type: object
@@ -1190,7 +1230,7 @@ components:
             date:
               type: string
             appointment_type:
-              type: string
+              $ref: '#/components/schemas/AppointmentType'
     ExtendAppointmentBody:
       allOf:
         - type: object
@@ -1250,9 +1290,8 @@ components:
             $ref: '#/components/schemas/Error'
     Created:
       description: Success
-
     GetAppointmentTypesResponse:
-      description: Success
+      description: time slots lookups.
       content:
         application/json:
           schema:
@@ -1260,17 +1299,19 @@ components:
             items:
               $ref: '#/components/schemas/TimeSlotLookup'
     AvailabilityResponse:
-      description: Success
+      description: Array of availabilities
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/Availability'
-              - type: object
-                properties:
-                  clinic_id:
-                    type: string
-              - $ref: '#/components/schemas/Timestamps'
+            type: array
+            items:
+              allOf:
+                - $ref: '#/components/schemas/Availability'
+                - type: object
+                  properties:
+                    clinic_id:
+                      type: string
+                - $ref: '#/components/schemas/Timestamps'
     FindAvailabilitysResponse:
       description: Success
       content:
