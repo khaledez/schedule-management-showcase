@@ -11,6 +11,8 @@ tags:
   - name: Appointment
   - name: Slot
     description: Slots management.
+  - name: Availability
+    description: Availability management.
   - name: WIP
   - name: Lookup
     description: lookups apis required to schedule
@@ -169,137 +171,234 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/slots:
+  /availabilities:
     post:
-      parameters:
-        - $ref: '#/components/parameters/clinic_id'
       tags:
-        - Slot
-      summary: create clinic availabilty slots
-      operationId: createAvaSlotsOpId
+        - Availability
+      summary: create doctor's availabilties
+      operationId: createAvaOpId
       description: |
-        create clinic availabilty slot for a doctor
+        create clinic availabilty Availabilitys for a doctor
       requestBody:
         description: autheticate user object
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateSlotBody'
+              $ref: '#/components/schemas/CreateAvailabilityBody'
       responses:
         201:
-          $ref: '#/components/responses/SlotResponse'
+          $ref: '#/components/responses/AvailabilityResponse'
         401:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
     get:
       parameters:
-        - $ref: '#/components/parameters/clinic_id'
         - $ref: '#/components/parameters/doctor_id_query'
         - $ref: '#/components/parameters/appointment_type'
         - $ref: '#/components/parameters/day'
         - $ref: '#/components/parameters/from'
         - $ref: '#/components/parameters/to'
       tags:
-        - Slot
-      summary: get clinic availabilty slots
-      operationId: getAvaSlotsOpId
+        - Availability
+      summary: get doctor's availabilities
+      operationId: getAvaOpId
       description: |
-        get clinic availabilty slots
+        get clinic availabilty Availabilitys
       responses:
         200:
-          $ref: '#/components/responses/FindSlotsResponse'
+          $ref: '#/components/responses/FindAvailabilitysResponse'
         401:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/slots-days:
+    options:
+      tags:
+        - Availability
+      responses:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: 'https://${stageVariables.apihost}/avaliabilities'
+        responses:
+          default:
+            statusCode: '200'
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
+  /avaliabilities-doctor:
+    get:
+      tags:
+        - Availability
+      parameters:
+        - $ref: '#/components/parameters/doctor_id_query'
+        - $ref: '#/components/parameters/day'
+      summary: get periiod of doctor's availability
+      responses:
+        200:
+          $ref: '#/components/responses/GetDoctorAvailability'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        500:
+          $ref: '#/components/responses/ErrorResponse'
+    options:
+      tags:
+        - Availability
+      responses:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: 'https://${stageVariables.apihost}/avaliabilities-doctor'
+        responses:
+          default:
+            statusCode: '200'
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
+
+  /availabilities-days:
     get:
       parameters:
-        - $ref: '#/components/parameters/clinic_id'
         - $ref: '#/components/parameters/doctor_id_query'
         - $ref: '#/components/parameters/from'
         - $ref: '#/components/parameters/to'
       tags:
-        - Slot
-      summary: find the days of slots at current month
-      operationId: getSlotsDaysOpId
+        - Availability
+      summary: find the days of availability at current month
+      operationId: getAvailabilitysDaysOpId
       description: |
-        find the days of slots at current month or the secertray can find to any month.
+        find the days of Availabilitys at current month or the secertray can find to any month.
       responses:
         200:
-          $ref: '#/components/responses/FindSlotsDaysResponse'
+          $ref: '#/components/responses/FindAvailabilitysDaysResponse'
         401:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/slots/{slotId}:
-    get:
-      parameters:
-        - $ref: '#/components/parameters/clinic_id'
-        - $ref: '#/components/parameters/slot_id'
+    options:
       tags:
-        - Slot
-      summary: get clinic availabilty slot by id
-      operationId: getAvaSlotOpId
-      description: |
-        get clinic availabilty slot by id
+        - Availability
       responses:
         200:
-          $ref: '#/components/responses/GetSlotResponse'
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: 'https://${stageVariables.apihost}/avaliabilities-days'
+        responses:
+          default:
+            statusCode: '200'
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
+  /availabilities/{id}:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/availability_id'
+      tags:
+        - Availability
+      summary: get doctor's availabilty by id
+      operationId: getAvaByIdOpId
+      description: |
+        get availabilty by id
+      responses:
+        200:
+          $ref: '#/components/responses/GetAvailabilityResponse'
         401:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
     put:
       parameters:
-        - $ref: '#/components/parameters/clinic_id'
-        - $ref: '#/components/parameters/slot_id'
+        - $ref: '#/components/parameters/availability_id'
       tags:
-        - Slot
-      summary: update clinic availabilty slots
-      operationId: updateAvaSlotsOpId
-      description: |
-        update clinic availabilty slot
+        - Availability
+      summary: update doctor's availability
+      operationId: updateAvaOpId
       requestBody:
         description: autheticate user object
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateSlotBody'
+              $ref: '#/components/schemas/UpdateAvailabilityBody'
       responses:
         200:
-          $ref: '#/components/responses/SlotResponse'
+          $ref: '#/components/responses/AvailabilityResponse'
         401:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
     delete:
       parameters:
-        - $ref: '#/components/parameters/clinic_id'
-        - $ref: '#/components/parameters/slot_id'
+        - $ref: '#/components/parameters/availability_id'
       tags:
-        - Slot
-      summary: delete clinic availabilty slots
-      operationId: deleteAvaSlotsOpId
+        - Availability
+      summary: delete clinic availabilty Availabilitys
+      operationId: deleteAvaAvailabilitysOpId
       description: |
-        delete clinic availabilty slot
+        delete clinic availabilty Availability
       responses:
         200:
-          $ref: '#/components/responses/SlotResponse'
+          $ref: '#/components/responses/AvailabilityResponse'
         401:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/appointment-types:
+  /appointment-types:
     get:
-      parameters:
-        - $ref: '#/components/parameters/clinic_id'
       tags:
         - Lookup
-      summary: get clinic appointment types
+      summary: get clinic's appointment types
       operationId: getAppointTypesOpId
       description: |
         get clinic appointment types
@@ -310,12 +409,10 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/scheduling:
-    parameters:
-      - $ref: '#/components/parameters/clinic_id'
+  /scheduling:
     post:
       tags:
-        - Slot
+        - Availability
       summary: schedule an appointement
       description: schedule an appointement
       operationId: schedulingOpId
@@ -333,12 +430,10 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/rescheduling:
-    parameters:
-      - $ref: '#/components/parameters/clinic_id'
+  /rescheduling:
     post:
       tags:
-        - Slot
+        - Availability
       summary: reschedule an appointement
       description: reschedule an appointement
       operationId: reschedulingOpId
@@ -357,13 +452,12 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorResponse'
 
-  /clinics/{clinicId}/slots/{slotId}/cancel:
+  /availabilities/{id}/cancel:
     parameters:
-      - $ref: '#/components/parameters/clinic_id'
-      - $ref: '#/components/parameters/slot_id'
+      - $ref: '#/components/parameters/availability_id'
     post:
       tags:
-        - Slot
+        - Availability
       summary: cancel an appointement
       description: cancel an appointement
       operationId: cancelScheduleOpId
@@ -381,9 +475,8 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/patients/{patientId}/assign-doctor:
+  /patients/{patientId}/assign-doctor:
     parameters:
-      - $ref: '#/components/parameters/clinic_id'
       - $ref: '#/components/parameters/patient_id'
     post:
       tags:
@@ -438,7 +531,7 @@ paths:
               schema:
                 type: string
       x-amazon-apigateway-integration:
-        uri: 'https://${stageVariables.apihost}/registration'
+        uri: 'https://${stageVariables.apihost}/scheduler-times'
         responses:
           default:
             statusCode: '200'
@@ -451,10 +544,8 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
-  /clinics/{clinicId}/doctors:
+  /doctors:
     get:
-      parameters:
-        - $ref: '#/components/parameters/clinic_id'
       tags:
         - Lookup
       summary: get clinic doctors
@@ -468,10 +559,9 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         500:
           $ref: '#/components/responses/ErrorResponse'
-  /clinics/{clinicId}/patients:
+  /patients:
     get:
       parameters:
-        - $ref: '#/components/parameters/clinic_id'
         - $ref: '#/components/parameters/patient_status'
         - $ref: '#/components/parameters/patient_phone_number'
         - $ref: '#/components/parameters/patient_dob'
@@ -498,32 +588,10 @@ components:
       scheme: bearer
       bearerFormat: JWT
   parameters:
-    clinic_id:
-      name: clinicId
-      in: path
-      description: clinic id
-      required: true
-      schema:
-        type: number
-    appointment_id:
+    availability_id:
       name: id
       in: path
-      description: appointement id
-      required: true
-      schema:
-        type: number
-
-    availability_id:
-      name: avId
-      in: path
       description: availability id
-      required: true
-      schema:
-        type: number
-    slot_id:
-      name: slotId
-      in: path
-      description: slot's identifier
       required: true
       schema:
         type: number
@@ -568,6 +636,13 @@ components:
       name: status
       in: query
       description: appointment status
+      schema:
+        type: string
+    appointment_id:
+      name: id
+      in: path
+      description: appointment id
+      required: true
       schema:
         type: string
     patient_phone_number:
@@ -616,6 +691,14 @@ components:
     EmailAddress:
       type: string
       format: email
+    AvailabilityPeriod:
+      allOf:
+        - type: object
+          properties:
+            from:
+              $ref: '#/components/schemas/Datetime'
+            to:
+              $ref: '#/components/schemas/Datetime'
     Datetime:
       type: string
       format: date-time
@@ -698,7 +781,7 @@ components:
     UserId:
       type: number
       readOnly: true
-    SlotId:
+    AvailabilityId:
       type: number
       readOnly: true
     AddressId:
@@ -709,7 +792,7 @@ components:
     DateOfBirth:
       type: string
       format: date
-    DeleteAvailabilitySlot:
+    DeleteAvailabilityAvailability:
       type: boolean
       writeOnly: true
     PracticionerType:
@@ -802,16 +885,16 @@ components:
       allOf:
         - type: object
           properties:
-            old_slot_id:
+            old_Availability_id:
               type: number
-            new_slot_ids:
+            new_Availability_ids:
               type: array
               items:
-                $ref: '#/components/schemas/SlotId'
+                $ref: '#/components/schemas/AvailabilityId'
             reason:
               $ref: '#/components/schemas/Reason'
-            delete_availability_slot:
-              $ref: '#/components/schemas/DeleteAvailabilitySlot'
+            delete_availability_Availability:
+              $ref: '#/components/schemas/DeleteAvailabilityAvailability'
             patient_id:
               type: number
             doctor_id:
@@ -823,10 +906,10 @@ components:
     Scheduling:
       type: object
       properties:
-        slot_ids:
+        Availability_ids:
           type: array
           items:
-            $ref: '#/components/schemas/SlotId'
+            $ref: '#/components/schemas/AvailabilityId'
         patient_ids:
           type: array
           items:
@@ -906,7 +989,7 @@ components:
       pattern: 'YYYY-MM-DD'
     AppointmentTypeId:
       type: number
-    TimeSlot:
+    time_availability:
       type: number
     Doctor:
       type: object
@@ -980,7 +1063,7 @@ components:
           $ref: '#/components/schemas/AppointmentStatus'
         priority:
           $ref: '#/components/schemas/AppointmentPriority'
-    Slot:
+    Availability:
       type: object
       properties:
         id:
@@ -989,8 +1072,8 @@ components:
           $ref: '#/components/schemas/Datetime'
         to:
           $ref: '#/components/schemas/Datetime'
-        timeSlot:
-          $ref: '#/components/schemas/TimeSlot'
+        time_availability:
+          $ref: '#/components/schemas/time_availability'
         appointmentType:
           $ref: '#/components/schemas/AppointmentType'
     PublicDoctorData:
@@ -1002,14 +1085,14 @@ components:
           $ref: '#/components/schemas/FirstName'
         last_name:
           $ref: '#/components/schemas/LastName'
-    SlotWithPatientData:
+    AvailabilityWithPatientData:
       type: object
       properties:
         data:
           type: array
           items:
             allOf:
-              - $ref: '#/components/schemas/Slot'
+              - $ref: '#/components/schemas/Availability'
               - type: object
                 properties:
                   doctor:
@@ -1026,33 +1109,33 @@ components:
               $ref: '#/components/schemas/PublicDoctorData'
             patient:
               $ref: '#/components/schemas/PublicUserData'
-    SlotWithPatientDataObject:
+    AvailabilityWithPatientDataObject:
       type: object
       properties:
         data:
           type: object
           allOf:
-            - $ref: '#/components/schemas/Slot'
+            - $ref: '#/components/schemas/Availability'
             - $ref: '#/components/schemas/PublicDoctorData'
             - type: object
               properties:
                 patient:
                   $ref: '#/components/schemas/PublicUserData'
-    SlotsDaysDataObject:
+    AvailabilitysDaysDataObject:
       type: object
       properties:
         data:
           type: array
           items:
             $ref: '#/components/schemas/Date'
-    CreateSlotBody:
+    CreateAvailabilityBody:
       allOf:
         - type: object
           required:
             - doctor_id
             - from
             - to
-            - timeSlot
+            - time_availability
             - appointment_type
           properties:
             doctor_id:
@@ -1061,11 +1144,11 @@ components:
               $ref: '#/components/schemas/Datetime'
             to:
               $ref: '#/components/schemas/Datetime'
-            timeSlot:
-              $ref: '#/components/schemas/TimeSlot'
+            time_availability:
+              $ref: '#/components/schemas/time_availability'
             appointment_type:
               type: string
-    UpdateSlotBody:
+    UpdateAvailabilityBody:
       allOf:
         - type: object
           properties:
@@ -1073,8 +1156,8 @@ components:
               $ref: '#/components/schemas/Datetime'
             to:
               $ref: '#/components/schemas/Datetime'
-            timeSlot:
-              $ref: '#/components/schemas/TimeSlot'
+            time_availability:
+              $ref: '#/components/schemas/time_availability'
             appointment_type:
               type: string
     UpdateAppointmentBody:
@@ -1112,6 +1195,12 @@ components:
             reason_message:
               type: string
   responses:
+    GetDoctorAvailability:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AvailabilityPeriod'
     SchedulerTimesResponse:
       description: Success
       content:
@@ -1131,7 +1220,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SlotWithPatientData'
+            $ref: '#/components/schemas/AvailabilityWithPatientData'
     ErrorResponse:
       description: ''
       content:
@@ -1140,38 +1229,38 @@ components:
             $ref: '#/components/schemas/Error'
     Created:
       description: Success
-    SlotResponse:
+    AvailabilityResponse:
       description: Success
       content:
         application/json:
           schema:
             allOf:
-              - $ref: '#/components/schemas/Slot'
+              - $ref: '#/components/schemas/Availability'
               - type: object
                 properties:
                   clinic_id:
                     type: string
               - $ref: '#/components/schemas/Timestamps'
-    FindSlotsResponse:
+    FindAvailabilitysResponse:
       description: Success
       content:
         application/json:
           schema:
             allOf:
               - $ref: '#/components/schemas/PaginatedResult'
-              - $ref: '#/components/schemas/SlotWithPatientData'
-    FindSlotsDaysResponse:
+              - $ref: '#/components/schemas/AvailabilityWithPatientData'
+    FindAvailabilitysDaysResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SlotsDaysDataObject'
-    GetSlotResponse:
+            $ref: '#/components/schemas/AvailabilitysDaysDataObject'
+    GetAvailabilityResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SlotWithPatientDataObject'
+            $ref: '#/components/schemas/AvailabilityWithPatientDataObject'
     GetDoctorsResponse:
       description: Success
       content:
