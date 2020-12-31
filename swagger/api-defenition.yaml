@@ -466,29 +466,6 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorResponse'
 
-  /availabilities/{id}/cancel:
-    parameters:
-      - $ref: '#/components/parameters/availability_id'
-    post:
-      tags:
-        - Availability
-      summary: cancel an appointement
-      description: cancel an appointement
-      operationId: cancelScheduleOpId
-      requestBody:
-        description: cancel object
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EmptyObject'
-      responses:
-        '201':
-          $ref: '#/components/responses/Created'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ErrorResponse'
   /patients/{patientId}/assign-doctor:
     parameters:
       - $ref: '#/components/parameters/patient_id'
@@ -709,13 +686,20 @@ components:
       allOf:
         - type: object
           properties:
-            from:
-              $ref: '#/components/schemas/Datetime'
-            to:
-              $ref: '#/components/schemas/Datetime'
+            start_time:
+              $ref: '#/components/schemas/Time'
+            end_time:
+              $ref: '#/components/schemas/Time'
+            day_date:
+              $ref: '#/components/schemas/Date'
     Datetime:
       type: string
       format: date-time
+      pattern: 'YYYY-MM-DD'
+      nullable: true
+    Time:
+      type: string
+      example: '13:17:49'
       nullable: true
     CreatedAtDatetime:
       type: string
@@ -1099,13 +1083,15 @@ components:
       properties:
         id:
           type: number
-        from:
-          $ref: '#/components/schemas/Datetime'
-        to:
-          $ref: '#/components/schemas/Datetime'
+        start_time:
+          $ref: '#/components/schemas/Time'
+        end_time:
+          $ref: '#/components/schemas/Time'
+        day_date:
+          $ref: '#/components/schemas/Date'
         time_slot:
           $ref: '#/components/schemas/time_slot'
-        appointmentType:
+        appointment_type:
           $ref: '#/components/schemas/AppointmentType'
     PublicDoctorData:
       type: object
@@ -1171,10 +1157,12 @@ components:
           properties:
             doctor_id:
               $ref: '#/components/schemas/DoctorId'
-            from:
-              $ref: '#/components/schemas/Datetime'
-            to:
-              $ref: '#/components/schemas/Datetime'
+            start_time:
+              $ref: '#/components/schemas/Time'
+            end_time:
+              $ref: '#/components/schemas/Time'
+            day_date:
+              $ref: '#/components/schemas/Date'
             time_slot:
               $ref: '#/components/schemas/time_slot'
             appointment_type:
@@ -1183,10 +1171,12 @@ components:
       allOf:
         - type: object
           properties:
-            from:
-              $ref: '#/components/schemas/Datetime'
-            to:
-              $ref: '#/components/schemas/Datetime'
+            start_time:
+              $ref: '#/components/schemas/Time'
+            end_time:
+              $ref: '#/components/schemas/Time'
+            day_date:
+              $ref: '#/components/schemas/Date'
             time_slot:
               $ref: '#/components/schemas/time_slot'
             appointment_type:
