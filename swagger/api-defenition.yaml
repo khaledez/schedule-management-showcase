@@ -21,6 +21,9 @@ paths:
   /appointments:
     get:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/from"
         - $ref: "#/components/parameters/to"
         - $ref: "#/components/parameters/appointment_type"
@@ -73,6 +76,9 @@ paths:
   /appointments/{id}/date-extension:
     put:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
         - Appointment
@@ -98,6 +104,9 @@ paths:
   /appointments/{id}/cancellation:
     put:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
         - Appointment
@@ -123,6 +132,9 @@ paths:
   /appointments/{id}/doctor-assignment:
     put:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
         - Appointment
@@ -148,6 +160,9 @@ paths:
   /appointments/{id}/type-changing:
     put:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
         - Appointment
@@ -172,6 +187,10 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
   /availabilities:
     post:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
       summary: create doctor's availabilties
@@ -194,6 +213,9 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
     get:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_type"
         - $ref: "#/components/parameters/day"
@@ -244,6 +266,10 @@ paths:
         passthroughBehavior: when_no_match
         type: mock
     put:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
       summary: update doctor's availabilities
@@ -265,6 +291,9 @@ paths:
   /avaliabilities-suggested:
     get:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_type"
         - $ref: "#/components/parameters/day"
@@ -319,6 +348,9 @@ paths:
       tags:
         - Availability
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_id_query"
         - $ref: "#/components/parameters/day"
       summary: get period of doctor's availability
@@ -365,6 +397,9 @@ paths:
   /availabilities-days:
     get:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/from"
         - $ref: "#/components/parameters/to"
@@ -414,6 +449,9 @@ paths:
   /availabilities/{id}:
     get:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/availability_id"
       tags:
         - Availability
@@ -430,6 +468,9 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
     delete:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/availability_id"
       tags:
         - Availability
@@ -476,6 +517,10 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
   /scheduling:
     post:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
       summary: schedule an appointement
@@ -497,10 +542,14 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
   /rescheduling:
     post:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
-      summary: reschedule an appointement
-      description: reschedule an appointement
+      summary: reschedule an appointment
+      description: reschedule an appointment
       operationId: reschedulingOpId
       requestBody:
         description: reschedule object
@@ -603,6 +652,9 @@ paths:
   /patients:
     get:
       parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/patient_status"
         - $ref: "#/components/parameters/patient_phone_number"
         - $ref: "#/components/parameters/patient_dob"
@@ -629,25 +681,25 @@ components:
       scheme: bearer
       bearerFormat: JWT
   parameters:
-    x_congnito_cognito_id:
-      name: x-congnito-congnito-id
+    x_cognito_cognito_id:
+      name: x-cognito-cognito-id
       in: header
       required: true
       schema:
-        $ref: "#/components/headers/X-congnito-cognito-id"
-    clinic_id:
-      name: x-congnito-clinic-id
+        $ref: "#/components/headers/X-cognito-cognito-id"
+    x_cognito_clinic_id:
+      name: x-cognito-clinic-id
       in: header
       required: true
       schema:
-        $ref: "#/components/headers/X-congnito-clinic-id"
-    user_id:
-      name: x-congnito-user-id
+        $ref: "#/components/headers/X-cognito-clinic-id"
+    x_cognito_user_id:
+      name: x-cognito-user-id
       description: practitioner id
       in: header
       required: true
       schema:
-        $ref: "#/components/headers/X-congnito-user-id"
+        $ref: "#/components/headers/X-cognito-user-id"
     doctor_id_query:
       name: appointment_type
       in: query
@@ -763,15 +815,15 @@ components:
       schema:
         type: string
   headers:
-    X-congnito-cognito-id:
+    X-cognito-cognito-id:
       description: Extracted from JWT and injected by API Gateway
       schema:
         type: string
-    X-congnito-clinic-id:
+    X-cognito-clinic-id:
       description: Extracted from JWT and injected by API Gateway
       schema:
         type: string
-    X-congnito-user-id:
+    X-cognito-user-id:
       description: Extracted from JWT and injected by API Gateway
       schema:
         type: string
@@ -833,7 +885,7 @@ components:
     #   maxProperties: 11
     FirstLine:
       type: string
-    SecoundLine:
+    SecondLine:
       type: string
       nullable: true
     FirstName:
@@ -906,7 +958,7 @@ components:
         first_line:
           $ref: "#/components/schemas/FirstLine"
         last_line:
-          $ref: "#/components/schemas/SecoundLine"
+          $ref: "#/components/schemas/SecondLine"
         country:
           $ref: "#/components/schemas/Country"
         state:
