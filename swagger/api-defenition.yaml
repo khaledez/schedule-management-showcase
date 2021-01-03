@@ -185,32 +185,7 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
-  /availabilities:
-    post:
-      parameters:
-        - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
-        - $ref: "#/components/parameters/x_cognito_user_id"
-      tags:
-        - Availability
-      summary: create doctor's availabilties
-      operationId: createAvaOpId
-      description: |
-        create clinic availabilty for a doctor
-      requestBody:
-        description: autheticate user object
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateAvailabilityBody"
-      responses:
-        201:
-          $ref: "#/components/responses/AvailabilityResponse"
-        401:
-          $ref: "#/components/responses/ErrorResponse"
-        500:
-          $ref: "#/components/responses/ErrorResponse"
+  /doctors/availabilities:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
@@ -265,11 +240,96 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
+  /doctors/{doctorId}/availabilities:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
+        - $ref: "#/components/parameters/doctor_id_path"
+      tags:
+        - Availability
+      summary: create doctor's availabilities
+      operationId: createAvaOpId
+      description: |
+        create clinic availabilty for a doctor
+      requestBody:
+        description: autheticate user object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAvailabilityBody"
+      responses:
+        201:
+          $ref: "#/components/responses/AvailabilityResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    get:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
+        - $ref: "#/components/parameters/doctor_id_path"
+        - $ref: "#/components/parameters/doctor_ids_query"
+        - $ref: "#/components/parameters/appointment_type"
+        - $ref: "#/components/parameters/day"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/scheduler_times"
+      tags:
+        - Availability
+      summary: get doctor's availabilities
+      operationId: getAvailabilitiesOpId
+      description: |
+        get doctor's availabilties
+      responses:
+        200:
+          $ref: "#/components/responses/FindAvailabilitysResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    options:
+      parameters:
+        - $ref: "#/components/parameters/doctor_id_path"
+      tags:
+        - Availability
+      responses:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: "https://${stageVariables.apihost}/avaliabilities"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
     put:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
+        - $ref: "#/components/parameters/doctor_id_path"
       tags:
         - Availability
       summary: update doctor's availabilities
@@ -281,6 +341,47 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateAvailabilityBody"
+      responses:
+        200:
+          $ref: "#/components/responses/AvailabilityResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+  /doctors/{doctorId}/availabilities/{avId}:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
+        - $ref: "#/components/parameters/availability_id"
+        - $ref: "#/components/parameters/doctor_id_path"
+      tags:
+        - Availability
+      summary: get doctor's availabilty by id
+      operationId: getAvaByIdOpId
+      description: |
+        get availabilty by id
+      responses:
+        200:
+          $ref: "#/components/responses/GetAvailabilityResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
+        - $ref: "#/components/parameters/availability_id"
+        - $ref: "#/components/parameters/doctor_id_path"
+      tags:
+        - Availability
+      summary: delete clinic availabilty by id
+      operationId: deleteAvaAvailabilitysOpId
+      description: |
+        delete clinic availabilty Availability
       responses:
         200:
           $ref: "#/components/responses/AvailabilityResponse"
@@ -446,45 +547,6 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
-  /availabilities/{id}:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
-        - $ref: "#/components/parameters/x_cognito_user_id"
-        - $ref: "#/components/parameters/availability_id"
-      tags:
-        - Availability
-      summary: get doctor's availabilty by id
-      operationId: getAvaByIdOpId
-      description: |
-        get availabilty by id
-      responses:
-        200:
-          $ref: "#/components/responses/GetAvailabilityResponse"
-        401:
-          $ref: "#/components/responses/ErrorResponse"
-        500:
-          $ref: "#/components/responses/ErrorResponse"
-    delete:
-      parameters:
-        - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
-        - $ref: "#/components/parameters/x_cognito_user_id"
-        - $ref: "#/components/parameters/availability_id"
-      tags:
-        - Availability
-      summary: delete clinic availabilty by id
-      operationId: deleteAvaAvailabilitysOpId
-      description: |
-        delete clinic availabilty Availability
-      responses:
-        200:
-          $ref: "#/components/responses/AvailabilityResponse"
-        401:
-          $ref: "#/components/responses/ErrorResponse"
-        500:
-          $ref: "#/components/responses/ErrorResponse"
   /appointment-types:
     get:
       tags:
@@ -707,7 +769,7 @@ components:
       schema:
         type: number
     availability_id:
-      name: id
+      name: avId
       in: path
       description: availability id
       required: true
@@ -720,7 +782,7 @@ components:
       schema:
         type: number
     doctor_id_path:
-      name: id
+      name: doctorId
       in: path
       description: doctor's identifier
       required: true
