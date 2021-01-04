@@ -848,7 +848,7 @@ paths:
   /doctors:
     get:
       tags:
-        - Lookup
+        - WIP
       summary: get clinic doctors
       operationId: getDoctorsOpId
       description: |
@@ -862,6 +862,8 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
   /patients:
     get:
+      tags:
+        - WIP
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
@@ -872,8 +874,6 @@ paths:
         - $ref: "#/components/parameters/patient_name"
         - $ref: "#/components/parameters/patient_ramq"
         - $ref: "#/components/parameters/patient_provisional_date"
-      tags:
-        - Lookup
       summary: get clinic patients
       operationId: getPatientsOpId
       description: |
