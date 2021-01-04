@@ -127,7 +127,7 @@ paths:
               $ref: "#/components/schemas/CancelAppointmentBody"
       responses:
         200:
-          $ref: "#/components/responses/SuccessMessageResponse"
+          $ref: "#/components/responses/AppointmentResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -553,7 +553,7 @@ paths:
         get clinic time slot steps
       responses:
         200:
-          $ref: "#/components/responses/GetAppointmentTypesResponse"
+          $ref: "#/components/responses/TimeSlotsLookupResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -1592,6 +1592,24 @@ components:
       properties: 
         data:
           $ref: "#/components/schemas/AppointmentsWithPatientData"
+    AvailabilityResponseData:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Availability"
+              - type: object
+                properties:
+                  clinic_id:
+                    type: string
+              - $ref: "#/components/schemas/Timestamps"
+    ReschedulingResponseData:
+      type: object
+      properties: 
+        data:
+          $ref: "#/components/schemas/AppointmentsWithPatientData"
     ResponseMetaData:
       type: object
   responses:
@@ -1619,7 +1637,9 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Rescheduling"
+            allOf:
+              - $ref: "#/components/schemas/ResponseMetaData"
+              - $ref: "#/components/schemas/ReschedulingResponseData"
     SchedulingResponse:
       description: Success
       content:
@@ -1635,27 +1655,27 @@ components:
     Created:
       description: Success
     GetAppointmentTypesResponse:
-      description: time slots lookups.
+      description: success
       content:
         application/json:
+        
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/TimeSlotLookup"
+            allOf:
+              - $ref: "#/components/schemas/PaginatedResult"
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TimeSlotLookup"
     AvailabilityResponse:
       description: Array of availabilities
       content:
         application/json:
           schema:
-            type: array
-            items:
-              allOf:
-                - $ref: "#/components/schemas/Availability"
-                - type: object
-                  properties:
-                    clinic_id:
-                      type: string
-                - $ref: "#/components/schemas/Timestamps"
+            allOf:
+              - $ref: "#/components/schemas/ResponseMetaData"
+              - $ref: "#/components/schemas/AvailabilityResponseData"
     FindAvailabilitysResponse:
       description: Success
       content:
@@ -1707,9 +1727,14 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/AppointmentType"
+            allOf:
+              - $ref: "#/components/schemas/PaginatedResult"
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TimeSlotLookup"
     AppointmentResponse:
       description: Success
       content:
