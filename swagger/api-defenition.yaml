@@ -1516,10 +1516,30 @@ components:
                     $ref: "#/components/schemas/time_slot"
                   appointment_type:
                     $ref: "#/components/schemas/AppointmentType"
+            to_update:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  start_time:
+                    $ref: "#/components/schemas/Time"
+                  end_time:
+                    $ref: "#/components/schemas/Time"
+                  date:
+                    $ref: "#/components/schemas/Date"
+                  time_slot:
+                    $ref: "#/components/schemas/time_slot"
+                  appointment_type:
+                    $ref: "#/components/schemas/AppointmentType"
             to_delete:
               type: array
               items:
-                type: number
+                type: object
+                properties:
+                  id:
+                    type: number
     ExtendAppointmentBody:
       allOf:
         - type: object
