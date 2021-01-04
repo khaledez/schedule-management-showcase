@@ -26,11 +26,11 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/from"
         - $ref: "#/components/parameters/to"
-        - $ref: "#/components/parameters/appointment_types"
         - $ref: "#/components/parameters/patient_ramq"
         - $ref: "#/components/parameters/patient_name"
-        - $ref: "#/components/parameters/appointment_status"
-        - $ref: "#/components/parameters/doctor_id_query"
+        - $ref: "#/components/parameters/appointment_types_query"
+        - $ref: "#/components/parameters/appointment_statuses_query"
+        - $ref: "#/components/parameters/doctor_ids_query"
       tags:
         - Appointment
       summary: find the appointments
@@ -945,6 +945,22 @@ components:
         type: array
         items:
           type: number
+    appointment_types_query:
+      name: appointment_types
+      in: query
+      description: appointment types array
+      schema:
+        type: array
+        items:
+          type: string
+    appointment_statuses_query:
+      name: appointment_status
+      in: query
+      description: appointment status array
+      schema:
+        type: array
+        items:
+          type: string
     time_groups:
       name: time_groups
       in: query
@@ -958,14 +974,6 @@ components:
       description: appointment type
       schema:
         type: string
-    appointment_types:
-      name: appointment_types
-      in: query
-      description: appointment types
-      schema:
-        type: array
-        items: 
-          type: string
     day:
       name: day
       in: query
