@@ -75,7 +75,7 @@ paths:
         passthroughBehavior: when_no_match
         type: mock
   /appointments/{id}/date-extension:
-    put:
+    post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
@@ -103,7 +103,7 @@ paths:
         500:
           $ref: "#/components/responses/ErrorResponse"
   /appointments/{id}/cancellation:
-    put:
+    post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
@@ -161,7 +161,7 @@ paths:
         500:
           $ref: "#/components/responses/ErrorResponse"
   /appointments/{id}/doctor-changing:
-    put:
+    post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
@@ -1587,6 +1587,13 @@ components:
               type: number
             reason_message:
               type: string
+    AppointmentResponseData:
+      type: object
+      properties: 
+        data:
+          $ref: "#/components/schemas/AppointmentsWithPatientData"
+    ResponseMetaData:
+      type: object
   responses:
     GetDoctorAvailability:
       description: Success
@@ -1709,13 +1716,15 @@ components:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/AppointmentsWithPatientData"
+              - $ref: "#/components/schemas/ResponseMetaData"
+              - $ref: "#/components/schemas/AppointmentResponseData"
     GetAppointmentsResponse:
       description: Success
       content:
         application/json:
           schema:
             allOf:
+              - $ref: "#/components/schemas/ResponseMetaData"
               - $ref: "#/components/schemas/PaginatedResult"
               - type: object
                 properties:
