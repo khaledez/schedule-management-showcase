@@ -1223,9 +1223,9 @@ components:
       allOf:
         - type: object
           properties:
-            old_Availability_id:
+            old_availability_id:
               type: number
-            new_Availability_id:
+            new_availability_id:
               type: number
             reason:
               $ref: "#/components/schemas/Reason"
