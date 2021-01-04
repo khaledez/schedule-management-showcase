@@ -26,11 +26,11 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/from"
         - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/appointment_types"
         - $ref: "#/components/parameters/patient_ramq"
         - $ref: "#/components/parameters/patient_name"
-        - $ref: "#/components/parameters/appointment_types_query"
-        - $ref: "#/components/parameters/appointment_statuses_query"
-        - $ref: "#/components/parameters/doctor_ids_query"
+        - $ref: "#/components/parameters/appointment_status"
+        - $ref: "#/components/parameters/doctor_id_query"
       tags:
         - Appointment
       summary: find the appointments
@@ -115,6 +115,8 @@ paths:
       description: |
         update an appointment
         <br>cancel appointment and set it to a new provisional date (in waitlist)
+        <br>and optionally provide is_remove_availability_slot to choose whether to keep or delete the availability slot
+        <br>is_remove_availability_slot if not provided will default to false
       operationId: cancelAppointmentOpId
       requestBody:
         description: update appointment requestBody
@@ -125,7 +127,7 @@ paths:
               $ref: "#/components/schemas/CancelAppointmentBody"
       responses:
         200:
-          $ref: "#/components/responses/AppointmentResponse"
+          $ref: "#/components/responses/SuccessMessageResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -646,6 +648,52 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
+  /priorites:
+    get:
+      tags:
+        - Lookup
+      summary: get clinic's priorites
+      description: list of priorites
+      operationId: prioritesOpId
+      responses:
+        200:
+          $ref: "#/components/responses/SchedulerTimesResponse"
+        400:
+          $ref: "#/components/responses/ErrorResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    options:
+      tags:
+        - Lookup
+      responses:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: "https://${stageVariables.apihost}/scheduler-times"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
   /doctors:
     get:
       tags:
@@ -741,7 +789,7 @@ components:
     doctor_ids_query:
       name: doctor_ids
       in: query
-      description: doctors identifiers array
+      description: doctors identifiers
       schema:
         type: array
         items:
@@ -759,21 +807,13 @@ components:
       description: appointment type
       schema:
         type: string
-    appointment_types_query:
+    appointment_types:
       name: appointment_types
       in: query
-      description: appointment types array
+      description: appointment types
       schema:
         type: array
-        items:
-          type: string
-    appointment_statuses_query:
-      name: appointment_status
-      in: query
-      description: appointment status array
-      schema:
-        type: array
-        items:
+        items: 
           type: string
     day:
       name: day
@@ -1353,6 +1393,8 @@ components:
               type: string
             reason_message:
               type: string
+            is_remove_availability_slot:
+              type: boolean
     AssignAppointmentDoctorBody:
       allOf:
         - type: object
@@ -1452,6 +1494,16 @@ components:
             type: array
             items:
               $ref: "#/components/schemas/PublicDoctorData"
+    SuccessMessageResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: success message
     GetPatientsResponse:
       description: Success
       content:
