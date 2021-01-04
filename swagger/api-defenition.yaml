@@ -1242,12 +1242,12 @@ components:
     Scheduling:
       type: object
       properties:
+        appointment_id:
+          type: number
         availability_id:
-          type: string
+          type: number
         patient_id:
-          type: string
-          items:
-            type: number
+          type: number
         doctor_id:
           type: number
     PublicUserData:
