@@ -199,7 +199,7 @@ paths:
         - $ref: "#/components/parameters/day"
         - $ref: "#/components/parameters/from"
         - $ref: "#/components/parameters/to"
-        - $ref: "#/components/parameters/scheduler_times"
+        - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
       summary: get doctor's availabilities
@@ -276,12 +276,11 @@ paths:
         - $ref: "#/components/parameters/x_cognito_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_id_path"
-        - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_type"
         - $ref: "#/components/parameters/day"
         - $ref: "#/components/parameters/from"
         - $ref: "#/components/parameters/to"
-        - $ref: "#/components/parameters/scheduler_times"
+        - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
       summary: get doctor's availabilities
@@ -403,7 +402,7 @@ paths:
         - $ref: "#/components/parameters/day"
         - $ref: "#/components/parameters/from"
         - $ref: "#/components/parameters/to"
-        - $ref: "#/components/parameters/scheduler_times"
+        - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
       summary: get doctor's availabilities
@@ -602,16 +601,16 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         "500":
           $ref: "#/components/responses/ErrorResponse"
-  /scheduler-times:
+  /time-groups:
     get:
       tags:
         - Lookup
-      summary: get scheduler times
-      description: list of schduler times
-      operationId: schecilerTimesOpId
+      summary: get clinic time groups
+      description: list of clinic time groups (morning, afternoon, and evening hours)
+      operationId: timeGroupsOpId
       responses:
         200:
-          $ref: "#/components/responses/SchedulerTimesResponse"
+          $ref: "#/components/responses/TimeGroupsResponse"
         400:
           $ref: "#/components/responses/ErrorResponse"
         401:
@@ -635,12 +634,12 @@ paths:
               schema:
                 type: string
       x-amazon-apigateway-integration:
-        uri: "https://${stageVariables.apihost}/scheduler-times"
+        uri: "https://${stageVariables.apihost}/time-groups"
         responses:
           default:
             statusCode: "200"
             responseParameters:
-              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
               method.response.header.Access-Control-Allow-Headers: >-
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
               method.response.header.Access-Control-Allow-Origin: "'*'"
@@ -728,6 +727,52 @@ paths:
                 type: string
       x-amazon-apigateway-integration:
         uri: "https://${stageVariables.apihost}/appointment-statuses"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
+  /clinic-working-hours:
+    get:
+      tags:
+        - Lookup
+      summary: get clinic's working hours
+      description: list of working hours
+      operationId: clinicWorkingHoursOpId
+      responses:
+        200:
+          $ref: "#/components/responses/ClinicWorkingHoursLookupResponse"
+        400:
+          $ref: "#/components/responses/ErrorResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
+    options:
+      tags:
+        - Lookup
+      responses:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: "https://${stageVariables.apihost}/clinic-working-hours"
         responses:
           default:
             statusCode: "200"
@@ -840,8 +885,8 @@ components:
         type: array
         items:
           type: number
-    scheduler_times:
-      name: scheduler_times
+    time_groups:
+      name: time_groups
       in: query
       schema:
         type: array
@@ -1192,7 +1237,7 @@ components:
           $ref: "#/components/schemas/AddressObject"
         rmaq:
           $ref: "#/components/schemas/RAMQ"
-    SchedulerTimes:
+    TimeGroup:
       allOf:
         - type: object
           properties:
@@ -1256,6 +1301,23 @@ components:
             value:
               type: string
               example: "15 min"
+            clinic_id:
+              $ref: "#/components/schemas/ClinicId"
+            doctor_id:
+              $ref: "#/components/schemas/UserId"
+        - $ref: "#/components/schemas/Timestamps"
+    ClinicWorkingHoursLookup:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: number
+            start_time:
+              $ref: "#/components/schemas/Time"
+            end_time:
+              $ref: "#/components/schemas/Time"
+            timezone:
+              type: string
             clinic_id:
               $ref: "#/components/schemas/ClinicId"
             doctor_id:
@@ -1410,25 +1472,28 @@ components:
           items:
             $ref: "#/components/schemas/Date"
     CreateAvailabilityBody:
-      allOf:
-        - type: object
-          required:
-            - doctor_id
-            - from
-            - to
-            - time_slot
-            - appointment_type
-          properties:
-            doctor_id:
-              $ref: "#/components/schemas/DoctorId"
-            from:
-              $ref: "#/components/schemas/Datetime"
-            to:
-              $ref: "#/components/schemas/Datetime"
-            time_slot:
-              $ref: "#/components/schemas/time_slot"
-            appointment_type:
-              $ref: "#/components/schemas/AppointmentType"
+      type: array
+      items:
+      
+        allOf:
+          - type: object
+            required:
+              - doctor_id
+              - from
+              - to
+              - time_slot
+              - appointment_type
+            properties:
+              doctor_id:
+                $ref: "#/components/schemas/DoctorId"
+              from:
+                $ref: "#/components/schemas/Datetime"
+              to:
+                $ref: "#/components/schemas/Datetime"
+              time_slot:
+                $ref: "#/components/schemas/time_slot"
+              appointment_type:
+                $ref: "#/components/schemas/AppointmentType"
     Time:
       type: string
       example: "20:00:00"
@@ -1494,14 +1559,19 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/AvailabilityPeriod"
-    SchedulerTimesResponse:
+    TimeGroupsResponse:
       description: Success
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/SchedulerTimes"
+            allOf:
+              - $ref: "#/components/schemas/PaginatedResult"
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TimeGroup"
     ReschedulingResponse:
       description: Success
       content:
@@ -1645,6 +1715,14 @@ components:
                     type: array
                     items:
                       $ref: "#/components/schemas/AppointmentStatuesLookup"
+    ClinicWorkingHoursLookupResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - type: object
+                $ref: "#/components/schemas/ClinicWorkingHoursLookup"
     AssignDoctorResponse:
       description: Assigned success
       content:
