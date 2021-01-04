@@ -657,7 +657,7 @@ paths:
       operationId: prioritesOpId
       responses:
         200:
-          $ref: "#/components/responses/SchedulerTimesResponse"
+          $ref: "#/components/responses/ClinicSlotsLookupResponse"
         400:
           $ref: "#/components/responses/ErrorResponse"
         401:
@@ -681,12 +681,12 @@ paths:
               schema:
                 type: string
       x-amazon-apigateway-integration:
-        uri: "https://${stageVariables.apihost}/scheduler-times"
+        uri: "https://${stageVariables.apihost}/priorites"
         responses:
           default:
             statusCode: "200"
             responseParameters:
-              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
               method.response.header.Access-Control-Allow-Headers: >-
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
               method.response.header.Access-Control-Allow-Origin: "'*'"
@@ -1166,6 +1166,23 @@ components:
             doctor_id:
               $ref: "#/components/schemas/UserId"
         - $ref: "#/components/schemas/Timestamps"
+    PriorityLookup:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: number
+            label:
+              type: string
+            value:
+              type: string
+            rank:
+              type: number
+            clinic_id:
+              $ref: "#/components/schemas/ClinicId"
+            doctor_id:
+              $ref: "#/components/schemas/UserId"
+        - $ref: "#/components/schemas/Timestamps"
     TimeSlotLookup:
       allOf:
         - type: object
@@ -1540,6 +1557,19 @@ components:
                     type: array
                     items:
                       $ref: "#/components/schemas/AppointmentsWithPatientData"
+    ClinicSlotsLookupResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/PaginatedResult"
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PriorityLookup"
     AssignDoctorResponse:
       description: Assigned success
       content:
