@@ -12,9 +12,9 @@ tags:
     description: Slots management.
   - name: Availability
     description: Availability management.
-  - name: WIP
   - name: Lookup
     description: lookups apis required to schedule
+  - name: WIP
 security:
   - bearerAuth: []
 paths:
@@ -1498,7 +1498,6 @@ components:
     CreateAvailabilityBody:
       type: array
       items:
-      
         allOf:
           - type: object
             required:
@@ -1589,7 +1588,7 @@ components:
               type: string
     AppointmentResponseData:
       type: object
-      properties: 
+      properties:
         data:
           $ref: "#/components/schemas/AppointmentsWithPatientData"
     AvailabilityResponseData:
@@ -1607,7 +1606,7 @@ components:
               - $ref: "#/components/schemas/Timestamps"
     ReschedulingResponseData:
       type: object
-      properties: 
+      properties:
         data:
           $ref: "#/components/schemas/AppointmentsWithPatientData"
     ResponseMetaData:
@@ -1658,7 +1657,6 @@ components:
       description: success
       content:
         application/json:
-        
           schema:
             allOf:
               - $ref: "#/components/schemas/PaginatedResult"
@@ -1770,7 +1768,7 @@ components:
                     type: array
                     items:
                       $ref: "#/components/schemas/PriorityLookup"
-                      
+
     AppointmentStatuesLookupResponse:
       description: Success
       content:
