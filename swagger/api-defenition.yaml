@@ -202,13 +202,13 @@ paths:
         - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
-      summary: get doctor's availabilities
+      summary: get doctors' availabilities
       operationId: getAvaOpId
       description: |
-        get doctor's availabilties
+        get all doctors' availabilities by default if there is no doctors_ ids in the query
       responses:
         200:
-          $ref: "#/components/responses/FindAvailabilitysResponse"
+          $ref: "#/components/responses/FindAvailabilityResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -255,9 +255,8 @@ paths:
       summary: create doctor's availabilities
       operationId: createAvaOpId
       description: |
-        create clinic availabilty for a doctor
+        create clinic availability for a doctor
       requestBody:
-        description: autheticate user object
         required: true
         content:
           application/json:
@@ -286,10 +285,10 @@ paths:
       summary: get doctor's availabilities
       operationId: getAvailabilitiesOpId
       description: |
-        get doctor's availabilties
+        get doctor's availabilities
       responses:
         200:
-          $ref: "#/components/responses/FindAvailabilitysResponse"
+          $ref: "#/components/responses/FindAvailabilityResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -360,10 +359,10 @@ paths:
         - $ref: "#/components/parameters/doctor_id_path"
       tags:
         - Availability
-      summary: get doctor's availabilty by id
+      summary: get doctor's availability by id
       operationId: getAvaByIdOpId
       description: |
-        get availabilty by id
+        get availability by id
       responses:
         200:
           $ref: "#/components/responses/GetAvailabilityResponse"
@@ -380,10 +379,10 @@ paths:
         - $ref: "#/components/parameters/doctor_id_path"
       tags:
         - Availability
-      summary: delete clinic availabilty by id
-      operationId: deleteAvaAvailabilitysOpId
+      summary: delete doctor's availability by id
+      operationId: deleteAvailabilityOpId
       description: |
-        delete clinic availabilty Availability
+        delete clinic availability Availability
       responses:
         204:
           $ref: "#/components/responses/NoContentResponse"
@@ -391,7 +390,7 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
-  /avaliabilities-suggested:
+  /availabilities-suggested:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
@@ -405,13 +404,13 @@ paths:
         - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
-      summary: get doctor's availabilities
+      summary: get suggested availabilities
       operationId: getSugAvaOpId
       description: |
-        get doctor's availabilties
+        get suggested availabilities
       responses:
         200:
-          $ref: "#/components/responses/FindAvailabilitysResponse"
+          $ref: "#/components/responses/FindAvailabilityResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -458,12 +457,12 @@ paths:
       tags:
         - Availability
       summary: find the days of availability at current month
-      operationId: getAvailabilitysDaysOpId
+      operationId: getAvailabilityDaysOpId
       description: |
-        find the days of Availabilitys at current month or the secertray can find to any month.
+        find the days of availabilities at current month or the secretary can find to any month.
       responses:
         200:
-          $ref: "#/components/responses/FindAvailabilitysDaysResponse"
+          $ref: "#/components/responses/FindAvailabilityDaysResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -596,8 +595,8 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
-      summary: schedule an appointement
-      description: schedule an appointement
+      summary: schedule an appointment
+      description: schedule an appointment
       operationId: schedulingOpId
       requestBody:
         description: reschedule object
@@ -707,13 +706,13 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
-  /priorites:
+  /priorities:
     get:
       tags:
         - Lookup
-      summary: get clinic's priorites
-      description: list of priorites
-      operationId: prioritesOpId
+      summary: get clinic's priorities
+      description: list of priorities
+      operationId: prioritiesOpId
       responses:
         200:
           $ref: "#/components/responses/ClinicSlotsLookupResponse"
@@ -1146,8 +1145,6 @@ components:
       type: string
     Timezone:
       type: string
-    # LogoRef:
-    #   type: string
     ProfilePictureRef:
       type: string
     ClinicId:
@@ -1488,7 +1485,7 @@ components:
               properties:
                 patient:
                   $ref: "#/components/schemas/PublicUserData"
-    AvailabilitysDaysDataObject:
+    AvailabilityDaysDataObject:
       type: object
       properties:
         data:
@@ -1674,7 +1671,7 @@ components:
             allOf:
               - $ref: "#/components/schemas/ResponseMetaData"
               - $ref: "#/components/schemas/AvailabilityResponseData"
-    FindAvailabilitysResponse:
+    FindAvailabilityResponse:
       description: Success
       content:
         application/json:
@@ -1682,12 +1679,12 @@ components:
             allOf:
               - $ref: "#/components/schemas/PaginatedResult"
               - $ref: "#/components/schemas/AvailabilityWithPatientData"
-    FindAvailabilitysDaysResponse:
+    FindAvailabilityDaysResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/AvailabilitysDaysDataObject"
+            $ref: "#/components/schemas/AvailabilityDaysDataObject"
     GetAvailabilityResponse:
       description: Success
       content:
