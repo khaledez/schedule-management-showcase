@@ -1165,10 +1165,8 @@ components:
           properties:
             old_Availability_id:
               type: number
-            new_Availability_ids:
-              type: array
-              items:
-                $ref: "#/components/schemas/AvailabilityId"
+            new_Availability_id:
+              type: number
             reason:
               $ref: "#/components/schemas/Reason"
             delete_availability:
@@ -1523,14 +1521,6 @@ components:
                 properties:
                   id:
                     type: number
-                  start_time:
-                    $ref: "#/components/schemas/Time"
-                  end_time:
-                    $ref: "#/components/schemas/Time"
-                  date:
-                    $ref: "#/components/schemas/Date"
-                  time_slot:
-                    $ref: "#/components/schemas/time_slot"
                   appointment_type:
                     $ref: "#/components/schemas/AppointmentType"
             to_delete:
