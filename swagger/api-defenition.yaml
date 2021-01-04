@@ -24,8 +24,8 @@ paths:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
-        - $ref: "#/components/parameters/from"
-        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/from_date"
+        - $ref: "#/components/parameters/to_date"
         - $ref: "#/components/parameters/patient_ramq"
         - $ref: "#/components/parameters/patient_name"
         - $ref: "#/components/parameters/appointment_types_query"
@@ -195,10 +195,10 @@ paths:
         - $ref: "#/components/parameters/x_cognito_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
-        - $ref: "#/components/parameters/appointment_type"
-        - $ref: "#/components/parameters/day"
-        - $ref: "#/components/parameters/from"
-        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/appointment_types_query"
+        - $ref: "#/components/parameters/date_query"
+        - $ref: "#/components/parameters/from_time"
+        - $ref: "#/components/parameters/to_time"
         - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
@@ -277,9 +277,9 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_id_path"
         - $ref: "#/components/parameters/appointment_type"
-        - $ref: "#/components/parameters/day"
-        - $ref: "#/components/parameters/from"
-        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/date_query"
+        - $ref: "#/components/parameters/from_time"
+        - $ref: "#/components/parameters/to_time"
         - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
@@ -399,9 +399,9 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_type"
-        - $ref: "#/components/parameters/day"
-        - $ref: "#/components/parameters/from"
-        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/date_query"
+        - $ref: "#/components/parameters/from_time"
+        - $ref: "#/components/parameters/to_time"
         - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
@@ -453,8 +453,8 @@ paths:
         - $ref: "#/components/parameters/x_cognito_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
-        - $ref: "#/components/parameters/from"
-        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/from_time"
+        - $ref: "#/components/parameters/to_time"
       tags:
         - Availability
       summary: find the days of availability at current month
@@ -954,9 +954,9 @@ components:
         items:
           type: string
     appointment_statuses_query:
-      name: appointment_status
+      name: appointment_statuses
       in: query
-      description: appointment status array
+      description: appointment statuses array
       schema:
         type: array
         items:
@@ -974,8 +974,8 @@ components:
       description: appointment type
       schema:
         type: string
-    day:
-      name: day
+    date_query:
+      name: date
       in: query
       description: date string
       schema:
@@ -1024,23 +1024,35 @@ components:
       schema:
         type: string
     patient_name:
-      name: name
+      name: patient_name
       in: query
       description: patient name
       schema:
         type: string
-    from:
+    from_time:
       name: from
       in: query
-      description: start dateTime
+      description: start time
       schema:
-        type: string
-    to:
+        $ref: "#/components/schemas/Time"
+    to_time:
       name: to
       in: query
-      description: end dateTime
+      description: end time
       schema:
-        type: string
+        $ref: "#/components/schemas/Time"
+    from_date:
+      name: from
+      in: query
+      description: start date
+      schema:
+        $ref: "#/components/schemas/Date"
+    to_date:
+      name: to
+      in: query
+      description: end date
+      schema:
+        $ref: "#/components/schemas/Date"
   headers:
     X-cognito-cognito-id:
       description: Extracted from JWT and injected by API Gateway
@@ -1055,9 +1067,6 @@ components:
       schema:
         type: string
   schemas:
-    # EmailAddress:
-    #   type: string
-    #   format: email
     AvailabilityPeriod:
       allOf:
         - type: object
@@ -1070,6 +1079,13 @@ components:
       type: string
       format: date-time
       nullable: true
+    Date:
+      type: string
+      format: date
+      pattern: "YYYY-MM-DD"
+    Time:
+      type: string
+      example: "20:00:00"
     CreatedAtDatetime:
       type: string
       format: date-time
@@ -1104,12 +1120,6 @@ components:
           $ref: "#/components/schemas/Message"
         error:
           type: string
-    # CognitoId:
-    #   type: string
-    # PhoneNumber:
-    #   type: string
-    #   minProperties: 11
-    #   maxProperties: 11
     FirstLine:
       type: string
     SecondLine:
@@ -1146,29 +1156,11 @@ components:
     UserId:
       type: number
       readOnly: true
-    AvailabilityId:
-      type: number
-      readOnly: true
-    # AddressId:
-    #   type: string
-    #   readOnly: true
     Reason:
       type: string
-    # DateOfBirth:
-    #   type: string
-    #   format: date
     DeleteAvailabilityAvailability:
       type: boolean
       writeOnly: true
-    # PracticionerType:
-    #   type: string
-    #   nullable: false
-    #   enum:
-    #     - doctor
-    #     - nurse
-    #     - admin_billing
-    #     - secertary
-    #     - admin
     AddressObject:
       type: object
       required:
@@ -1258,34 +1250,6 @@ components:
             type: number
         doctor_id:
           type: number
-    # User:
-    #   type: object
-    #   readOnly: true
-    #   properties:
-    #     id:
-    #       $ref: "#/components/schemas/UserId"
-    #     cognito_id:
-    #       $ref: "#/components/schemas/CognitoId"
-    #     clinic_id:
-    #       $ref: "#/components/schemas/ClinicId"
-    #     address_id:
-    #       $ref: "#/components/schemas/AddressId"
-    #     address:
-    #       $ref: "#/components/schemas/AddressObject"
-    #     phone_no:
-    #       $ref: "#/components/schemas/PhoneNumber"
-    #     profile_picture:
-    #       $ref: "#/components/schemas/LogoRef"
-    #     dob:
-    #       $ref: "#/components/schemas/DateOfBirth"
-    #     practicioner_type:
-    #       $ref: "#/components/schemas/PracticionerType"
-    #     email:
-    #       $ref: "#/components/schemas/EmailAddress"
-    #     first_name:
-    #       $ref: "#/components/schemas/FirstName"
-    #     last_name:
-    #       $ref: "#/components/schemas/LastName"
     PublicUserData:
       type: object
       properties:
@@ -1303,6 +1267,8 @@ components:
           $ref: "#/components/schemas/AddressObject"
         rmaq:
           $ref: "#/components/schemas/RAMQ"
+        dob:
+          $ref: "#/components/schemas/Date"
     TimeGroup:
       allOf:
         - type: object
@@ -1391,12 +1357,6 @@ components:
         - $ref: "#/components/schemas/Timestamps"
     DoctorId:
       type: number
-    Date:
-      type: string
-      format: date
-      pattern: "YYYY-MM-DD"
-    # AppointmentTypeId:
-    #   type: number
     time_slot:
       type: number
     Doctor:
@@ -1406,8 +1366,6 @@ components:
           $ref: "#/components/schemas/DoctorId"
         name:
           type: string
-    Duration:
-      type: number
     AppointmentType:
       type: string
       enum:
@@ -1462,10 +1420,10 @@ components:
           $ref: "#/components/schemas/PublicDoctorData"
         appointment_type:
           $ref: "#/components/schemas/AppointmentType"
-        date:
+        provisional_date:
           $ref: "#/components/schemas/Datetime"
-        duration:
-          $ref: "#/components/schemas/Duration"
+        booked_date:
+          $ref: "#/components/schemas/Datetime"
         status:
           $ref: "#/components/schemas/AppointmentStatus"
         priority:
@@ -1552,17 +1510,16 @@ components:
             properties:
               doctor_id:
                 $ref: "#/components/schemas/DoctorId"
-              from:
-                $ref: "#/components/schemas/Datetime"
-              to:
-                $ref: "#/components/schemas/Datetime"
+              start_time:
+                $ref: "#/components/schemas/Time"
+              end_time:
+                $ref: "#/components/schemas/Time"
+              date:
+                $ref: "#/components/schemas/Date"
               time_slot:
                 $ref: "#/components/schemas/time_slot"
               appointment_type:
                 $ref: "#/components/schemas/AppointmentType"
-    Time:
-      type: string
-      example: "20:00:00"
     UpdateAvailabilityBody:
       allOf:
         - type: object
@@ -1603,7 +1560,7 @@ components:
         - type: object
           properties:
             provisional_date:
-              type: string
+              $ref: "#/components/schemas/Datetime"
             reason_message:
               type: string
     CancelAppointmentBody:
@@ -1611,7 +1568,7 @@ components:
         - type: object
           properties:
             provisional_date:
-              type: string
+              $ref: "#/components/schemas/Datetime"
             reason_message:
               type: string
             is_remove_availability_slot:
@@ -1798,9 +1755,7 @@ components:
       content:
         application/json:
           schema:
-            allOf:
-              - type: object
-                $ref: "#/components/schemas/ClinicWorkingHoursLookup"
+            $ref: "#/components/schemas/ClinicWorkingHoursLookup"
     AssignDoctorResponse:
       description: Assigned success
       content:
