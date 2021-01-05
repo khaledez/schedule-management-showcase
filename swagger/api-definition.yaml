@@ -398,9 +398,6 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_type"
-        - $ref: "#/components/parameters/date_query"
-        - $ref: "#/components/parameters/from_time"
-        - $ref: "#/components/parameters/to_time"
         - $ref: "#/components/parameters/from_date"
         - $ref: "#/components/parameters/to_date"
         - $ref: "#/components/parameters/time_groups"
@@ -890,9 +887,14 @@ paths:
 components:
   securitySchemes:
     bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: "apiKey"
+      name: "Authorization"
+      in: "header"
+      x-amazon-apigateway-authtype: "cognito_user_pools"
+      x-amazon-apigateway-authorizer:
+        providerARNs: 
+        - 'arn:aws:cognito-idp:us-east-1:259079320262:userpool/us-east-1_bnSDEoZne'
+        type: "cognito_user_pools"
   parameters:
     x_cognito_cognito_id:
       name: x-cognito-cognito-id
