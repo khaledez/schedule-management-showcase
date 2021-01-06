@@ -1,7 +1,7 @@
 import { Dialect } from 'sequelize/types';
 
 export const config = () => ({
-  serviceName: '',
+  serviceName: 'schedule-management',
   baseURL: undefined,
   port: 3000,
   database: {
@@ -21,5 +21,5 @@ export const config = () => ({
     clientId: '2egoivd9acq1nqhp18upeieubn',
     region: 'us-east-1',
   },
- 
+
 });
