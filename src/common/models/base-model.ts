@@ -7,6 +7,9 @@ import {
 } from 'sequelize-typescript';
 
 export class BaseModel extends Model<BaseModel> {
+  @Column
+  clinic_id: number;
+
   @CreatedAt
   created_at: Date;
 
