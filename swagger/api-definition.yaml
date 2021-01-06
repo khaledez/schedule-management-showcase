@@ -54,7 +54,7 @@ paths:
         - $ref: "#/components/parameters/patient_ramq"
         - $ref: "#/components/parameters/patient_name"
         - $ref: "#/components/parameters/appointment_types_query"
-        - $ref: "#/components/parameters/appointment_statuses_query"
+        - $ref: "#/components/parameters/appointment_status_query"
         - $ref: "#/components/parameters/doctor_ids_query"
       tags:
         - WIP
@@ -221,6 +221,7 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_types_query"
+        - $ref: "#/components/parameters/appointment_status_query"
         - $ref: "#/components/parameters/date_query"
         - $ref: "#/components/parameters/from_time"
         - $ref: "#/components/parameters/to_time"
@@ -920,10 +921,10 @@ components:
         type: array
         items:
           type: number
-    appointment_statuses_query:
-      name: appointment_statuses_ids
+    appointment_status_query:
+      name: appointment_status_ids
       in: query
-      description: appointment statuses array
+      description: appointment status array
       schema:
         type: array
         items:
@@ -1312,7 +1313,7 @@ components:
         - $ref: "#/components/schemas/Timestamps"
     DoctorId:
       type: number
-    duration_minutes:
+    time_slot:
       type: number
     Doctor:
       type: object
@@ -1412,8 +1413,8 @@ components:
           $ref: "#/components/schemas/Time"
         date:
           $ref: "#/components/schemas/Date"
-        duration_minutes:
-          $ref: "#/components/schemas/duration_minutes"
+        time_slot:
+          $ref: "#/components/schemas/time_slot"
         type:
           $ref: "#/components/schemas/AppointmentType"
     PublicDoctorData:
@@ -1476,15 +1477,15 @@ components:
             required:
               - from
               - to
-              - duration_minutes
+              - time_slot
               - type
             properties:
               start_time:
                 $ref: "#/components/schemas/Time"
               date:
                 $ref: "#/components/schemas/Date"
-              duration_minutes:
-                $ref: "#/components/schemas/duration_minutes"
+              time_slot:
+                $ref: "#/components/schemas/time_slot"
               type:
                 $ref: "#/components/schemas/AppointmentType"
     UpdateAvailabilityBody:
@@ -1500,8 +1501,8 @@ components:
                     $ref: "#/components/schemas/Time"
                   date:
                     $ref: "#/components/schemas/Date"
-                  duration_minutes:
-                    $ref: "#/components/schemas/duration_minutes"
+                  time_slot:
+                    $ref: "#/components/schemas/time_slot"
                   type:
                     $ref: "#/components/schemas/AppointmentType"
             to_delete:
