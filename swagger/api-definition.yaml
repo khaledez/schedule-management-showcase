@@ -12,13 +12,38 @@ tags:
     description: Slots management.
   - name: Availability
     description: Availability management.
-  - name: WIP
   - name: Lookup
     description: lookups apis required to schedule
+  - name: WIP
 security:
   - bearerAuth: []
 paths:
   /appointments:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/x_cognito_cognito_id"
+        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_cognito_user_id"
+      tags:
+        - Appointment
+      summary: create a new appointments
+      operationId: createAppointmentsOpId
+      description: |
+        this api for create an appointment
+      requestBody:
+        description: create appointment requestBody
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppointmentBody"
+      responses:
+        200:
+          $ref: "#/components/responses/AppointmentResponse"
+        401:
+          $ref: "#/components/responses/ErrorResponse"
+        500:
+          $ref: "#/components/responses/ErrorResponse"
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
@@ -29,14 +54,14 @@ paths:
         - $ref: "#/components/parameters/patient_ramq"
         - $ref: "#/components/parameters/patient_name"
         - $ref: "#/components/parameters/appointment_types_query"
-        - $ref: "#/components/parameters/appointment_statuses_query"
+        - $ref: "#/components/parameters/appointment_status_query"
         - $ref: "#/components/parameters/doctor_ids_query"
       tags:
-        - Appointment
+        - WIP
       summary: find the appointments
       operationId: getAppointmentsOpId
       description: |
-        get appointments of current clinic
+        this api on assumption that will be used for manage patient page.
       responses:
         200:
           $ref: "#/components/responses/GetAppointmentsResponse"
@@ -46,7 +71,7 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
     options:
       tags:
-        - Appointment
+        - WIP
       responses:
         200:
           description: OK
@@ -188,7 +213,7 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
-  /doctors/availabilities:
+  /doctors/availability:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
@@ -196,19 +221,24 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_types_query"
+        - $ref: "#/components/parameters/appointment_status_query"
         - $ref: "#/components/parameters/date_query"
         - $ref: "#/components/parameters/from_time"
         - $ref: "#/components/parameters/to_time"
+        - $ref: "#/components/parameters/from_date"
+        - $ref: "#/components/parameters/to_date"
         - $ref: "#/components/parameters/time_groups"
+        - $ref: "#/components/parameters/availability_types"
+        - $ref: "#/components/parameters/availability_include"
       tags:
         - Availability
-      summary: get doctor's availabilities
+      summary: get doctors' availabilities
       operationId: getAvaOpId
       description: |
-        get doctor's availabilties
+        get all doctors' availabilities by default if there is no doctors_ ids in the query, if the availability has not booked yet, the value of appointment key will be null.
       responses:
         200:
-          $ref: "#/components/responses/FindAvailabilitysResponse"
+          $ref: "#/components/responses/FindAvailabilityResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -243,89 +273,7 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
-  /doctors/{doctorId}/availabilities:
-    post:
-      parameters:
-        - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
-        - $ref: "#/components/parameters/x_cognito_user_id"
-        - $ref: "#/components/parameters/doctor_id_path"
-      tags:
-        - Availability
-      summary: create doctor's availabilities
-      operationId: createAvaOpId
-      description: |
-        create clinic availabilty for a doctor
-      requestBody:
-        description: autheticate user object
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateAvailabilityBody"
-      responses:
-        201:
-          $ref: "#/components/responses/AvailabilityResponse"
-        401:
-          $ref: "#/components/responses/ErrorResponse"
-        500:
-          $ref: "#/components/responses/ErrorResponse"
-    get:
-      parameters:
-        - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
-        - $ref: "#/components/parameters/x_cognito_user_id"
-        - $ref: "#/components/parameters/doctor_id_path"
-        - $ref: "#/components/parameters/appointment_type"
-        - $ref: "#/components/parameters/date_query"
-        - $ref: "#/components/parameters/from_time"
-        - $ref: "#/components/parameters/to_time"
-        - $ref: "#/components/parameters/time_groups"
-      tags:
-        - Availability
-      summary: get doctor's availabilities
-      operationId: getAvailabilitiesOpId
-      description: |
-        get doctor's availabilties
-      responses:
-        200:
-          $ref: "#/components/responses/FindAvailabilitysResponse"
-        401:
-          $ref: "#/components/responses/ErrorResponse"
-        500:
-          $ref: "#/components/responses/ErrorResponse"
-    options:
-      parameters:
-        - $ref: "#/components/parameters/doctor_id_path"
-      tags:
-        - Availability
-      responses:
-        200:
-          description: OK
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: string
-            Access-Control-Allow-Methods:
-              schema:
-                type: string
-            Access-Control-Allow-Headers:
-              schema:
-                type: string
-      x-amazon-apigateway-integration:
-        uri: "https://${stageVariables.apihost}/avaliabilities"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
-              method.response.header.Access-Control-Allow-Headers: >-
-                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        requestTemplates:
-          application/json: '{"statusCode": 200}'
-        passthroughBehavior: when_no_match
-        type: mock
+  /doctors/{doctorId}/availability:
     put:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
@@ -335,9 +283,10 @@ paths:
       tags:
         - Availability
       summary: update doctor's availabilities
+      description: In order to update a time slot please use to_add array and take consider that will the update process here si deletion old availability and create new ones.
       operationId: updateAvaOpId
       requestBody:
-        description: autheticate user object
+        description: authenticate user object
         required: true
         content:
           application/json:
@@ -350,7 +299,7 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
-  /doctors/{doctorId}/availabilities/{avId}:
+  /doctors/{doctorId}/availability/{avId}:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
@@ -360,10 +309,10 @@ paths:
         - $ref: "#/components/parameters/doctor_id_path"
       tags:
         - Availability
-      summary: get doctor's availabilty by id
+      summary: get doctor's availability by id
       operationId: getAvaByIdOpId
       description: |
-        get availabilty by id
+        get availability by id
       responses:
         200:
           $ref: "#/components/responses/GetAvailabilityResponse"
@@ -371,47 +320,60 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
-    delete:
+    options:
       parameters:
-        - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
-        - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/availability_id"
         - $ref: "#/components/parameters/doctor_id_path"
       tags:
         - Availability
-      summary: delete clinic availabilty by id
-      operationId: deleteAvaAvailabilitysOpId
+      operationId: optionsAvailabilityOpId
       description: |
-        delete clinic availabilty Availability
+        options request for getting a clinic's availability
       responses:
-        204:
-          $ref: "#/components/responses/NoContentResponse"
-        401:
-          $ref: "#/components/responses/ErrorResponse"
-        500:
-          $ref: "#/components/responses/ErrorResponse"
-  /avaliabilities-suggested:
+        200:
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        uri: "https://${stageVariables.apihost}/avaliabilities"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: when_no_match
+        type: mock
+  /suggested-availability:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
-        - $ref: "#/components/parameters/appointment_type"
-        - $ref: "#/components/parameters/date_query"
-        - $ref: "#/components/parameters/from_time"
-        - $ref: "#/components/parameters/to_time"
         - $ref: "#/components/parameters/time_groups"
+        - $ref: "#/components/parameters/availability_include"
       tags:
         - Availability
-      summary: get doctor's availabilities
+      summary: get suggested availabilities
       operationId: getSugAvaOpId
       description: |
-        get doctor's availabilties
+        get suggested availabilities
       responses:
         200:
-          $ref: "#/components/responses/FindAvailabilitysResponse"
+          $ref: "#/components/responses/FindAvailabilityResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -446,24 +408,25 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
-  /availabilities-days:
+  /days-availability:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
-        - $ref: "#/components/parameters/from_time"
-        - $ref: "#/components/parameters/to_time"
+        - $ref: "#/components/parameters/from_date"
+        - $ref: "#/components/parameters/to_date"
+        - $ref: "#/components/parameters/time_groups"
       tags:
         - Availability
       summary: find the days of availability at current month
-      operationId: getAvailabilitysDaysOpId
+      operationId: getAvailabilityDaysOpId
       description: |
-        find the days of Availabilitys at current month or the secertray can find to any month.
+        find the days of availabilities at current month or the secretary can find to any month.
       responses:
         200:
-          $ref: "#/components/responses/FindAvailabilitysDaysResponse"
+          $ref: "#/components/responses/FindAvailabilityDaysResponse"
         401:
           $ref: "#/components/responses/ErrorResponse"
         500:
@@ -596,8 +559,8 @@ paths:
         - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
-      summary: schedule an appointement
-      description: schedule an appointement
+      summary: schedule an appointment
+      description: schedule an appointment
       operationId: schedulingOpId
       requestBody:
         description: reschedule object
@@ -707,13 +670,13 @@ paths:
           application/json: '{"statusCode": 200}'
         passthroughBehavior: when_no_match
         type: mock
-  /priorites:
+  /priorities:
     get:
       tags:
         - Lookup
-      summary: get clinic's priorites
-      description: list of priorites
-      operationId: prioritesOpId
+      summary: get clinic's priorities
+      description: list of priorities
+      operationId: prioritiesOpId
       responses:
         200:
           $ref: "#/components/responses/ClinicSlotsLookupResponse"
@@ -848,7 +811,7 @@ paths:
   /doctors:
     get:
       tags:
-        - Lookup
+        - WIP
       summary: get clinic doctors
       operationId: getDoctorsOpId
       description: |
@@ -862,6 +825,8 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
   /patients:
     get:
+      tags:
+        - WIP
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
@@ -872,8 +837,6 @@ paths:
         - $ref: "#/components/parameters/patient_name"
         - $ref: "#/components/parameters/patient_ramq"
         - $ref: "#/components/parameters/patient_provisional_date"
-      tags:
-        - Lookup
       summary: get clinic patients
       operationId: getPatientsOpId
       description: |
@@ -888,9 +851,14 @@ paths:
 components:
   securitySchemes:
     bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: "apiKey"
+      name: "Authorization"
+      in: "header"
+      x-amazon-apigateway-authtype: "cognito_user_pools"
+      x-amazon-apigateway-authorizer:
+        providerARNs:
+          - "arn:aws:cognito-idp:us-east-1:259079320262:userpool/us-east-1_bnSDEoZne"
+        type: "cognito_user_pools"
   parameters:
     x_cognito_cognito_id:
       name: x-cognito-cognito-id
@@ -946,34 +914,28 @@ components:
         items:
           type: number
     appointment_types_query:
-      name: appointment_types
+      name: appointment_types_ids
       in: query
       description: appointment types array
       schema:
         type: array
         items:
-          type: string
-    appointment_statuses_query:
-      name: appointment_statuses
+          type: number
+    appointment_status_query:
+      name: appointment_status_ids
       in: query
-      description: appointment statuses array
+      description: appointment status array
       schema:
         type: array
         items:
-          type: string
+          type: number
     time_groups:
-      name: time_groups
+      name: time_groups_ids
       in: query
       schema:
         type: array
         items:
           type: number
-    appointment_type:
-      name: appointment_type
-      in: query
-      description: appointment type
-      schema:
-        type: string
     date_query:
       name: date
       in: query
@@ -1030,29 +992,49 @@ components:
       schema:
         type: string
     from_time:
-      name: from
+      name: from_time
       in: query
       description: start time
       schema:
         $ref: "#/components/schemas/Time"
     to_time:
-      name: to
+      name: to_time
       in: query
       description: end time
       schema:
         $ref: "#/components/schemas/Time"
     from_date:
-      name: from
+      name: from_date
       in: query
       description: start date
       schema:
         $ref: "#/components/schemas/Date"
     to_date:
-      name: to
+      name: to_date
       in: query
       description: end date
       schema:
         $ref: "#/components/schemas/Date"
+    availability_types:
+      name: availability_types
+      in: query
+      description: both of them is the default value.
+      schema:
+        type: array
+        items:
+          enum:
+            - booked
+            - unbooked
+    availability_include:
+      name: include
+      in: query
+      schema:
+        type: array
+        items:
+          enum:
+            - appointment
+            - patient
+            - doctor
   headers:
     X-cognito-cognito-id:
       description: Extracted from JWT and injected by API Gateway
@@ -1092,12 +1074,6 @@ components:
       nullable: true
       readOnly: true
     UpdatedAtDatetime:
-      type: string
-      format: date-time
-      nullable: true
-      default: null
-      readOnly: true
-    DeletedAtDatetime:
       type: string
       format: date-time
       nullable: true
@@ -1146,8 +1122,6 @@ components:
       type: string
     Timezone:
       type: string
-    # LogoRef:
-    #   type: string
     ProfilePictureRef:
       type: string
     ClinicId:
@@ -1190,7 +1164,6 @@ components:
       allOf:
         - $ref: "#/components/schemas/CreateProps"
         - $ref: "#/components/schemas/UpdateProps"
-        - $ref: "#/components/schemas/DeleteProps"
     CreateProps:
       type: object
       properties:
@@ -1204,13 +1177,6 @@ components:
         updated_at:
           $ref: "#/components/schemas/UpdatedAtDatetime"
         updated_by:
-          $ref: "#/components/schemas/UserId"
-    DeleteProps:
-      type: object
-      properties:
-        deleted_at:
-          $ref: "#/components/schemas/DeletedAtDatetime"
-        deleted_by:
           $ref: "#/components/schemas/UserId"
     AssignDoctor:
       type: object
@@ -1255,20 +1221,10 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/UserId"
-        clinic_id:
-          $ref: "#/components/schemas/ClinicId"
         first_name:
           $ref: "#/components/schemas/FirstName"
         last_name:
           $ref: "#/components/schemas/LastName"
-        profile_picture:
-          $ref: "#/components/schemas/ProfilePictureRef"
-        address:
-          $ref: "#/components/schemas/AddressObject"
-        rmaq:
-          $ref: "#/components/schemas/RAMQ"
-        dob:
-          $ref: "#/components/schemas/Date"
     TimeGroup:
       allOf:
         - type: object
@@ -1410,24 +1366,42 @@ components:
         - a
         - b
     Appointment:
-      type: object
-      properties:
-        id:
-          type: number
-        patient:
-          $ref: "#/components/schemas/PublicUserData"
-        doctor:
-          $ref: "#/components/schemas/PublicDoctorData"
-        appointment_type:
-          $ref: "#/components/schemas/AppointmentType"
-        provisional_date:
-          $ref: "#/components/schemas/Datetime"
-        booked_date:
-          $ref: "#/components/schemas/Datetime"
-        status:
-          $ref: "#/components/schemas/AppointmentStatus"
-        priority:
-          $ref: "#/components/schemas/AppointmentPriority"
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: number
+            patient_id:
+              type: number
+            assigned_doctor_id:
+              type: number
+            availability_id:
+              type: number
+            old_appointment_id:
+              type: number
+            type:
+              $ref: "#/components/schemas/AppointmentType"
+            provisional_date:
+              $ref: "#/components/schemas/Datetime"
+            booked_date:
+              $ref: "#/components/schemas/Datetime"
+            status:
+              $ref: "#/components/schemas/AppointmentStatus"
+            priority:
+              $ref: "#/components/schemas/AppointmentPriority"
+            rescheduling_reason:
+              type: string
+            cancellation_reason:
+              type: string
+            doctor_reassignment_reason:
+              type: string
+            complains:
+              type: string
+            clinical_notes:
+              type: string
+            date_extension_reason:
+              type: string
+        - $ref: "#/components/schemas/Timestamps"
     Availability:
       type: object
       properties:
@@ -1441,7 +1415,7 @@ components:
           $ref: "#/components/schemas/Date"
         time_slot:
           $ref: "#/components/schemas/time_slot"
-        appointment_type:
+        type:
           $ref: "#/components/schemas/AppointmentType"
     PublicDoctorData:
       type: object
@@ -1462,20 +1436,20 @@ components:
               - $ref: "#/components/schemas/Availability"
               - type: object
                 properties:
-                  doctor:
-                    $ref: "#/components/schemas/PublicDoctorData"
+                  appointment:
+                    $ref: "#/components/schemas/Appointment"
                   patient:
                     $ref: "#/components/schemas/PublicUserData"
     AppointmentsWithPatientData:
       type: object
       allOf:
         - $ref: "#/components/schemas/Appointment"
-        - type: object
-          properties:
-            doctor:
-              $ref: "#/components/schemas/PublicDoctorData"
-            patient:
-              $ref: "#/components/schemas/PublicUserData"
+        # - type: object
+        #   properties:
+        #     doctor:
+        #       $ref: "#/components/schemas/PublicDoctorData"
+        #     patient:
+        #       $ref: "#/components/schemas/PublicUserData"
     AvailabilityWithPatientDataObject:
       type: object
       properties:
@@ -1483,12 +1457,12 @@ components:
           type: object
           allOf:
             - $ref: "#/components/schemas/Availability"
-            - $ref: "#/components/schemas/PublicDoctorData"
+            # - $ref: "#/components/schemas/PublicDoctorData"
             - type: object
               properties:
                 patient:
                   $ref: "#/components/schemas/PublicUserData"
-    AvailabilitysDaysDataObject:
+    AvailabilityDaysDataObject:
       type: object
       properties:
         data:
@@ -1498,27 +1472,21 @@ components:
     CreateAvailabilityBody:
       type: array
       items:
-      
         allOf:
           - type: object
             required:
-              - doctor_id
               - from
               - to
               - time_slot
-              - appointment_type
+              - type
             properties:
-              doctor_id:
-                $ref: "#/components/schemas/DoctorId"
               start_time:
-                $ref: "#/components/schemas/Time"
-              end_time:
                 $ref: "#/components/schemas/Time"
               date:
                 $ref: "#/components/schemas/Date"
               time_slot:
                 $ref: "#/components/schemas/time_slot"
-              appointment_type:
+              type:
                 $ref: "#/components/schemas/AppointmentType"
     UpdateAvailabilityBody:
       allOf:
@@ -1531,22 +1499,11 @@ components:
                 properties:
                   start_time:
                     $ref: "#/components/schemas/Time"
-                  end_time:
-                    $ref: "#/components/schemas/Time"
                   date:
                     $ref: "#/components/schemas/Date"
                   time_slot:
                     $ref: "#/components/schemas/time_slot"
-                  appointment_type:
-                    $ref: "#/components/schemas/AppointmentType"
-            to_update:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: number
-                  appointment_type:
+                  type:
                     $ref: "#/components/schemas/AppointmentType"
             to_delete:
               type: array
@@ -1562,6 +1519,28 @@ components:
             provisional_date:
               $ref: "#/components/schemas/Datetime"
             reason_message:
+              type: string
+    CreateAppointmentBody:
+      allOf:
+        - type: object
+          required:
+            - patient_id
+            - type
+            - priority
+          properties:
+            patient_id:
+              type: number
+            type:
+              $ref: "#/components/schemas/AppointmentType"
+            provisional_date:
+              $ref: "#/components/schemas/Datetime"
+            priority:
+              $ref: "#/components/schemas/AppointmentPriority"
+            status:
+              $ref: "#/components/schemas/AppointmentStatus"
+            complains:
+              type: string
+            clinic_notes:
               type: string
     CancelAppointmentBody:
       allOf:
@@ -1589,7 +1568,7 @@ components:
               type: string
     AppointmentResponseData:
       type: object
-      properties: 
+      properties:
         data:
           $ref: "#/components/schemas/AppointmentsWithPatientData"
     AvailabilityResponseData:
@@ -1603,15 +1582,18 @@ components:
               - type: object
                 properties:
                   clinic_id:
-                    type: string
+                    type: number
               - $ref: "#/components/schemas/Timestamps"
     ReschedulingResponseData:
       type: object
-      properties: 
+      properties:
         data:
           $ref: "#/components/schemas/AppointmentsWithPatientData"
     ResponseMetaData:
       type: object
+      properties:
+        meta:
+          type: object
   responses:
     GetDoctorAvailability:
       description: Success
@@ -1658,7 +1640,6 @@ components:
       description: success
       content:
         application/json:
-        
           schema:
             allOf:
               - $ref: "#/components/schemas/PaginatedResult"
@@ -1676,7 +1657,7 @@ components:
             allOf:
               - $ref: "#/components/schemas/ResponseMetaData"
               - $ref: "#/components/schemas/AvailabilityResponseData"
-    FindAvailabilitysResponse:
+    FindAvailabilityResponse:
       description: Success
       content:
         application/json:
@@ -1684,12 +1665,12 @@ components:
             allOf:
               - $ref: "#/components/schemas/PaginatedResult"
               - $ref: "#/components/schemas/AvailabilityWithPatientData"
-    FindAvailabilitysDaysResponse:
+    FindAvailabilityDaysResponse:
       description: Success
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/AvailabilitysDaysDataObject"
+            $ref: "#/components/schemas/AvailabilityDaysDataObject"
     GetAvailabilityResponse:
       description: Success
       content:
@@ -1770,7 +1751,7 @@ components:
                     type: array
                     items:
                       $ref: "#/components/schemas/PriorityLookup"
-                      
+
     AppointmentStatuesLookupResponse:
       description: Success
       content:
@@ -1807,4 +1788,3 @@ components:
                   clinic_id:
                     $ref: "#/components/schemas/ClinicId"
               - $ref: "#/components/schemas/CreateProps"
-              - $ref: "#/components/schemas/DeleteProps"
