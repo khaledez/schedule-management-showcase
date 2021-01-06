@@ -38,6 +38,7 @@ module.exports = {
         type: Sequelize.STRING,
       },
       provisional_date: {
+        allowNull: false,
         type: Sequelize.DATE,
       },
       booked_date: {
