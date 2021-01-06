@@ -44,6 +44,7 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
+  /manage-patients:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
@@ -274,7 +275,7 @@ paths:
         passthroughBehavior: when_no_match
         type: mock
   /doctors/{doctorId}/availability:
-    put:
+    post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
         - $ref: "#/components/parameters/x_cognito_clinic_id"
@@ -299,63 +300,63 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
-  /doctors/{doctorId}/availability/{avId}:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
-        - $ref: "#/components/parameters/x_cognito_user_id"
-        - $ref: "#/components/parameters/availability_id"
-        - $ref: "#/components/parameters/doctor_id_path"
-      tags:
-        - Availability
-      summary: get doctor's availability by id
-      operationId: getAvaByIdOpId
-      description: |
-        get availability by id
-      responses:
-        200:
-          $ref: "#/components/responses/GetAvailabilityResponse"
-        401:
-          $ref: "#/components/responses/ErrorResponse"
-        500:
-          $ref: "#/components/responses/ErrorResponse"
-    options:
-      parameters:
-        - $ref: "#/components/parameters/availability_id"
-        - $ref: "#/components/parameters/doctor_id_path"
-      tags:
-        - Availability
-      operationId: optionsAvailabilityOpId
-      description: |
-        options request for getting a clinic's availability
-      responses:
-        200:
-          description: OK
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: string
-            Access-Control-Allow-Methods:
-              schema:
-                type: string
-            Access-Control-Allow-Headers:
-              schema:
-                type: string
-      x-amazon-apigateway-integration:
-        uri: "https://${stageVariables.apihost}/avaliabilities"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
-              method.response.header.Access-Control-Allow-Headers: >-
-                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        requestTemplates:
-          application/json: '{"statusCode": 200}'
-        passthroughBehavior: when_no_match
-        type: mock
+  # /doctors/{doctorId}/availability/{avId}:
+  #   get:
+  #     parameters:
+  #       - $ref: "#/components/parameters/x_cognito_cognito_id"
+  #       - $ref: "#/components/parameters/x_cognito_clinic_id"
+  #       - $ref: "#/components/parameters/x_cognito_user_id"
+  #       - $ref: "#/components/parameters/availability_id"
+  #       - $ref: "#/components/parameters/doctor_id_path"
+  #     tags:
+  #       - Availability
+  #     summary: get doctor's availability by id
+  #     operationId: getAvaByIdOpId
+  #     description: |
+  #       get availability by id
+  #     responses:
+  #       200:
+  #         $ref: "#/components/responses/GetAvailabilityResponse"
+  #       401:
+  #         $ref: "#/components/responses/ErrorResponse"
+  #       500:
+  #         $ref: "#/components/responses/ErrorResponse"
+  #   options:
+  #     parameters:
+  #       - $ref: "#/components/parameters/availability_id"
+  #       - $ref: "#/components/parameters/doctor_id_path"
+  #     tags:
+  #       - Availability
+  #     operationId: optionsAvailabilityOpId
+  #     description: |
+  #       options request for getting a clinic's availability
+  #     responses:
+  #       200:
+  #         description: OK
+  #         headers:
+  #           Access-Control-Allow-Origin:
+  #             schema:
+  #               type: string
+  #           Access-Control-Allow-Methods:
+  #             schema:
+  #               type: string
+  #           Access-Control-Allow-Headers:
+  #             schema:
+  #               type: string
+  #     x-amazon-apigateway-integration:
+  #       uri: "https://${stageVariables.apihost}/avaliabilities"
+  #       responses:
+  #         default:
+  #           statusCode: "200"
+  #           responseParameters:
+  #             method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+  #             method.response.header.Access-Control-Allow-Headers: >-
+  #               'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+  #             method.response.header.Access-Control-Allow-Origin: "'*'"
+  #       requestTemplates:
+  #         application/json: '{"statusCode": 200}'
+  #       passthroughBehavior: when_no_match
+  #       type: mock
   /suggested-availability:
     get:
       parameters:
@@ -1034,7 +1035,7 @@ components:
           enum:
             - appointment
             - patient
-            - doctor
+            # - doctor
   headers:
     X-cognito-cognito-id:
       description: Extracted from JWT and injected by API Gateway
