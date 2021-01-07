@@ -11,6 +11,7 @@ import { AppointmentsService } from './modules/appointments/appointments.service
 import { AvailabilityService } from './modules/availability/availability.service';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
+import { Appointments } from './modules/appointments/appointments.provider';
 import config from '../config';
 
 @Module({
@@ -25,7 +26,7 @@ import config from '../config';
     AvailabilityModule,
   ],
   controllers: [AppController, AppointmentsController, AvailabilityController],
-  providers: [AppService, AppointmentsService, AvailabilityService],
+  providers: [AppService, AppointmentsService, AvailabilityService, Appointments],
 })
 export class AppModule {
   // apply logger middleware in all-over the modules.
