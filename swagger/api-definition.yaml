@@ -1335,6 +1335,7 @@ components:
       type: number
     duration_minutes:
       type: number
+      example: 0 => 15min
     Doctor:
       type: object
       properties:
@@ -1390,9 +1391,7 @@ components:
               type: number
             type_id:
               $ref: "#/components/schemas/AppointmentType"
-            provisional_date:
-              $ref: "#/components/schemas/Datetime"
-            booked_date:
+            date:
               $ref: "#/components/schemas/Datetime"
             status_id:
               $ref: "#/components/schemas/AppointmentStatus"
@@ -1422,7 +1421,7 @@ components:
           $ref: "#/components/schemas/Time"
         date:
           $ref: "#/components/schemas/Date"
-        duration_minutes:
+        duration_minutes_id:
           $ref: "#/components/schemas/duration_minutes"
         type_id:
           $ref: "#/components/schemas/AppointmentType"
@@ -1486,14 +1485,14 @@ components:
             required:
               - from
               - to
-              - duration_minutes
+              - duration_minutes_id
               - type
             properties:
               start_time:
                 $ref: "#/components/schemas/Time"
               date:
                 $ref: "#/components/schemas/Date"
-              duration_minutes:
+              duration_minutes_id:
                 $ref: "#/components/schemas/duration_minutes"
               type_id:
                 $ref: "#/components/schemas/AppointmentType"
@@ -1510,7 +1509,7 @@ components:
                     $ref: "#/components/schemas/Time"
                   date:
                     $ref: "#/components/schemas/Date"
-                  duration_minutes:
+                  duration_minutes_id:
                     $ref: "#/components/schemas/duration_minutes"
                   type_id:
                     $ref: "#/components/schemas/AppointmentType"
