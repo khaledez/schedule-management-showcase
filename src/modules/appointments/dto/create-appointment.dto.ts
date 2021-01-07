@@ -10,7 +10,7 @@ export class CreateAppointmentBodyDto {
 
   @IsString()
   @IsDateString()
-  provisional_date: string;
+  provisional_date: Date;
 
   // lookup
   @IsNumber()

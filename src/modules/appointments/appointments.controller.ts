@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Headers } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentBodyDto } from './dto/create-appointment.dto';
 import { AppointmentsModel } from './models/appointments.model';
+import { ExtendAppointmentBodyDto } from './dto/extend-appointment.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -27,6 +28,21 @@ export class AppointmentsController {
       ...appointmentData,
       clinic_id: Number(clinic_id),
       created_by: Number(user_id),
+    });
+  }
+
+  @Post('/date-extension')
+  async extendAppointmentDate(
+    @Body() data: ExtendAppointmentBodyDto,
+    @Headers() headers: Headers,
+  ): Promise<AppointmentsModel> {
+    console.log(data, headers);
+    return await this.appointmentsService.extendDate({
+      ...data,
+      date_extension_reason: "reason",
+      old_appointment_id:1,
+      updated_by:1,
+      updated_at: new Date(),
     });
   }
 }
