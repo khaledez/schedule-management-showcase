@@ -22,7 +22,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Appointment
@@ -44,12 +45,13 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         500:
           $ref: "#/components/responses/ErrorResponse"
-  /manage-patients:
+  /patients-management:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
         - $ref: "#/components/parameters/x_cognito_user_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/from_date"
         - $ref: "#/components/parameters/to_date"
         - $ref: "#/components/parameters/patient_ramq"
@@ -104,7 +106,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
@@ -132,7 +135,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
@@ -162,7 +166,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
@@ -190,7 +195,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/appointment_id"
       tags:
@@ -218,14 +224,11 @@ paths:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/appointment_types_query"
-        - $ref: "#/components/parameters/appointment_status_query"
-        - $ref: "#/components/parameters/date_query"
-        - $ref: "#/components/parameters/from_time"
-        - $ref: "#/components/parameters/to_time"
         - $ref: "#/components/parameters/from_date"
         - $ref: "#/components/parameters/to_date"
         - $ref: "#/components/parameters/time_groups"
@@ -278,7 +281,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_id_path"
       tags:
@@ -304,7 +308,7 @@ paths:
   #   get:
   #     parameters:
   #       - $ref: "#/components/parameters/x_cognito_cognito_id"
-  #       - $ref: "#/components/parameters/x_cognito_clinic_id"
+  #       - $ref: "#/components/parameters/x_mmx_clinic_id"
   #       - $ref: "#/components/parameters/x_cognito_user_id"
   #       - $ref: "#/components/parameters/availability_id"
   #       - $ref: "#/components/parameters/doctor_id_path"
@@ -361,7 +365,8 @@ paths:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/time_groups"
@@ -413,7 +418,8 @@ paths:
     get:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/doctor_ids_query"
         - $ref: "#/components/parameters/from_date"
@@ -556,7 +562,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
@@ -581,7 +588,8 @@ paths:
     post:
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
       tags:
         - Availability
@@ -830,7 +838,8 @@ paths:
         - WIP
       parameters:
         - $ref: "#/components/parameters/x_cognito_cognito_id"
-        - $ref: "#/components/parameters/x_cognito_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_clinic_id"
+        - $ref: "#/components/parameters/x_mmx_lang"
         - $ref: "#/components/parameters/x_cognito_user_id"
         - $ref: "#/components/parameters/patient_status"
         - $ref: "#/components/parameters/patient_phone_number"
@@ -867,12 +876,18 @@ components:
       required: true
       schema:
         $ref: "#/components/headers/X-cognito-cognito-id"
-    x_cognito_clinic_id:
-      name: x-cognito-clinic-id
+    x_mmx_clinic_id:
+      name: x-mmx-clinic-id
       in: header
       required: true
       schema:
-        $ref: "#/components/headers/X-cognito-clinic-id"
+        $ref: "#/components/headers/X-mmx-clinic-id"
+    x_mmx_lang:
+      name: x-mmx-lang
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/headers/X-mmx-lang"
     x_cognito_user_id:
       name: x-cognito-user-id
       description: practitioner id
@@ -917,7 +932,7 @@ components:
     appointment_types_query:
       name: appointment_types_ids
       in: query
-      description: appointment types array
+      description: appointment types array for example 1 => FUQ, 2 => NEW, 3 => FUQ/NEW
       schema:
         type: array
         items:
@@ -925,7 +940,7 @@ components:
     appointment_status_query:
       name: appointment_status_ids
       in: query
-      description: appointment status array
+      description: appointment status array for example 1=>waitlist, 2=> confirmed, 3=> ready
       schema:
         type: array
         items:
@@ -1041,7 +1056,11 @@ components:
       description: Extracted from JWT and injected by API Gateway
       schema:
         type: string
-    X-cognito-clinic-id:
+    X-mmx-clinic-id:
+      description: Extracted from JWT and injected by API Gateway
+      schema:
+        type: string
+    X-mmx-lang:
       description: Extracted from JWT and injected by API Gateway
       schema:
         type: string
@@ -1314,7 +1333,7 @@ components:
         - $ref: "#/components/schemas/Timestamps"
     DoctorId:
       type: number
-    time_slot:
+    duration_minutes:
       type: number
     Doctor:
       type: object
@@ -1414,8 +1433,8 @@ components:
           $ref: "#/components/schemas/Time"
         date:
           $ref: "#/components/schemas/Date"
-        time_slot:
-          $ref: "#/components/schemas/time_slot"
+        duration_minutes:
+          $ref: "#/components/schemas/duration_minutes"
         type:
           $ref: "#/components/schemas/AppointmentType"
     PublicDoctorData:
@@ -1478,15 +1497,15 @@ components:
             required:
               - from
               - to
-              - time_slot
+              - duration_minutes
               - type
             properties:
               start_time:
                 $ref: "#/components/schemas/Time"
               date:
                 $ref: "#/components/schemas/Date"
-              time_slot:
-                $ref: "#/components/schemas/time_slot"
+              duration_minutes:
+                $ref: "#/components/schemas/duration_minutes"
               type:
                 $ref: "#/components/schemas/AppointmentType"
     UpdateAvailabilityBody:
@@ -1502,8 +1521,8 @@ components:
                     $ref: "#/components/schemas/Time"
                   date:
                     $ref: "#/components/schemas/Date"
-                  time_slot:
-                    $ref: "#/components/schemas/time_slot"
+                  duration_minutes:
+                    $ref: "#/components/schemas/duration_minutes"
                   type:
                     $ref: "#/components/schemas/AppointmentType"
             to_delete:
