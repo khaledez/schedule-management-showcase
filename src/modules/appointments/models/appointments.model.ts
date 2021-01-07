@@ -26,8 +26,8 @@ export class AppointmentsModel extends BaseModel {
   @Column
   type: string;
 
-  @Column
   @IsDate
+  @Column
   provisional_date: Date;
 
   @Column
@@ -59,4 +59,7 @@ export class AppointmentsModel extends BaseModel {
 
   @BelongsTo(() => AvailabilityModel)
   availability: AvailabilityModel;
+
+  @Column
+  is_active: boolean;
 }

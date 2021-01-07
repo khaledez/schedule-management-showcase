@@ -62,6 +62,10 @@ module.exports = {
       date_extension_reason: {
         type: Sequelize.TEXT,
       },
+      is_active: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+      },
       created_at: {
         allowNull: false,
         type: Sequelize.DATE,

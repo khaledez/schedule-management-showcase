@@ -2,6 +2,8 @@ import { Sequelize } from 'sequelize-typescript';
 import { ConfigService } from '@nestjs/config';
 import { SEQUELIZE } from '../../common/constants';
 import { getSSMParameterValue } from 'src/utils/ssmGetParameter';
+import { AppointmentsModel } from '../appointments/models/appointments.model';
+import { AvailabilityModel } from '../availability/models/availability.model';
 
 export const databaseProviders = [
   {
@@ -15,7 +17,7 @@ export const databaseProviders = [
         config.password = password;
       }
       const sequelize = new Sequelize(config);
-      sequelize.addModels([]);
+      sequelize.addModels([AppointmentsModel, AvailabilityModel]);
       // sequelize.addModels([__dirname + '../**/models/*.model{.ts,.js}']);
       await sequelize.sync();
       return sequelize;

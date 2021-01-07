@@ -10,7 +10,6 @@ async function bootstrap() {
   const appConfig = app.get(CONFIG_SERVICE);
   const serviceName = appConfig.get(SERVICE_NAME);
   const port = appConfig.get(PORT);
-
   registerApp(app, serviceName);
   /**
    * use global pipes to be accessible by app's controllers

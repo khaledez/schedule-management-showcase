@@ -5,13 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 import { requestLoggerMiddleware } from '@mon-medic/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { DatabaseModule } from './modules/database/database.module';
-import { AppointmentsController } from './modules/appointments/appointments.controller';
-import { AvailabilityController } from './modules/availability/availability.controller';
-import { AppointmentsService } from './modules/appointments/appointments.service';
-import { AvailabilityService } from './modules/availability/availability.service';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
-import { Appointments } from './modules/appointments/appointments.provider';
 import config from '../config';
 
 @Module({
@@ -25,8 +20,8 @@ import config from '../config';
     AppointmentsModule,
     AvailabilityModule,
   ],
-  controllers: [AppController, AppointmentsController, AvailabilityController],
-  providers: [AppService, AppointmentsService, AvailabilityService, Appointments],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {
   // apply logger middleware in all-over the modules.
