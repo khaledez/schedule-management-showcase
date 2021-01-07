@@ -1534,8 +1534,9 @@ components:
         - type: object
           required:
             - patient_id
-            - type
-            - priority
+            - type_id
+            - status_id
+            - priority_id
           properties:
             patient_id:
               type: number
