@@ -24,13 +24,13 @@ export class AppointmentsService {
   async extendDate(
     extendAppointmentDto: ExtendAppointmentDto,
   ): Promise<AppointmentsModel> {
-    const { old_appointment_id, ...othersData } = extendAppointmentDto;
+    const { prev_appointment_id, ...othersData } = extendAppointmentDto;
     const oldAppointment = await this.appoitmentsRepo.findByPk(
-      old_appointment_id,
+      prev_appointment_id,
     );
     await oldAppointment.update({
       ...oldAppointment,
-      is_active:false
+      upcoming_appointment: false,
     });
     return this.appoitmentsRepo.create({
       ...oldAppointment,

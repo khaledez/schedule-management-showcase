@@ -25,9 +25,9 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'NO ACTION',
       },
-      type: {
+      appointment_type_id: {
         allowNull: false,
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
       },
       start_time: {
         allowNull: false,

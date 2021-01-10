@@ -16,10 +16,10 @@ module.exports = {
         allowNull: false,
         type: Sequelize.INTEGER,
       },
-      assigned_doctor_id: {
+      doctor_id: {
         type: Sequelize.INTEGER,
       },
-      old_appointment_id: {
+      prev_appointment_id: {
         type: Sequelize.INTEGER,
         references: {
           model: 'appointments',
@@ -28,21 +28,24 @@ module.exports = {
         onUpdate: 'NO ACTION',
         onDelete: 'NO ACTION',
       },
-      type: {
-        type: Sequelize.STRING,
+      type_id: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
       },
-      status: {
-        type: Sequelize.STRING,
+      status_id: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
       },
-      priority: {
-        type: Sequelize.STRING,
+      priority_id: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
       },
-      provisional_date: {
+      date: {
         allowNull: false,
         type: Sequelize.DATE,
       },
-      booked_date: {
-        type: Sequelize.DATE,
+      start_time:{
+        type: Sequelize.TIME
       },
       complains: {
         type: Sequelize.TEXT,
@@ -62,7 +65,7 @@ module.exports = {
       date_extension_reason: {
         type: Sequelize.TEXT,
       },
-      is_active: {
+      upcoming_appointment: {
         type: Sequelize.BOOLEAN,
         defaultValue: true,
       },

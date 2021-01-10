@@ -8,36 +8,40 @@ import {
 import { BaseModel } from '../../../common/models/base-model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 
+// note that the id will auto added by sequalize.
 @Table({ tableName: 'appointments' })
 export class AppointmentsModel extends BaseModel {
   @Column
   patient_id: number;
 
   @Column
-  assigned_doctor_id: number;
+  doctor_id: number;
 
   @Column
   @ForeignKey(() => AvailabilityModel)
   availability_id: number;
 
   @Column
-  old_appointment_id: number;
+  prev_appointment_id: number;
 
   @Column
-  type: string;
+  type_id: number;
+
+  @Column
+  clinic_id: number;
 
   @IsDate
   @Column
-  provisional_date: Date;
+  date: Date;
 
   @Column
-  booked_date: Date;
+  status_id: number;
 
   @Column
-  status: string;
+  priority_id: number;
 
   @Column
-  priority: string;
+  start_time: string;
 
   @Column
   complains: string;
@@ -61,5 +65,5 @@ export class AppointmentsModel extends BaseModel {
   availability: AvailabilityModel;
 
   @Column
-  is_active: boolean;
+  upcoming_appointment: boolean;
 }

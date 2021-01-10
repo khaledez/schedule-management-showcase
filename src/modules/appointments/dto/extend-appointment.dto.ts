@@ -16,7 +16,7 @@ export class ExtendAppointmentDto extends ExtendAppointmentBodyDto {
   date_extension_reason: string;
 
   @IsNumber()
-  old_appointment_id: number;
+  prev_appointment_id: number;
 
   @IsNumber()
   updated_by: number;

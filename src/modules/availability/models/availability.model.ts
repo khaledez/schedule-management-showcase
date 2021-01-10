@@ -18,6 +18,9 @@ export class AvailabilityModel extends BaseModel {
   start_time: string;
 
   @Column
+  appointment_type_id: string
+
+  @Column
   date: Date;
 
   @Column

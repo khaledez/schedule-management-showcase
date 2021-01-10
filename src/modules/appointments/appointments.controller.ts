@@ -40,9 +40,11 @@ export class AppointmentsController {
     return await this.appointmentsService.extendDate({
       ...data,
       date_extension_reason: "reason",
-      old_appointment_id:1,
+      prev_appointment_id:1,
       updated_by:1,
       updated_at: new Date(),
     });
   }
+
+  
 }
