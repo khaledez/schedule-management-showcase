@@ -1,10 +1,11 @@
-import { IsString, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsNumber, IsDate, IsDateString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 // this dto for the body comes from the request
 export class ExtendAppointmentBodyDto {
-  @IsString()
-  @IsDateString()
-  provisional_date: Date;
+  @IsDate()
+  @Type(() => Date)
+  date: Date;
 
   @IsNumber()
   reason_message: number;
