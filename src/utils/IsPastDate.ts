@@ -15,7 +15,7 @@ export function IsPastDate(validationOptions?: ValidationOptions) {
       },
       validator: {
         validate(value: Date) {
-          // i decrease a day from today to let 'today' passed.
+          // i decrease a day from today to let 'today' pass.
           const isPastDate: boolean = moment().add(-1, 'days').diff(value) < 0;
           return isPastDate;
         },

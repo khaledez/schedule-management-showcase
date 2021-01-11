@@ -1,18 +1,22 @@
-import { IsString, IsNumber, IsDate, IsDateString } from 'class-validator';
+import { IsString, IsNumber, IsDate, IsDateString, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 // this dto for the body comes from the request
 export class ExtendAppointmentBodyDto {
   @IsDate()
   @Type(() => Date)
-  date: Date;
+  provisional_date: Date;
 
-  @IsNumber()
-  reason_message: number;
+  @IsString()
+  reason_message: string;
 }
 
 // this dto after modify the dto.
-export class ExtendAppointmentDto extends ExtendAppointmentBodyDto {
+export class ExtendAppointmentDto {
+  @IsDate()
+  @Type(() => Date)
+  date: Date;
+
   @IsString()
   date_extension_reason: string;
 
@@ -21,6 +25,10 @@ export class ExtendAppointmentDto extends ExtendAppointmentBodyDto {
 
   @IsNumber()
   updated_by: number;
+
+  // TODO: this should not come from the code, it should use the default value which is TRUE 
+  @IsBoolean()
+  upcoming_appointment: boolean
 
   @IsDateString()
   updated_at: Date;

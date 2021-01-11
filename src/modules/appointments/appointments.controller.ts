@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Headers, Param } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentBodyDto } from './dto/create-appointment.dto';
 import { AppointmentsModel } from './models/appointments.model';
 import { ExtendAppointmentBodyDto } from './dto/extend-appointment.dto';
+import { CancelAppointmentBodyDto } from './dto/cancel-appointment.dto';
+import { ReassignAppointmentBodyDto } from './dto/reassign-appointment.dto';
+import { ChangeDoctorAppointmentBodyDto } from './dto/change-doctor-appointment.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -13,7 +16,7 @@ export class AppointmentsController {
   }
 
   @Post()
-  async createAppointment(
+  createAppointment(
     @Body() appointmentData: CreateAppointmentBodyDto,
     @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
@@ -24,27 +27,81 @@ export class AppointmentsController {
     const user_lang: string = headers['x-mmx-lang'];
     const user_id: string = headers['x-cognito-user-id'];
 
-    return await this.appointmentsService.create({
+    return this.appointmentsService.create({
       ...appointmentData,
       clinic_id: Number(clinic_id),
       created_by: Number(user_id),
     });
   }
 
-  @Post('/date-extension')
-  async extendAppointmentDate(
+  @Post(':id/date-extension')
+  extendAppointmentDate(
+    // add interface for params
+    @Param() params: any,
     @Body() data: ExtendAppointmentBodyDto,
     @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
     console.log(data, headers);
-    return await this.appointmentsService.extendDate({
-      ...data,
-      date_extension_reason: "reason",
-      prev_appointment_id:1,
-      updated_by:1,
+    return this.appointmentsService.extendDate({
+      upcoming_appointment: true, // added this for returning it at the response. it should be deleted.
+      date: data.provisional_date,
+      date_extension_reason: data.reason_message,
+      prev_appointment_id: Number(params.id),
+      updated_by: 1,
       updated_at: new Date(),
     });
   }
 
-  
+  @Post(':id/cancellation')
+  cancelAppointment(
+    @Param() params: any,
+    @Body() data: CancelAppointmentBodyDto, // TODO: add cancel interface,
+    @Headers() headers: Headers,
+  ): Promise<AppointmentsModel> {
+    // TODO : is_remove_availability_slot add your own code below.
+    /*
+     * your own code
+     */
+    // Q: Do we have cancel status that i have to change it here?
+    // Q: Do we need canceled_by, canceled_at fields?
+    return this.appointmentsService.cancelAppointment({
+      date: data.provisional_date,
+      prev_appointment_id: Number(params.id),
+      upcoming_appointment: true,
+      cancellation_reason: data.reason_message,
+      deleted_by: 1,
+      deleted_at: new Date(),
+    });
+  }
+
+  @Post(':id/doctor-assignment')
+  reassign(
+    @Param() params: any,
+    @Body() data: ReassignAppointmentBodyDto,
+    @Headers() headers: Headers,
+  ): Promise<AppointmentsModel> {
+    return this.appointmentsService.reassignAppointment({
+      doctor_id: data.doctor_id,
+      prev_appointment_id: Number(params.id),
+      upcoming_appointment: true,
+      updated_by: 1,
+      updated_at: new Date(),
+    });
+  }
+
+  @Post(':id/doctor-changing')
+  changeDoctor(
+    @Param() params: any,
+    @Body() data: ChangeDoctorAppointmentBodyDto,
+    @Headers() headers: Headers,
+  ): Promise<AppointmentsModel> {
+    return this.appointmentsService.changeDoctorAppointment({
+      doctor_id: Number(data.doctor_id),
+      doctor_reassignment_reason: data.reason_message,
+      prev_appointment_id: Number(params.id),
+      upcoming_appointment: true,
+      updated_by: 1,
+      updated_at: new Date(),
+    });
+  }
 }

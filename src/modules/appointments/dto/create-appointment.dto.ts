@@ -28,7 +28,7 @@ export class CreateAppointmentBodyDto {
 
   @IsString()
   @IsOptional()
-  clinic_notes: string;
+  clinical_notes: string;
 }
 
 // this dto after modify the dto.
