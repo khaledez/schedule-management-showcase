@@ -37,8 +37,8 @@ export class CancelAppointmentDto {
   upcoming_appointment: boolean;
 
   @IsNumber()
-  deleted_by: number;
+  canceled_by: number;
 
   @IsDateString()
-  deleted_at: Date;
+  canceled_at: Date;
 }

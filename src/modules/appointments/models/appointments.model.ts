@@ -66,4 +66,10 @@ export class AppointmentsModel extends BaseModel {
 
   @Column
   upcoming_appointment: boolean;
+
+  @Column
+  canceled_by: number
+
+  @Column
+  canceled_at: Date
 }

@@ -44,8 +44,8 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
       },
-      start_time:{
-        type: Sequelize.TIME
+      start_time: {
+        type: Sequelize.TIME,
       },
       complains: {
         type: Sequelize.TEXT,
@@ -84,6 +84,12 @@ module.exports = {
         defaultValue: Sequelize.fn('now'),
       },
       updated_by: {
+        type: Sequelize.INTEGER,
+      },
+      canceled_at: {
+        type: Sequelize.DATE,
+      },
+      canceled_by: {
         type: Sequelize.INTEGER,
       },
       deleted_at: {

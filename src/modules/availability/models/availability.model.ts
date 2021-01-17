@@ -1,6 +1,7 @@
 import { Table, Column, HasOne, ForeignKey } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
+import { IsOptional } from 'class-validator';
 
 @Table({ tableName: 'availability' })
 export class AvailabilityModel extends BaseModel {

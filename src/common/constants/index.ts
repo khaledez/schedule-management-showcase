@@ -4,3 +4,4 @@ export const CONFIG_SERVICE = 'ConfigService'; // caution : don't change this li
 export const PORT = 'port'; // caution : don't change this line
 
 export const APPOINTMENTS_REPOSITORY = 'APPOINTMENTS_REPOSITORY';
+export const AVAILABILITY_REPOSITORY = 'AVAILABILITY_REPOSITORY';

@@ -54,7 +54,7 @@ export class AppointmentsController {
 
   @Post(':id/cancellation')
   cancelAppointment(
-    @Param() params: any,
+    @Param() params: any, // TODO: add param interface
     @Body() data: CancelAppointmentBodyDto, // TODO: add cancel interface,
     @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
@@ -63,14 +63,14 @@ export class AppointmentsController {
      * your own code
      */
     // Q: Do we have cancel status that i have to change it here?
-    // Q: Do we need canceled_by, canceled_at fields?
+    // TODO: we need canceled_by, canceled_at fields?
     return this.appointmentsService.cancelAppointment({
       date: data.provisional_date,
       prev_appointment_id: Number(params.id),
       upcoming_appointment: true,
       cancellation_reason: data.reason_message,
-      deleted_by: 1,
-      deleted_at: new Date(),
+      canceled_by: 1,
+      canceled_at: new Date(),
     });
   }
 
