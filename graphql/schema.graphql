@@ -1,0 +1,274 @@
+type Query {
+  appointment(id: ID!): Appointment
+  appointmentsByIds(ids: [ID!]!): [Appointment!]
+  appointments(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    query: String
+    reverse: Boolean
+    sortKey: AppointmentSortKets!
+  ): AppointmentConnection!
+  availabilityElement(id: ID!): Availability
+  availabilityByIds(ids: [ID!]!): [Availability!]
+  availabilityElements(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    query: String
+  ): AvailabilityConnection!
+}
+
+type Mutation {
+  appointmentCreate(input: AppointmentCreateInput!): AppointmentUpsertPayload
+  appointmentExtend(
+    "appointment id"
+    id: ID!
+    input: AppointmentExtendInput!
+  ): AppointmentUpsertPayload
+  appointmentCancel(
+    "appointment id"
+    id: ID!
+    input: AppointmentCancelInput!
+  ): AppointmentUpsertPayload
+  appointmentAssignDoctor(
+    "appointment id"
+    id: ID!
+    "doctor id to assign at the appointment"
+    doctorId: ID!
+  ): AppointmentUpsertPayload
+  appointmentChangeAssignedDoctor(
+    "appointment id"
+    id: ID!
+    input: AppointmentChangeAssignedDoctorInput!
+  ): AppointmentUpsertPayload
+  appointmentSchedule(
+    input: AppointmentScheduleInput
+  ): AvailabilitiesUpsertPayload
+  appointmentReschedule(
+    id: ID!
+    input: AppointmentRescheduleInput
+  ): AppointmentUpsertPayload
+}
+
+input AppointmentCreateInput {
+  patientId: ID!
+  date: Date!
+  typeId: ID!
+  startTime: Time
+  statusId: ID
+  priorityId: ID
+  complains: String
+  clinic_notes: String
+}
+
+input AppointmentExtendInput {
+  provisionalDate: Date!
+  "extension reason message"
+  message: String!
+}
+
+input AppointmentCancelInput {
+  provisionalDate: Date!
+  "cancellation reason message"
+  message: String
+  removeAvailabilitySlot: Boolean
+}
+
+input AppointmentChangeAssignedDoctorInput {
+  doctorId: ID!
+  "change Assignement doctors reason message"
+  message: String
+}
+
+type AppointmentUpsertPayload {
+  appointment: Appointment
+  errors: [UserError!]!
+}
+
+type AppointmentUpsertionUserError implements DisplayableError {
+  code: AppointmentUpsertionErrorCode
+  field: [String!]
+  message: String!
+}
+
+enum AppointmentUpsertionErrorCode {
+  """
+  Input value is invalid.
+  """
+  INVALID
+
+  """
+  Resource does not exist.
+  """
+  RESOURCE_NOT_FOUND
+
+  """
+  Input value is blank.
+  """
+  BLANK
+}
+
+enum AppointmentSortKets {
+  DATE
+}
+
+interface Node {
+  id: ID!
+}
+
+type User implements Node {
+  id: ID!
+}
+
+type Clinic implements Node {
+  id: ID!
+}
+
+type Availability implements Node {
+  id: ID!
+}
+
+interface Appointment implements Node & CreatedProps & UpdatedProps & DeletedProps {
+  id: ID!
+  clinic: Clinic
+  patient: User
+  doctor: User
+  availability: Availability
+  previousAppointmentId: ID
+  date: Date!
+  status: AppointmentStatus
+  type: AppointmentType
+  priority: AppointmentPriority
+  startTime: Time
+  complains: String
+  clinicalNotes: String
+  reschedulingReason: String
+  cancellationReason: String
+  doctorReassignmentReason: String
+  dateExtensionReason: String
+  upcomingAppointment: Boolean
+  createdAt: DateTime!
+  updatedAt: DateTime
+  deletedAt: DateTime
+  cancelledAt: DateTime
+  createdBy: User!
+  updatedBy: User
+  deletedBy: User
+  cancelledBy: User
+}
+
+type AppointmentType implements Node & Lookup {
+  id: ID!
+  name: String! @i18
+  code: AppointmentTypeCode
+}
+
+type AppointmentStatus implements Node & Lookup {
+  id: ID!
+  name: String! @i18
+  code: AppointmentStatusCode
+}
+
+type AppointmentPriority implements Node {
+  id: ID!
+  code: AppointmentPriorityCode!
+}
+
+type AppointmentConnection implements PageInfo {
+  edges: [AppointmentEdge!]!
+  pageInfo: PageInfo!
+}
+
+type AppointmentEdge {
+  cursor: String!
+  node: Appointment!
+}
+
+interface Availability implements Node & CreatedProps & UpdatedProps & DeletedProps {
+  id: ID!
+  patient: User
+  appointment: Appointment
+  date: Date!
+  type: AppointmentTypeId
+  startTime: Time
+  durationMin: Int
+  createdAt: DateTime!
+  updatedAt: DateTime
+  deletedAt: DateTime
+  createdBy: User!
+  updatedBy: User
+  deletedBy: User
+}
+
+type AvailabilityConnection implements PageInfo {
+  edges: [AvailabilityEdge!]!
+  pageInfo: PageInfo!
+}
+
+type AvailabilityEdge {
+  cursor: String!
+  node: Availability!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String!
+  endCursor: String!
+}
+
+interface CreatedProps {
+  createdAt: DateTime!
+  createdBy: User
+}
+interface UpdatedProps {
+  updatedAt: DateTime
+  updatedBy: User
+}
+interface DeletedProps {
+  deletedAt: DateTime
+  deletedBy: User
+}
+
+type DisplayableError {
+  field: [String!]
+  message: String!
+}
+
+interface Lookup {
+  name: String! @i18
+}
+
+"""
+Lookups: Appointment Types
+"""
+enum AppointmentTypeCode {
+  NEW
+  FUP
+    # FUP_NEW = "FUP+NEW"
+}
+
+enum AppointmentStatusCode {
+  PENDING
+  CONFIRMED
+  ARRIVED
+  READY
+}
+
+enum AppointmentPriorityCode {
+    A
+    B
+}
+
+scalar Date
+
+scalar DateTime
+
+scalar Time
+
+scalar JSON
+
+directive @i18 on FIELD_DEFINITION
