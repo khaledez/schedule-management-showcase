@@ -21,6 +21,7 @@ type Query {
     before: String
     first: Int
     last: Int
+    reverse: Boolean
     """
     Supported filter parameters:
         - patientId
@@ -51,6 +52,7 @@ type Query {
     before: String
     first: Int
     last: Int
+    reverse: Boolean
     """
     Supported filter parameters:
         - patientId
@@ -62,6 +64,23 @@ type Query {
     """
     query: String
   ): AvailabilityConnection!
+  availabilityDays(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    reverse: Boolean
+    """
+    Supported filter parameters:
+        - doctorId
+        - doctorsIds
+        - startDate
+        - endDate
+     - appointmentTypeId (AppointmentTypeCode)
+    See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
+    """
+    query: String
+  ): AvailabilityDaysConnection!
 }
 
 type Mutation {
@@ -271,10 +290,11 @@ type Clinic implements Node {
   id: ID!
 }
 
-type Availability implements Node {
+type Availability implements Node & CreatedProps & UpdatedProps & DeletedProps {
   id: ID!
   date: Date
   startTime: Time
+  endTime: Time
   durationMin: Int
   patient: User
   doctor: User!
@@ -369,6 +389,20 @@ type AvailabilityEdge {
   node: Availability!
 }
 
+type AvailabilityDaysConnection implements PageInfo {
+  edges: [AvailabilityDaysEdge!]!
+  pageInfo: PageInfo!
+}
+
+type AvailabilityDaysEdge {
+  cursor: String!
+  node: AvailabilityDays!
+}
+
+interface AvailabilityDays {
+  date: Date!
+}
+
 type PageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -404,7 +438,7 @@ Lookups: Appointment Types
 enum AppointmentTypeCode {
   NEW
   FUP
-  # FUP_NEW = "FUP+NEW"
+  FUP_NEW
 }
 
 enum AppointmentStatusCode {
