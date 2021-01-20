@@ -99,7 +99,7 @@ type Mutation {
   ): AppointmentUpsertPayload
   appointmentSchedule(
     input: AppointmentScheduleInput
-  ): AvailabilitiesUpsertPayload
+  ): AppointmentUpsertPayload
   appointmentReschedule(
     """
     appointment id to reschedule
@@ -109,7 +109,7 @@ type Mutation {
   ): AppointmentUpsertPayload
 
   availabilityCreate(input: AvailabilityCreateInput!): Availability!
-  availabilityBulkCreate(input: [AvailabilityCreateInput!]!): [Availability!]
+  bulkAvailabilityCreate(input: [AvailabilityCreateInput!]!): [Availability!]
   availabilityRemove(
     """
     availability id
