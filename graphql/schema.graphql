@@ -97,9 +97,7 @@ type Mutation {
     id: ID!
     input: AppointmentChangeAssignedDoctorInput!
   ): AppointmentUpsertPayload
-  appointmentSchedule(
-    input: AppointmentScheduleInput
-  ): AppointmentUpsertPayload
+  appointmentSchedule(input: AppointmentScheduleInput): AppointmentUpsertPayload
   appointmentReschedule(
     """
     appointment id to reschedule
@@ -108,14 +106,16 @@ type Mutation {
     input: AppointmentRescheduleInput
   ): AppointmentUpsertPayload
 
-  availabilityCreate(input: AvailabilityCreateInput!): Availability!
-  bulkAvailabilityCreate(input: [AvailabilityCreateInput!]!): [Availability!]
+  availabilityCreate(
+    input: AvailabilityCreateInput!
+  ): AvailabilityUpsertPayload!
+  availabilityBulkCreate(input: [AvailabilityCreateInput!]!): AvailabilityBulkCreatePayload
   availabilityRemove(
     """
     availability id
     """
     id: ID!
-  ): Availability!
+  ): AvailabilityUpsertPayload!
 }
 
 input AppointmentCreateInput {
@@ -186,16 +186,31 @@ input AvailabilityCreateInput {
 
 type AppointmentUpsertPayload {
   appointment: Appointment
-  errors: [UserError!]!
+  errors: [AppointmentUpsertUserError!]!
 }
 
-type AppointmentUpsertionUserError implements DisplayableError {
-  code: AppointmentUpsertionErrorCode
+type AvailabilityBulkCreatePayload{
+  """
+  The IDs of the created availabilty.
+  """
+  ids: [ID!]
+  errors: [AvailabilityUpsertErrorCode!]!
+}
+
+type AvailabilityUpsertPayload {
+  availability: Availability
+  errors: [AvailabilityUpsertErrorCode!]!
+}
+
+type AppointmentUpsertUserError implements DisplayableError {
+  code: AppointmentUpsertErrorCode
   field: [String!]
   message: String!
 }
 
-enum AppointmentUpsertionErrorCode {
+type AvailabilityUpsert
+
+enum AppointmentUpsertErrorCode {
   """
   Input value is invalid.
   """
@@ -210,6 +225,32 @@ enum AppointmentUpsertionErrorCode {
   Input value is blank.
   """
   BLANK
+}
+
+enum AvailabilityUpsertErrorCode {
+  """
+  Input value is invalid.
+  """
+  INVALID
+
+  """
+  Operation take too much time to execute
+  """
+  TIME_OUT
+  """
+  Operation contains conflicting.
+  """
+  CONFLICT
+
+  """
+  Missing a required argument.
+  """
+  MISSING_ARGUMENT
+
+  """
+  Error Occure at the server
+  """
+  INTERNAL_SERVER_ERROR
 }
 
 enum AppointmentSortKets {
