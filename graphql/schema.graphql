@@ -1,22 +1,65 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
 type Query {
+  ### Appointment Queries
+  """
+  get appointment
+  """
   appointment(id: ID!): Appointment
+  """
+  find appointments by ids
+  """
   appointmentsByIds(ids: [ID!]!): [Appointment!]
+  """
+  list appointments
+  """
   appointments(
     after: String
     before: String
     first: Int
     last: Int
+    """
+    Supported filter parameters:
+        - patientId
+        - doctorId
+        - startDate
+        - endDate
+        - status (AppointmentStatusCode)
+     - appointmentTypeId (AppointmentTypeCode)
+    See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
+    """
     query: String
-    reverse: Boolean
     sortKey: AppointmentSortKets!
   ): AppointmentConnection!
-  availabilityElement(id: ID!): Availability
+  ### Availability Queries
+  """
+  get availability
+  """
+  availabilityById(id: ID!): Availability
+  """
+  find availability by ids
+  """
   availabilityByIds(ids: [ID!]!): [Availability!]
-  availabilityElements(
+  """
+  list availability
+  """
+  availability(
     after: String
     before: String
     first: Int
     last: Int
+    """
+    Supported filter parameters:
+        - patientId
+        - doctorId
+        - startDate
+        - endDate
+     - appointmentTypeId (AppointmentTypeCode)
+    See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
+    """
     query: String
   ): AvailabilityConnection!
 }
@@ -24,23 +67,33 @@ type Query {
 type Mutation {
   appointmentCreate(input: AppointmentCreateInput!): AppointmentUpsertPayload
   appointmentExtend(
-    "appointment id"
+    """
+    appointment id
+    """
     id: ID!
     input: AppointmentExtendInput!
   ): AppointmentUpsertPayload
   appointmentCancel(
-    "appointment id"
+    """
+    appointment id
+    """
     id: ID!
     input: AppointmentCancelInput!
   ): AppointmentUpsertPayload
   appointmentAssignDoctor(
-    "appointment id"
+    """
+    appointment id
+    """
     id: ID!
-    "doctor id to assign at the appointment"
+    """
+    doctor id to assign at the appointment
+    """
     doctorId: ID!
   ): AppointmentUpsertPayload
   appointmentChangeAssignedDoctor(
-    "appointment id"
+    """
+    appointment id
+    """
     id: ID!
     input: AppointmentChangeAssignedDoctorInput!
   ): AppointmentUpsertPayload
@@ -48,9 +101,21 @@ type Mutation {
     input: AppointmentScheduleInput
   ): AvailabilitiesUpsertPayload
   appointmentReschedule(
+    """
+    appointment id to reschedule
+    """
     id: ID!
     input: AppointmentRescheduleInput
   ): AppointmentUpsertPayload
+
+  availabilityCreate(input: AvailabilityCreateInput!): Availability!
+  availabilityBulkCreate(input: [AvailabilityCreateInput!]!): [Availability!]
+  availabilityRemove(
+    """
+    availability id
+    """
+    id: ID!
+  ): Availability!
 }
 
 input AppointmentCreateInput {
@@ -66,21 +131,57 @@ input AppointmentCreateInput {
 
 input AppointmentExtendInput {
   provisionalDate: Date!
-  "extension reason message"
+  """
+  extension reason message
+  """
   message: String!
 }
 
 input AppointmentCancelInput {
   provisionalDate: Date!
-  "cancellation reason message"
+  """
+  cancellation reason message
+  """
   message: String
   removeAvailabilitySlot: Boolean
 }
 
 input AppointmentChangeAssignedDoctorInput {
   doctorId: ID!
-  "change Assignement doctors reason message"
+  """
+  change Assignement doctors reason message
+  """
   message: String
+}
+
+input AppointmentScheduleInput {
+  appointmentId: ID!
+  availabilityId: ID!
+  doctorId: ID!
+  patientId: ID!
+}
+
+input AppointmentRescheduleInput {
+  """
+  reason for rescheduling the appointment
+  """
+  reason: String
+  """
+  remove availability slot for the doctor
+  """
+  removeAvailability: Boolean
+  """
+  new availability id
+  """
+  newAvailabilityId: Boolean!
+}
+
+input AvailabilityCreateInput {
+  date: Date!
+  startTime: Time!
+  durationMin: Int!
+  doctorId: ID!
+  appointmentTypeId: ID!
 }
 
 type AppointmentUpsertPayload {
@@ -129,6 +230,18 @@ type Clinic implements Node {
 
 type Availability implements Node {
   id: ID!
+  date: Date
+  startTime: Time
+  durationMin: Int
+  doctorId: ID!
+  patientId: ID
+  type: AppointmentType
+  createdAt: DateTime!
+  updatedAt: DateTime
+  deletedAt: DateTime
+  createdBy: User!
+  updatedBy: User
+  deletedBy: User
 }
 
 interface Appointment implements Node & CreatedProps & UpdatedProps & DeletedProps {
@@ -248,7 +361,7 @@ Lookups: Appointment Types
 enum AppointmentTypeCode {
   NEW
   FUP
-    # FUP_NEW = "FUP+NEW"
+  # FUP_NEW = "FUP+NEW"
 }
 
 enum AppointmentStatusCode {
@@ -259,8 +372,8 @@ enum AppointmentStatusCode {
 }
 
 enum AppointmentPriorityCode {
-    A
-    B
+  A
+  B
 }
 
 scalar Date
