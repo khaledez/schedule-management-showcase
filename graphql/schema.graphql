@@ -64,6 +64,9 @@ type Query {
     """
     query: String
   ): AvailabilityConnection!
+  """
+  list availability days for a doctor or in general between two dates, default will return current month
+  """
   availabilityDays(
     after: String
     before: String
