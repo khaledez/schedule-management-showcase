@@ -109,7 +109,9 @@ type Mutation {
   availabilityCreate(
     input: AvailabilityCreateInput!
   ): AvailabilityUpsertPayload!
-  availabilityBulkCreate(input: [AvailabilityCreateInput!]!): AvailabilityBulkCreatePayload
+  availabilityBulkCreate(
+    input: [AvailabilityCreateInput!]!
+  ): AvailabilityBulkCreatePayload
   availabilityRemove(
     """
     availability id
@@ -189,7 +191,7 @@ type AppointmentUpsertPayload {
   errors: [AppointmentUpsertUserError!]!
 }
 
-type AvailabilityBulkCreatePayload{
+type AvailabilityBulkCreatePayload {
   """
   The IDs of the created availabilty.
   """
@@ -274,8 +276,8 @@ type Availability implements Node {
   date: Date
   startTime: Time
   durationMin: Int
-  doctorId: ID!
-  patientId: ID
+  patient: User
+  doctor: User!
   type: AppointmentType
   createdAt: DateTime!
   updatedAt: DateTime
