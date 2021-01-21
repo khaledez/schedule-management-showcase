@@ -6,15 +6,15 @@ schema {
 type Query {
   ### Appointment Queries
   """
-  get appointment
+  Get appointment
   """
   appointment(id: ID!): Appointment
   """
-  find appointments by ids
+  Find appointments by ids
   """
   appointmentsByIds(ids: [ID!]!): [Appointment!]
   """
-  list appointments
+  List appointments
   """
   appointments(
     after: String
@@ -37,15 +37,15 @@ type Query {
   ): AppointmentConnection!
   ### Availability Queries
   """
-  get availability
+  Get availability
   """
   availabilityById(id: ID!): Availability
   """
-  find availability by ids
+  Find availability by ids
   """
   availabilityByIds(ids: [ID!]!): [Availability!]
   """
-  list availability
+  List availability
   """
   availability(
     after: String
@@ -212,9 +212,12 @@ type AppointmentUpsertUserError implements DisplayableError {
   message: String!
 }
 
-type AvailabilityUpsert
-
 enum AppointmentUpsertErrorCode {
+  """
+  Input value is blank.
+  """
+  BLANK
+
   """
   Input value is invalid.
   """
@@ -224,27 +227,23 @@ enum AppointmentUpsertErrorCode {
   Resource does not exist.
   """
   RESOURCE_NOT_FOUND
-
-  """
-  Input value is blank.
-  """
-  BLANK
 }
 
 enum AvailabilityUpsertErrorCode {
   """
-  Input value is invalid.
-  """
-  INVALID
-
-  """
-  Operation take too much time to execute
-  """
-  TIME_OUT
-  """
   Operation contains conflicting.
   """
   CONFLICT
+
+  """
+  Error Occure at the server
+  """
+  INTERNAL_SERVER_ERROR
+
+  """
+  Input value is invalid.
+  """
+  INVALID
 
   """
   Missing a required argument.
@@ -252,9 +251,9 @@ enum AvailabilityUpsertErrorCode {
   MISSING_ARGUMENT
 
   """
-  Error Occure at the server
+  Operation take too much time to execute
   """
-  INTERNAL_SERVER_ERROR
+  TIME_OUT
 }
 
 enum AppointmentSortKets {
@@ -279,7 +278,7 @@ type Clinic implements Node {
   id: ID!
 }
 
-type Availability implements Node & CreatedProps & UpdatedProps {
+interface Availability implements Node & CreatedProps & UpdatedProps {
   id: ID!
   date: Date
   startTime: Time
@@ -344,7 +343,7 @@ type AppointmentStatus implements Node & Lookup {
   code: String!
 }
 
-type AppointmentPriority implements Node & Lookup {
+type AppointmentPriority implements Node {
   id: ID!
   """
   This depends on the clinic and each clinic has own state machine.
@@ -363,20 +362,6 @@ type AppointmentConnection {
 type AppointmentEdge {
   cursor: String!
   node: Appointment!
-}
-
-interface Availability implements Node & CreatedProps & UpdatedProps {
-  id: ID!
-  patient: Patient
-  appointment: Appointment
-  date: Date!
-  type: AppointmentType
-  startTime: Time
-  durationMin: Int
-  createdAt: DateTime!
-  updatedAt: DateTime
-  createdBy: User!
-  updatedBy: User
 }
 
 type AvailabilityConnection {
@@ -405,7 +390,7 @@ interface UpdatedProps {
   updatedBy: User
 }
 
-type DisplayableError {
+interface DisplayableError {
   field: [String!]
   message: String!
 }
@@ -419,14 +404,9 @@ interface Lookup {
 Lookups: Appointment Types
 """
 enum AppointmentTypeCode {
-  NEW
   FUP
   FUP_NEW
-}
-
-enum AppointmentPriorityCode {
-  A
-  B
+  NEW
 }
 
 scalar Date
@@ -434,7 +414,3 @@ scalar Date
 scalar DateTime
 
 scalar Time
-
-scalar JSON
-
-directive @i18 on FIELD_DEFINITION
