@@ -64,26 +64,6 @@ type Query {
     """
     query: String
   ): AvailabilityConnection!
-  """
-  list availability days for a doctor or in general between two dates, default will return current month
-  """
-  availabilityDays(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    reverse: Boolean
-    """
-    Supported filter parameters:
-        - doctorId
-        - doctorsIds
-        - startDate
-        - endDate
-     - appointmentTypeId (AppointmentTypeCode)
-    See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
-    """
-    query: String
-  ): AvailabilityDaysConnection!
 }
 
 type Mutation {
@@ -149,8 +129,8 @@ input AppointmentCreateInput {
   startTime: Time
   statusId: ID
   priorityId: ID
-  complains: String
-  clinic_notes: String
+  # complains: String
+  # clinic_notes: String
 }
 
 input AppointmentExtendInput {
@@ -288,33 +268,37 @@ interface Node {
 type User implements Node {
   id: ID!
 }
+type Patient implements Node {
+  id: ID!
+}
+type Doctor implements Node {
+  id: ID!
+}
 
 type Clinic implements Node {
   id: ID!
 }
 
-type Availability implements Node & CreatedProps & UpdatedProps & DeletedProps {
+type Availability implements Node & CreatedProps & UpdatedProps {
   id: ID!
   date: Date
   startTime: Time
   endTime: Time
   durationMin: Int
-  patient: User
-  doctor: User!
+  patient: Patient
+  doctor: Doctor!
   type: AppointmentType
   createdAt: DateTime!
   updatedAt: DateTime
-  deletedAt: DateTime
   createdBy: User!
   updatedBy: User
-  deletedBy: User
 }
 
-interface Appointment implements Node & CreatedProps & UpdatedProps & DeletedProps {
+interface Appointment implements Node & CreatedProps & UpdatedProps {
   id: ID!
   clinic: Clinic
-  patient: User
-  doctor: User
+  patient: Patient
+  doctor: Doctor
   availability: Availability
   previousAppointmentId: ID
   date: Date!
@@ -322,8 +306,8 @@ interface Appointment implements Node & CreatedProps & UpdatedProps & DeletedPro
   type: AppointmentType
   priority: AppointmentPriority
   startTime: Time
-  complains: String
-  clinicalNotes: String
+  # complains: String
+  # clinicalNotes: String
   reschedulingReason: String
   cancellationReason: String
   doctorReassignmentReason: String
@@ -331,32 +315,47 @@ interface Appointment implements Node & CreatedProps & UpdatedProps & DeletedPro
   upcomingAppointment: Boolean
   createdAt: DateTime!
   updatedAt: DateTime
-  deletedAt: DateTime
   cancelledAt: DateTime
   createdBy: User!
   updatedBy: User
-  deletedBy: User
   cancelledBy: User
 }
 
 type AppointmentType implements Node & Lookup {
   id: ID!
-  name: String! @i18
+  nameEn: String!
+  nameFr: String!
   code: AppointmentTypeCode
 }
 
 type AppointmentStatus implements Node & Lookup {
   id: ID!
-  name: String! @i18
-  code: AppointmentStatusCode
+  nameEn: String!
+  nameFr: String!
+  """
+  This depends on the clinic and each clinic has own state machine.
+  Example:
+    PENDING
+    CONFIRMED1
+    CONFIRMED2
+    ARRIVED
+    READY
+  """
+  code: String!
 }
 
-type AppointmentPriority implements Node {
+type AppointmentPriority implements Node & Lookup {
   id: ID!
-  code: AppointmentPriorityCode!
+  """
+  This depends on the clinic and each clinic has own state machine.
+  Example:
+    A
+    B
+  """
+  code: String!
 }
 
-type AppointmentConnection implements PageInfo {
+type AppointmentConnection {
   edges: [AppointmentEdge!]!
   pageInfo: PageInfo!
 }
@@ -366,23 +365,21 @@ type AppointmentEdge {
   node: Appointment!
 }
 
-interface Availability implements Node & CreatedProps & UpdatedProps & DeletedProps {
+interface Availability implements Node & CreatedProps & UpdatedProps {
   id: ID!
-  patient: User
+  patient: Patient
   appointment: Appointment
   date: Date!
-  type: AppointmentTypeId
+  type: AppointmentType
   startTime: Time
   durationMin: Int
   createdAt: DateTime!
   updatedAt: DateTime
-  deletedAt: DateTime
   createdBy: User!
   updatedBy: User
-  deletedBy: User
 }
 
-type AvailabilityConnection implements PageInfo {
+type AvailabilityConnection {
   edges: [AvailabilityEdge!]!
   pageInfo: PageInfo!
 }
@@ -390,20 +387,6 @@ type AvailabilityConnection implements PageInfo {
 type AvailabilityEdge {
   cursor: String!
   node: Availability!
-}
-
-type AvailabilityDaysConnection implements PageInfo {
-  edges: [AvailabilityDaysEdge!]!
-  pageInfo: PageInfo!
-}
-
-type AvailabilityDaysEdge {
-  cursor: String!
-  node: AvailabilityDays!
-}
-
-interface AvailabilityDays {
-  date: Date!
 }
 
 type PageInfo {
@@ -421,10 +404,6 @@ interface UpdatedProps {
   updatedAt: DateTime
   updatedBy: User
 }
-interface DeletedProps {
-  deletedAt: DateTime
-  deletedBy: User
-}
 
 type DisplayableError {
   field: [String!]
@@ -432,7 +411,8 @@ type DisplayableError {
 }
 
 interface Lookup {
-  name: String! @i18
+  nameEn: String!
+  nameFr: String!
 }
 
 """
@@ -442,13 +422,6 @@ enum AppointmentTypeCode {
   NEW
   FUP
   FUP_NEW
-}
-
-enum AppointmentStatusCode {
-  PENDING
-  CONFIRMED
-  ARRIVED
-  READY
 }
 
 enum AppointmentPriorityCode {
