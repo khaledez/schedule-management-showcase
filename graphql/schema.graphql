@@ -278,7 +278,7 @@ type Clinic implements Node {
   id: ID!
 }
 
-interface Availability implements Node & CreatedProps & UpdatedProps {
+type Availability implements Node & CreatedProps & UpdatedProps {
   id: ID!
   date: Date
   startTime: Time
@@ -293,7 +293,7 @@ interface Availability implements Node & CreatedProps & UpdatedProps {
   updatedBy: User
 }
 
-interface Appointment implements Node & CreatedProps & UpdatedProps {
+type Appointment implements Node & CreatedProps & UpdatedProps {
   id: ID!
   clinic: Clinic
   patient: Patient
