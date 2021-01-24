@@ -10,7 +10,7 @@ type Query {
   """
   appointment(id: ID!): Appointment
   """
-  Find appointments by ids
+  Find appointments by ids Max 100 ids
   """
   appointmentsByIds(ids: [ID!]!): [Appointment!]
   """
@@ -33,7 +33,7 @@ type Query {
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
-    sortKey: AppointmentSortKets!
+    sortKey: AppointmentSortKeys!
   ): AppointmentConnection!
   ### Availability Queries
   """
@@ -55,33 +55,33 @@ type Query {
     reverse: Boolean
     """
     Supported filter parameters:
-        - patientId
         - doctorId
         - startDate
         - endDate
-     - appointmentTypeId (AppointmentTypeCode)
+        - appointmentTypeId (AppointmentTypeCode)
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
+    sortKey: AvailabilitySortKeys!
   ): AvailabilityConnection!
 }
 
 type Mutation {
-  appointmentCreate(input: AppointmentCreateInput!): AppointmentUpsertPayload
+  appointmentCreate(input: AppointmentCreateInput!): AppointmentCreatePayload
   appointmentExtend(
     """
     appointment id
     """
     id: ID!
     input: AppointmentExtendInput!
-  ): AppointmentUpsertPayload
+  ): AppointmentCreatePayload
   appointmentCancel(
     """
     appointment id
     """
     id: ID!
     input: AppointmentCancelInput!
-  ): AppointmentUpsertPayload
+  ): AppointmentCreatePayload
   appointmentAssignDoctor(
     """
     appointment id
@@ -91,42 +91,45 @@ type Mutation {
     doctor id to assign at the appointment
     """
     doctorId: ID!
-  ): AppointmentUpsertPayload
+  ): AppointmentCreatePayload
   appointmentChangeAssignedDoctor(
     """
     appointment id
     """
     id: ID!
     input: AppointmentChangeAssignedDoctorInput!
-  ): AppointmentUpsertPayload
-  appointmentSchedule(input: AppointmentScheduleInput): AppointmentUpsertPayload
+  ): AppointmentCreatePayload
+  appointmentSchedule(input: AppointmentScheduleInput): AppointmentCreatePayload
   appointmentReschedule(
     """
     appointment id to reschedule
     """
     id: ID!
     input: AppointmentRescheduleInput
-  ): AppointmentUpsertPayload
+  ): AppointmentCreatePayload
 
   availabilityCreate(
     input: AvailabilityCreateInput!
-  ): AvailabilityUpsertPayload!
+  ): AvailabilityCreatePayload!
   availabilityBulkCreate(
     input: [AvailabilityCreateInput!]!
+  ): AvailabilityBulkCreatePayload
+  availabilityBulkPatch(
+    input: [AvailabilityBulkPatchInput!]!
   ): AvailabilityBulkCreatePayload
   availabilityRemove(
     """
     availability id
     """
     id: ID!
-  ): AvailabilityUpsertPayload!
+  ): AvailabilityCreatePayload!
 }
 
 input AppointmentCreateInput {
   patientId: ID!
-  date: Date!
+  AWSDate: AWSDate!
   typeId: ID!
-  startTime: Time
+  startTime: AWSTime
   statusId: ID
   priorityId: ID
   # complains: String
@@ -134,7 +137,7 @@ input AppointmentCreateInput {
 }
 
 input AppointmentExtendInput {
-  provisionalDate: Date!
+  provisionalDate: AWSDate!
   """
   extension reason message
   """
@@ -142,7 +145,7 @@ input AppointmentExtendInput {
 }
 
 input AppointmentCancelInput {
-  provisionalDate: Date!
+  provisionalDate: AWSDate!
   """
   cancellation reason message
   """
@@ -181,38 +184,47 @@ input AppointmentRescheduleInput {
 }
 
 input AvailabilityCreateInput {
-  date: Date!
-  startTime: Time!
+  AWSDate: AWSDate!
+  startTime: AWSTime!
   durationMin: Int!
   doctorId: ID!
   appointmentTypeId: ID!
 }
 
-type AppointmentUpsertPayload {
-  appointment: Appointment
-  errors: [AppointmentUpsertUserError!]!
+input AvailabilityBulkPatchInput {
+  availabilityToCreate: [AvailabilityCreateInput!]
+  availabilityToUpdate: [AvailabilityCreateInput!]
+}
+
+type AppointmentCreatePayload {
+  appointment: Appointment!
+  errors: [AppointmentCreateUserError!]!
 }
 
 type AvailabilityBulkCreatePayload {
   """
-  The IDs of the created availabilty.
+  The IDs of the effected availability.
   """
   ids: [ID!]
-  errors: [AvailabilityUpsertErrorCode!]!
+  """
+  List of the effected availability
+  """
+  availability: [Availability!]!
+  errors: [AvailabilityCreateErrorCode!]!
 }
 
-type AvailabilityUpsertPayload {
-  availability: Availability
-  errors: [AvailabilityUpsertErrorCode!]!
+type AvailabilityCreatePayload {
+  availability: Availability!
+  errors: [AvailabilityCreateErrorCode!]!
 }
 
-type AppointmentUpsertUserError implements DisplayableError {
-  code: AppointmentUpsertErrorCode
+type AppointmentCreateUserError implements DisplayableError {
+  code: AppointmentCreateErrorCode
   field: [String!]
   message: String!
 }
 
-enum AppointmentUpsertErrorCode {
+enum AppointmentCreateErrorCode {
   """
   Input value is blank.
   """
@@ -229,7 +241,7 @@ enum AppointmentUpsertErrorCode {
   RESOURCE_NOT_FOUND
 }
 
-enum AvailabilityUpsertErrorCode {
+enum AvailabilityCreateErrorCode {
   """
   Operation contains conflicting.
   """
@@ -251,13 +263,17 @@ enum AvailabilityUpsertErrorCode {
   MISSING_ARGUMENT
 
   """
-  Operation take too much time to execute
+  Operation take too much AWSTime to execute
   """
   TIME_OUT
 }
 
-enum AppointmentSortKets {
-  DATE
+enum AppointmentSortKeys {
+  AWSDate
+}
+enum AvailabilitySortKeys {
+  AWSDate
+  DOCTOR_ID
 }
 
 interface Node {
@@ -278,59 +294,60 @@ type Clinic implements Node {
   id: ID!
 }
 
-type Availability implements Node & CreatedProps & UpdatedProps {
+type Availability implements Node & CreatedProps {
   id: ID!
-  date: Date
-  startTime: Time
-  endTime: Time
-  durationMin: Int
-  patient: Patient
+  AWSDate: AWSDate!
+  startTime: AWSTime!
+  endTime: AWSTime
+  durationMin: Int!
+  appointment: Appointment
   doctor: Doctor!
-  type: AppointmentType
-  createdAt: DateTime!
-  updatedAt: DateTime
+  type: AppointmentType!
+  createdAt: AWSDateTime!
   createdBy: User!
-  updatedBy: User
 }
 
 type Appointment implements Node & CreatedProps & UpdatedProps {
   id: ID!
-  clinic: Clinic
+  clinic: Clinic!
   patient: Patient
   doctor: Doctor
   availability: Availability
-  previousAppointmentId: ID
-  date: Date!
+  previousAppointment: Appointment
+  AWSDate: AWSDate!
   status: AppointmentStatus
   type: AppointmentType
   priority: AppointmentPriority
-  startTime: Time
-  # complains: String
-  # clinicalNotes: String
+  startTime: AWSTime
   reschedulingReason: String
   cancellationReason: String
   doctorReassignmentReason: String
   dateExtensionReason: String
   upcomingAppointment: Boolean
-  createdAt: DateTime!
-  updatedAt: DateTime
-  cancelledAt: DateTime
+  provisionalAppointment: Boolean # calculated
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+  canceledAt: AWSDateTime
   createdBy: User!
   updatedBy: User
-  cancelledBy: User
+  canceledBy: User
+  latestAction: AppointmentActions
+  nextPossibleActions: [AppointmentActions]!
+  nextPossibleStatus: [AppointmentStatus]!
 }
 
 type AppointmentType implements Node & Lookup {
   id: ID!
   nameEn: String!
   nameFr: String!
-  code: AppointmentTypeCode
+  code: String!
 }
 
 type AppointmentStatus implements Node & Lookup {
   id: ID!
   nameEn: String!
   nameFr: String!
+  group: String!
   """
   This depends on the clinic and each clinic has own state machine.
   Example:
@@ -343,8 +360,16 @@ type AppointmentStatus implements Node & Lookup {
   code: String!
 }
 
-type AppointmentPriority implements Node {
+type AppointmentActions implements Node & Lookup {
   id: ID!
+  nameEn: String!
+  nameFr: String!
+}
+
+type AppointmentPriority implements Node & Lookup {
+  id: ID!
+  nameEn: String!
+  nameFr: String!
   """
   This depends on the clinic and each clinic has own state machine.
   Example:
@@ -377,16 +402,17 @@ type AvailabilityEdge {
 type PageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
+  totalCount: Int!
   startCursor: String!
   endCursor: String!
 }
 
 interface CreatedProps {
-  createdAt: DateTime!
+  createdAt: AWSDateTime!
   createdBy: User
 }
 interface UpdatedProps {
-  updatedAt: DateTime
+  updatedAt: AWSDateTime
   updatedBy: User
 }
 
@@ -400,17 +426,8 @@ interface Lookup {
   nameFr: String!
 }
 
-"""
-Lookups: Appointment Types
-"""
-enum AppointmentTypeCode {
-  FUP
-  FUP_NEW
-  NEW
-}
+scalar AWSDate
 
-scalar Date
+scalar AWSDateTime
 
-scalar DateTime
-
-scalar Time
+scalar AWSTime
