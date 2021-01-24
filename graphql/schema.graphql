@@ -127,7 +127,7 @@ type Mutation {
 
 input AppointmentCreateInput {
   patientId: ID!
-  AWSDate: AWSDate!
+  date: AWSDate!
   typeId: ID!
   startTime: AWSTime
   statusId: ID
@@ -184,7 +184,7 @@ input AppointmentRescheduleInput {
 }
 
 input AvailabilityCreateInput {
-  AWSDate: AWSDate!
+  date: AWSDate!
   startTime: AWSTime!
   durationMin: Int!
   doctorId: ID!
@@ -269,10 +269,10 @@ enum AvailabilityCreateErrorCode {
 }
 
 enum AppointmentSortKeys {
-  AWSDate
+  DATE
 }
 enum AvailabilitySortKeys {
-  AWSDate
+  DATE
   DOCTOR_ID
 }
 
@@ -296,7 +296,7 @@ type Clinic implements Node {
 
 type Availability implements Node & CreatedProps {
   id: ID!
-  AWSDate: AWSDate!
+  date: AWSDate!
   startTime: AWSTime!
   endTime: AWSTime
   durationMin: Int!
@@ -314,7 +314,7 @@ type Appointment implements Node & CreatedProps & UpdatedProps {
   doctor: Doctor
   availability: Availability
   previousAppointment: Appointment
-  AWSDate: AWSDate!
+  date: AWSDate!
   status: AppointmentStatus
   type: AppointmentType
   priority: AppointmentPriority
