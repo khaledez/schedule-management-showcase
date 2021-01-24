@@ -270,7 +270,9 @@ enum AvailabilityCreateErrorCode {
 
 enum AppointmentSortKeys {
   DATE
+  TIME
 }
+
 enum AvailabilitySortKeys {
   DATE
   DOCTOR_ID
