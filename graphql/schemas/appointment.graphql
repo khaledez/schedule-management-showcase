@@ -16,7 +16,6 @@ extend type QueryRoot {
     before: String
     first: Int
     last: Int
-    reverse: Boolean
     """
     Supported filter parameters:
         - patientId
@@ -28,7 +27,7 @@ extend type QueryRoot {
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
-    sortKey: AppointmentSortKeys!
+    sortKey: [AppointmentSortKey]!
   ): AppointmentConnection!
   ### Availability Queries
   """
@@ -47,7 +46,6 @@ extend type QueryRoot {
     before: String
     first: Int
     last: Int
-    reverse: Boolean
     """
     Supported filter parameters:
         - doctorId
@@ -57,7 +55,7 @@ extend type QueryRoot {
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
-    sortKey: AvailabilitySortKeys!
+    sortKey: AvailabilitySortKey!
   ): AvailabilityConnection!
 }
 
@@ -76,16 +74,6 @@ extend type Mutation {
     """
     id: ID!
     input: AppointmentCancelInput!
-  ): AppointmentCreatePayload
-  appointmentAssignDoctor(
-    """
-    appointment id
-    """
-    id: ID!
-    """
-    doctor id to assign at the appointment
-    """
-    doctorId: ID!
   ): AppointmentCreatePayload
   appointmentChangeAssignedDoctor(
     """
@@ -131,10 +119,7 @@ input AppointmentCreateInput {
   date: AWSDate!
   typeId: ID!
   startTime: AWSTime
-  statusId: ID
   priorityId: ID
-  # complains: String
-  # clinic_notes: String
 }
 
 input AppointmentExtendInput {
@@ -146,12 +131,14 @@ input AppointmentExtendInput {
 }
 
 input AppointmentCancelInput {
-  provisionalDate: AWSDate!
+  # Provisional date
+  date: AWSDate
+  priorityId: ID
   """
   cancellation reason message
   """
-  message: String
-  removeAvailabilitySlot: Boolean
+  reason: String
+  removeAvailability: Boolean
 }
 
 input AppointmentChangeAssignedDoctorInput {
@@ -163,7 +150,7 @@ input AppointmentChangeAssignedDoctorInput {
 }
 
 input AppointmentScheduleInput {
-  appointmentId: ID!
+  # appointmentId: ID! take it from backend (provisional one depend on the patient)
   availabilityId: ID!
   doctorId: ID!
   patientId: ID!
@@ -202,8 +189,8 @@ input AvailabilityBulkPatchInput {
 }
 
 type AppointmentCreatePayload {
-  appointment: Appointment!
-  errors: [UserError!]!
+  appointment: Appointment
+  errors: [UserError!]
 }
 
 type AvailabilityBulkCreatePayload {
@@ -223,12 +210,12 @@ type AvailabilityCreatePayload {
   errors: [UserError!]!
 }
 
-enum AppointmentSortKeys {
+enum AppointmentSortKey {
   DATE
   TIME
 }
 
-enum AvailabilitySortKeys {
+enum AvailabilitySortKey {
   DATE
   DOCTOR_ID
 }
@@ -259,8 +246,8 @@ type Appointment implements Node & Entity {
   priority: AppointmentPriority
   startTime: AWSTime
   # Add cancel object / keep it see what's the perfect.
-  cancelReason: String
-  cancelAction: AppointmentActions
+  cancelText: String
+  cancelReason: AppointmentAction
   # Means: is_active_appointment
   upcomingAppointment: Boolean
   provisionalAppointment: Boolean # calculated
@@ -270,10 +257,10 @@ type Appointment implements Node & Entity {
   createdBy: User!
   updatedBy: User
   canceledBy: User
-  # It would return the action for dropdown list
-  nextPossibleActions: [AppointmentActions]!
+  # It would return the action for dropdown list included the next action
+  changeActions: [AppointmentAction!]!
   # This will return the next status has to be (Button).
-  nextPossibleStatus: AppointmentStatus!
+  nextStatusAction: AppointmentStatus!
 }
 
 type AppointmentType implements Node & Lookup {
@@ -298,7 +285,6 @@ type AppointmentStatus implements Node & Lookup {
     READY
   """
   code: String!
-  clinicId: ID!
 }
 
 type AppointmentStatusGroup implements Node & Lookup {
@@ -308,14 +294,14 @@ type AppointmentStatusGroup implements Node & Lookup {
   code: AppointmentStatusGroupCode!
 }
 
-type AppointmentActions implements Node & Lookup {
+type AppointmentAction implements Node & Lookup {
   id: ID!
   nameEn: String!
   nameFr: String!
   """
 
   """
-  code: AppointmentActionsType!
+  code: AppointmentActionType!
 }
 
 type AppointmentPriority implements Node & Lookup {
@@ -358,13 +344,13 @@ type AvailabilityEdge {
   node: Availability!
 }
 
-enum AppointmentActionsType {
-  CANCELED
+enum AppointmentActionType {
+  CANCEL
+  CHANGE_APPT_TYPE
   CHANGE_DOCTOR
   EXTEND
-  RESCHEDULE
-  SCHEDULE
-  UPDATE
+  RESCHEDULE_APPT
+  SCHEDULE_APPT
 }
 
 enum AppointmentStatusGroupCode {

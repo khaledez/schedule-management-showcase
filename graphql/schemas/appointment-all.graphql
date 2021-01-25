@@ -19,8 +19,8 @@ type Appointment implements Node & Entity {
   startTime: AWSTime
 
   """Add cancel object / keep it see what's the perfect."""
-  cancelReason: String
-  cancelAction: AppointmentActions
+  cancelText: String
+  cancelReason: AppointmentAction
 
   """Means: is_active_appointment"""
   upcomingAppointment: Boolean
@@ -32,35 +32,37 @@ type Appointment implements Node & Entity {
   updatedBy: User
   canceledBy: User
 
-  """It would return the action for dropdown list"""
-  nextPossibleActions: [AppointmentActions]!
+  """It would return the action for dropdown list included the next action"""
+  changeActions: [AppointmentAction!]!
 
   """This will return the next status has to be (Button)."""
-  nextPossibleStatus: AppointmentStatus!
+  nextStatusAction: AppointmentStatus!
 }
 
-type AppointmentActions implements Node & Lookup {
+type AppointmentAction implements Node & Lookup {
   id: ID!
   nameEn: String!
   nameFr: String!
-  code: AppointmentActionsType!
+  code: AppointmentActionType!
 }
 
-enum AppointmentActionsType {
-  CANCELED
+enum AppointmentActionType {
+  CANCEL
+  CHANGE_APPT_TYPE
   CHANGE_DOCTOR
   EXTEND
-  RESCHEDULE
-  SCHEDULE
-  UPDATE
+  RESCHEDULE_APPT
+  SCHEDULE_APPT
 }
 
 input AppointmentCancelInput {
-  provisionalDate: AWSDate!
+  """Provisional date"""
+  date: AWSDate
+  priorityId: ID
 
   """cancellation reason message"""
-  message: String
-  removeAvailabilitySlot: Boolean
+  reason: String
+  removeAvailability: Boolean
 }
 
 input AppointmentChangeAssignedDoctorInput {
@@ -80,13 +82,12 @@ input AppointmentCreateInput {
   date: AWSDate!
   typeId: ID!
   startTime: AWSTime
-  statusId: ID
   priorityId: ID
 }
 
 type AppointmentCreatePayload {
-  appointment: Appointment!
-  errors: [UserError!]!
+  appointment: Appointment
+  errors: [UserError!]
 }
 
 type AppointmentEdge {
@@ -127,13 +128,15 @@ input AppointmentRescheduleInput {
 }
 
 input AppointmentScheduleInput {
-  appointmentId: ID!
+  """
+  appointmentId: ID! take it from backend (provisional one depend on the patient)
+  """
   availabilityId: ID!
   doctorId: ID!
   patientId: ID!
 }
 
-enum AppointmentSortKeys {
+enum AppointmentSortKey {
   DATE
   TIME
 }
@@ -154,7 +157,6 @@ type AppointmentStatus implements Node & Lookup {
     READY
   """
   code: String!
-  clinicId: ID!
 }
 
 type AppointmentStatusGroup implements Node & Lookup {
@@ -232,7 +234,7 @@ type AvailabilityEdge {
   node: Availability!
 }
 
-enum AvailabilitySortKeys {
+enum AvailabilitySortKey {
   DATE
   DOCTOR_ID
 }
@@ -279,13 +281,6 @@ type Mutation {
     """appointment id"""
     id: ID!
     input: AppointmentCancelInput!
-  ): AppointmentCreatePayload
-  appointmentAssignDoctor(
-    """appointment id"""
-    id: ID!
-
-    """doctor id to assign at the appointment"""
-    doctorId: ID!
   ): AppointmentCreatePayload
   appointmentChangeAssignedDoctor(
     """appointment id"""
@@ -340,7 +335,6 @@ type QueryRoot {
     before: String
     first: Int
     last: Int
-    reverse: Boolean
 
     """
     Supported filter parameters:
@@ -353,7 +347,7 @@ type QueryRoot {
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
-    sortKey: AppointmentSortKeys!
+    sortKey: [AppointmentSortKey]!
   ): AppointmentConnection!
 
   """Get availability"""
@@ -368,7 +362,6 @@ type QueryRoot {
     before: String
     first: Int
     last: Int
-    reverse: Boolean
 
     """
     Supported filter parameters:
@@ -379,7 +372,7 @@ type QueryRoot {
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
-    sortKey: AvailabilitySortKeys!
+    sortKey: AvailabilitySortKey!
   ): AvailabilityConnection!
 }
 
