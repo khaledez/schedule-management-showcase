@@ -1,0 +1,397 @@
+schema {
+  query: QueryRoot
+  mutation: Mutation
+}
+
+directive @generated on FIELD_DEFINITION
+
+type Appointment implements Node & Entity {
+  id: ID!
+  clinic: Clinic!
+  patient: Patient
+  doctor: Doctor
+  availability: Availability
+  previousAppointment: Appointment
+  date: AWSDate!
+  status: AppointmentStatus
+  type: AppointmentType
+  priority: AppointmentPriority
+  startTime: AWSTime
+
+  """Add cancel object / keep it see what's the perfect."""
+  cancelReason: String
+  cancelAction: AppointmentActions
+
+  """Means: is_active_appointment"""
+  upcomingAppointment: Boolean
+  provisionalAppointment: Boolean
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+  canceledAt: AWSDateTime
+  createdBy: User!
+  updatedBy: User
+  canceledBy: User
+
+  """It would return the action for dropdown list"""
+  nextPossibleActions: [AppointmentActions]!
+
+  """This will return the next status has to be (Button)."""
+  nextPossibleStatus: AppointmentStatus!
+}
+
+type AppointmentActions implements Node & Lookup {
+  id: ID!
+  nameEn: String!
+  nameFr: String!
+  code: AppointmentActionsType!
+}
+
+enum AppointmentActionsType {
+  CANCELED
+  CHANGE_DOCTOR
+  EXTEND
+  RESCHEDULE
+  SCHEDULE
+  UPDATE
+}
+
+input AppointmentCancelInput {
+  provisionalDate: AWSDate!
+
+  """cancellation reason message"""
+  message: String
+  removeAvailabilitySlot: Boolean
+}
+
+input AppointmentChangeAssignedDoctorInput {
+  doctorId: ID!
+
+  """change Assignement doctors reason message"""
+  message: String
+}
+
+type AppointmentConnection {
+  edges: [AppointmentEdge!]!
+  pageInfo: PageInfo!
+}
+
+input AppointmentCreateInput {
+  patientId: ID!
+  date: AWSDate!
+  typeId: ID!
+  startTime: AWSTime
+  statusId: ID
+  priorityId: ID
+}
+
+type AppointmentCreatePayload {
+  appointment: Appointment!
+  errors: [UserError!]!
+}
+
+type AppointmentEdge {
+  cursor: String!
+  node: Appointment!
+}
+
+input AppointmentExtendInput {
+  provisionalDate: AWSDate!
+
+  """extension reason message"""
+  message: String!
+}
+
+type AppointmentPriority implements Node & Lookup {
+  id: ID!
+  nameEn: String!
+  nameFr: String!
+
+  """
+  This depends on the clinic and each clinic has own state machine.
+  Example:
+    A
+    B
+  """
+  code: String!
+}
+
+input AppointmentRescheduleInput {
+  """reason for rescheduling the appointment"""
+  reason: String
+
+  """remove availability slot for the doctor"""
+  removeAvailability: Boolean
+
+  """new availability id"""
+  newAvailabilityId: Boolean!
+}
+
+input AppointmentScheduleInput {
+  appointmentId: ID!
+  availabilityId: ID!
+  doctorId: ID!
+  patientId: ID!
+}
+
+enum AppointmentSortKeys {
+  DATE
+  TIME
+}
+
+type AppointmentStatus implements Node & Lookup {
+  id: ID!
+  nameEn: String!
+  nameFr: String!
+  group: AppointmentStatusGroup!
+
+  """
+  This depends on the clinic and each clinic has own state machine.
+  Example:
+    PENDING
+    CONFIRMED1
+    CONFIRMED2
+    ARRIVED
+    READY
+  """
+  code: String!
+  clinicId: ID!
+}
+
+type AppointmentStatusGroup implements Node & Lookup {
+  id: ID!
+  nameEn: String!
+  nameFr: String!
+  code: AppointmentStatusGroupCode!
+}
+
+enum AppointmentStatusGroupCode {
+  ARRIVED
+  AVAILABILE
+  BOOKED
+  RELEASED
+}
+
+type AppointmentType implements Node & Lookup {
+  id: ID!
+  nameEn: String!
+  nameFr: String!
+  code: String!
+}
+
+type Availability implements Node & CreatedProps {
+  id: ID!
+  date: AWSDate!
+  startTime: AWSTime!
+  endTime: AWSTime
+  durationMin: Int!
+  appointment: Appointment
+  doctor: Doctor!
+  type: AppointmentType!
+  createdAt: AWSDateTime!
+  createdBy: User!
+}
+
+type AvailabilityBulkCreatePayload {
+  """The IDs of the effected availability."""
+  ids: [ID!]
+
+  """List of the effected availability"""
+  availability: [Availability!]!
+  errors: [UserError!]!
+}
+
+input AvailabilityBulkPatchInput {
+  availabilityToCreate: [AvailabilityCreateInput!]
+  availabilityToDelete: [AvailabilityDeleteInput!]
+}
+
+type AvailabilityConnection {
+  edges: [AvailabilityEdge!]!
+  pageInfo: PageInfo!
+}
+
+input AvailabilityCreateInput {
+  date: AWSDate!
+  startTime: AWSTime!
+  durationMin: Int!
+  doctorId: ID!
+  appointmentTypeId: ID!
+}
+
+type AvailabilityCreatePayload {
+  availability: Availability!
+  errors: [UserError!]!
+}
+
+input AvailabilityDeleteInput {
+  id: ID!
+}
+
+type AvailabilityEdge {
+  cursor: String!
+  node: Availability!
+}
+
+enum AvailabilitySortKeys {
+  DATE
+  DOCTOR_ID
+}
+
+scalar AWSDate
+
+scalar AWSDateTime
+
+scalar AWSTime
+
+type Clinic implements Node {
+  id: ID!
+}
+
+interface CreatedProps {
+  createdAt: AWSDateTime!
+  createdBy: User!
+}
+
+type Doctor implements Node {
+  id: ID!
+}
+
+interface Entity {
+  createdAt: AWSDateTime!
+  createdBy: User!
+  updatedAt: AWSDateTime
+  updatedBy: User
+}
+
+interface Lookup {
+  nameEn: String!
+  nameFr: String!
+}
+
+type Mutation {
+  appointmentCreate(input: AppointmentCreateInput!): AppointmentCreatePayload
+  appointmentExtend(
+    """appointment id"""
+    id: ID!
+    input: AppointmentExtendInput!
+  ): AppointmentCreatePayload
+  appointmentCancel(
+    """appointment id"""
+    id: ID!
+    input: AppointmentCancelInput!
+  ): AppointmentCreatePayload
+  appointmentAssignDoctor(
+    """appointment id"""
+    id: ID!
+
+    """doctor id to assign at the appointment"""
+    doctorId: ID!
+  ): AppointmentCreatePayload
+  appointmentChangeAssignedDoctor(
+    """appointment id"""
+    id: ID!
+    input: AppointmentChangeAssignedDoctorInput!
+  ): AppointmentCreatePayload
+  appointmentSchedule(input: AppointmentScheduleInput): AppointmentCreatePayload
+  appointmentReschedule(
+    """appointment id to reschedule"""
+    id: ID!
+    input: AppointmentRescheduleInput
+  ): AppointmentCreatePayload
+  availabilityCreate(input: AvailabilityCreateInput!): AvailabilityCreatePayload!
+
+  """Create many availability at the same time."""
+  availabilityBulkCreate(input: [AvailabilityCreateInput!]!): AvailabilityBulkCreatePayload
+
+  """Create or update or delete bulk availabiliy."""
+  availabilityBulkPatch(input: [AvailabilityBulkPatchInput!]!): AvailabilityBulkCreatePayload
+  availabilityRemove(
+    """availability id"""
+    id: ID!
+  ): AvailabilityCreatePayload!
+}
+
+interface Node {
+  id: ID!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  totalCount: Int!
+  startCursor: String!
+  endCursor: String!
+}
+
+type Patient implements Node {
+  id: ID!
+}
+
+type QueryRoot {
+  """Get appointment"""
+  appointment(id: ID!): Appointment
+
+  """Find appointments by ids Max 100 ids"""
+  appointmentsByIds(ids: [ID!]!): [Appointment!]
+
+  """List appointments"""
+  appointments(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    reverse: Boolean
+
+    """
+    Supported filter parameters:
+        - patientId
+        - doctorId
+        - startDate
+        - endDate
+        - status (AppointmentStatusCode)
+     - appointmentTypeId (AppointmentTypeCode)
+    See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
+    """
+    query: String
+    sortKey: AppointmentSortKeys!
+  ): AppointmentConnection!
+
+  """Get availability"""
+  availabilityById(id: ID!): Availability
+
+  """Find availability by ids"""
+  availabilityByIds(ids: [ID!]!): [Availability!]
+
+  """List availability"""
+  availability(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    reverse: Boolean
+
+    """
+    Supported filter parameters:
+        - doctorId
+        - startDate
+        - endDate
+        - appointmentTypeId (AppointmentTypeCode)
+    See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
+    """
+    query: String
+    sortKey: AvailabilitySortKeys!
+  ): AvailabilityConnection!
+}
+
+type User implements Node {
+  id: ID!
+}
+
+"""Represents an error in the input of a mutation."""
+type UserError {
+  """Path to the input field which caused the error."""
+  field: [String!]
+
+  """The error message."""
+  message: String!
+}

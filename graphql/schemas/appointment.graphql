@@ -1,9 +1,4 @@
-schema {
-  query: Query
-  mutation: Mutation
-}
-
-type Query {
+extend type QueryRoot {
   ### Appointment Queries
   """
   Get appointment
@@ -66,7 +61,7 @@ type Query {
   ): AvailabilityConnection!
 }
 
-type Mutation {
+extend type Mutation {
   appointmentCreate(input: AppointmentCreateInput!): AppointmentCreatePayload
   appointmentExtend(
     """
@@ -111,9 +106,15 @@ type Mutation {
   availabilityCreate(
     input: AvailabilityCreateInput!
   ): AvailabilityCreatePayload!
+  """
+  Create many availability at the same time.
+  """
   availabilityBulkCreate(
     input: [AvailabilityCreateInput!]!
   ): AvailabilityBulkCreatePayload
+  """
+  Create or update or delete bulk availabiliy.
+  """
   availabilityBulkPatch(
     input: [AvailabilityBulkPatchInput!]!
   ): AvailabilityBulkCreatePayload
@@ -191,14 +192,18 @@ input AvailabilityCreateInput {
   appointmentTypeId: ID!
 }
 
+input AvailabilityDeleteInput {
+  id: ID!
+}
+
 input AvailabilityBulkPatchInput {
   availabilityToCreate: [AvailabilityCreateInput!]
-  availabilityToUpdate: [AvailabilityCreateInput!]
+  availabilityToDelete: [AvailabilityDeleteInput!]
 }
 
 type AppointmentCreatePayload {
   appointment: Appointment!
-  errors: [AppointmentCreateUserError!]!
+  errors: [UserError!]!
 }
 
 type AvailabilityBulkCreatePayload {
@@ -210,62 +215,12 @@ type AvailabilityBulkCreatePayload {
   List of the effected availability
   """
   availability: [Availability!]!
-  errors: [AvailabilityCreateErrorCode!]!
+  errors: [UserError!]!
 }
 
 type AvailabilityCreatePayload {
   availability: Availability!
-  errors: [AvailabilityCreateErrorCode!]!
-}
-
-type AppointmentCreateUserError implements DisplayableError {
-  code: AppointmentCreateErrorCode
-  field: [String!]
-  message: String!
-}
-
-enum AppointmentCreateErrorCode {
-  """
-  Input value is blank.
-  """
-  BLANK
-
-  """
-  Input value is invalid.
-  """
-  INVALID
-
-  """
-  Resource does not exist.
-  """
-  RESOURCE_NOT_FOUND
-}
-
-enum AvailabilityCreateErrorCode {
-  """
-  Operation contains conflicting.
-  """
-  CONFLICT
-
-  """
-  Error Occure at the server
-  """
-  INTERNAL_SERVER_ERROR
-
-  """
-  Input value is invalid.
-  """
-  INVALID
-
-  """
-  Missing a required argument.
-  """
-  MISSING_ARGUMENT
-
-  """
-  Operation take too much AWSTime to execute
-  """
-  TIME_OUT
+  errors: [UserError!]!
 }
 
 enum AppointmentSortKeys {
@@ -276,24 +231,6 @@ enum AppointmentSortKeys {
 enum AvailabilitySortKeys {
   DATE
   DOCTOR_ID
-}
-
-interface Node {
-  id: ID!
-}
-
-type User implements Node {
-  id: ID!
-}
-type Patient implements Node {
-  id: ID!
-}
-type Doctor implements Node {
-  id: ID!
-}
-
-type Clinic implements Node {
-  id: ID!
 }
 
 type Availability implements Node & CreatedProps {
@@ -309,7 +246,7 @@ type Availability implements Node & CreatedProps {
   createdBy: User!
 }
 
-type Appointment implements Node & CreatedProps & UpdatedProps {
+type Appointment implements Node & Entity {
   id: ID!
   clinic: Clinic!
   patient: Patient
@@ -321,10 +258,10 @@ type Appointment implements Node & CreatedProps & UpdatedProps {
   type: AppointmentType
   priority: AppointmentPriority
   startTime: AWSTime
-  reschedulingReason: String
-  cancellationReason: String
-  doctorReassignmentReason: String
-  dateExtensionReason: String
+  # Add cancel object / keep it see what's the perfect.
+  cancelReason: String
+  cancelAction: AppointmentActions
+  # Means: is_active_appointment
   upcomingAppointment: Boolean
   provisionalAppointment: Boolean # calculated
   createdAt: AWSDateTime!
@@ -333,9 +270,10 @@ type Appointment implements Node & CreatedProps & UpdatedProps {
   createdBy: User!
   updatedBy: User
   canceledBy: User
-  latestAction: AppointmentActions
+  # It would return the action for dropdown list
   nextPossibleActions: [AppointmentActions]!
-  nextPossibleStatus: [AppointmentStatus]!
+  # This will return the next status has to be (Button).
+  nextPossibleStatus: AppointmentStatus!
 }
 
 type AppointmentType implements Node & Lookup {
@@ -349,7 +287,7 @@ type AppointmentStatus implements Node & Lookup {
   id: ID!
   nameEn: String!
   nameFr: String!
-  group: String!
+  group: AppointmentStatusGroup!
   """
   This depends on the clinic and each clinic has own state machine.
   Example:
@@ -360,12 +298,24 @@ type AppointmentStatus implements Node & Lookup {
     READY
   """
   code: String!
+  clinicId: ID!
+}
+
+type AppointmentStatusGroup implements Node & Lookup {
+  id: ID!
+  nameEn: String!
+  nameFr: String!
+  code: AppointmentStatusGroupCode!
 }
 
 type AppointmentActions implements Node & Lookup {
   id: ID!
   nameEn: String!
   nameFr: String!
+  """
+
+  """
+  code: AppointmentActionsType!
 }
 
 type AppointmentPriority implements Node & Lookup {
@@ -380,6 +330,13 @@ type AppointmentPriority implements Node & Lookup {
   """
   code: String!
 }
+
+# type CancelReasonType implements Node & Lookup {
+#   id: ID!
+#   nameEn: String!
+#   nameFr: String!
+#   code:
+# }
 
 type AppointmentConnection {
   edges: [AppointmentEdge!]!
@@ -401,35 +358,18 @@ type AvailabilityEdge {
   node: Availability!
 }
 
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  totalCount: Int!
-  startCursor: String!
-  endCursor: String!
+enum AppointmentActionsType {
+  CANCELED
+  CHANGE_DOCTOR
+  EXTEND
+  RESCHEDULE
+  SCHEDULE
+  UPDATE
 }
 
-interface CreatedProps {
-  createdAt: AWSDateTime!
-  createdBy: User
+enum AppointmentStatusGroupCode {
+  ARRIVED
+  AVAILABILE
+  BOOKED
+  RELEASED
 }
-interface UpdatedProps {
-  updatedAt: AWSDateTime
-  updatedBy: User
-}
-
-interface DisplayableError {
-  field: [String!]
-  message: String!
-}
-
-interface Lookup {
-  nameEn: String!
-  nameFr: String!
-}
-
-scalar AWSDate
-
-scalar AWSDateTime
-
-scalar AWSTime

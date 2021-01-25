@@ -1,0 +1,15 @@
+type User implements Node {
+  id: ID!
+}
+
+type Patient implements Node {
+  id: ID!
+}
+
+type Doctor implements Node {
+  id: ID!
+}
+
+type Clinic implements Node {
+  id: ID!
+}
