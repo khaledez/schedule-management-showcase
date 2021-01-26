@@ -81,8 +81,6 @@ input AppointmentCreateInput {
   patientId: ID!
   date: AWSDate!
   typeId: ID!
-  startTime: AWSTime
-  priorityId: ID
 }
 
 type AppointmentCreatePayload {
@@ -96,10 +94,10 @@ type AppointmentEdge {
 }
 
 input AppointmentExtendInput {
-  provisionalDate: AWSDate!
+  date: AWSDate!
 
   """extension reason message"""
-  message: String!
+  reason: String!
 }
 
 type AppointmentPriority implements Node & Lookup {
@@ -124,7 +122,7 @@ input AppointmentRescheduleInput {
   removeAvailability: Boolean
 
   """new availability id"""
-  newAvailabilityId: Boolean!
+  newAvailabilityId: ID!
 }
 
 input AppointmentScheduleInput {
@@ -134,6 +132,11 @@ input AppointmentScheduleInput {
   availabilityId: ID!
   doctorId: ID!
   patientId: ID!
+}
+
+input AppointmentSearchSortInput {
+  key: AppointmentSortKey!
+  order: SortOrder
 }
 
 enum AppointmentSortKey {
@@ -167,10 +170,11 @@ type AppointmentStatusGroup implements Node & Lookup {
 }
 
 enum AppointmentStatusGroupCode {
-  ARRIVED
-  AVAILABILE
   BOOKED
-  RELEASED
+  CHECKIN
+  COMPLETED
+  CONFIRM
+  READY
 }
 
 type AppointmentType implements Node & Lookup {
@@ -232,6 +236,11 @@ input AvailabilityDeleteInput {
 type AvailabilityEdge {
   cursor: String!
   node: Availability!
+}
+
+input AvailabilitySearchSortInput {
+  key: AvailabilitySortKey!
+  order: SortOrder
 }
 
 enum AvailabilitySortKey {
@@ -347,7 +356,7 @@ type QueryRoot {
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
-    sortKey: [AppointmentSortKey]!
+    sort: [AppointmentSearchSortInput]!
   ): AppointmentConnection!
 
   """Get availability"""
@@ -372,8 +381,13 @@ type QueryRoot {
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
     query: String
-    sortKey: AvailabilitySortKey!
+    sort: [AvailabilitySearchSortInput!]
   ): AvailabilityConnection!
+}
+
+enum SortOrder {
+  ASC
+  DESC
 }
 
 type User implements Node {
