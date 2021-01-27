@@ -26,14 +26,9 @@ interface Entity {
 type PageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
-  totalCount: Int!
+  total: Int
   startCursor: String!
   endCursor: String!
-}
-
-interface CreatedProps {
-  createdAt: AWSDateTime!
-  createdBy: User!
 }
 
 enum SortOrder {

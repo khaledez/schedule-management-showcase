@@ -23,10 +23,10 @@ extend type QueryRoot {
         - startDate
         - endDate
         - status (AppointmentStatusCode)
-     - appointmentTypeId (AppointmentTypeCode)
+        - appointmentTypeId (AppointmentTypeCode)
     See https://shopify.dev/concepts/about-apis/search-syntax#search-query-syntax
     """
-    query: String
+    query: String # TODO: use constrant / string?
     sort: [AppointmentSearchSortInput]!
   ): AppointmentConnection!
   ### Availability Queries
@@ -61,12 +61,19 @@ extend type QueryRoot {
 
 extend type Mutation {
   appointmentCreate(input: AppointmentCreateInput!): AppointmentCreatePayload
-  appointmentExtend(
+  appointmentChangeDateById(
     """
     appointment id
     """
     id: ID!
-    input: AppointmentExtendInput!
+    input: AppointmentChangeDateInput!
+  ): AppointmentCreatePayload
+  appointmentChangeDateByPatientId(
+    """
+    patient id
+    """
+    id: ID!
+    input: AppointmentChangeDateInput!
   ): AppointmentCreatePayload
   appointmentCancel(
     """
@@ -75,37 +82,43 @@ extend type Mutation {
     id: ID!
     input: AppointmentCancelInput!
   ): AppointmentCreatePayload
-  appointmentChangeAssignedDoctor(
+  appointmentScheduleById(
     """
     appointment id
     """
     id: ID!
-    input: AppointmentChangeAssignedDoctorInput!
+    """
+    availability id
+    """
+    availabilityId: ID!
   ): AppointmentCreatePayload
-  appointmentSchedule(input: AppointmentScheduleInput): AppointmentCreatePayload
+  appointmentScheduleByPatientId(
+    """
+    patient id
+    """
+    id: ID!
+    """
+    availability id
+    """
+    availabilityId: ID!
+  ): AppointmentCreatePayload
   appointmentReschedule(
     """
     appointment id to reschedule
     """
     id: ID!
+    """
+    new availability id
+    """
+    availabilityId: ID!
     input: AppointmentRescheduleInput
   ): AppointmentCreatePayload
-
-  availabilityCreate(
-    input: AvailabilityCreateInput!
-  ): AvailabilityCreatePayload!
-  """
-  Create many availability at the same time.
-  """
-  availabilityBulkCreate(
-    input: [AvailabilityCreateInput!]!
-  ): AvailabilityBulkCreatePayload
   """
   Create or update or delete bulk availabiliy.
   """
   availabilityBulkPatch(
-    input: [AvailabilityBulkPatchInput!]!
-  ): AvailabilityBulkCreatePayload
+    input: AvailabilityBulkPatchInput!
+  ): AvailabilityBulkCreatePayload!
   availabilityRemove(
     """
     availability id
@@ -122,7 +135,7 @@ input AppointmentCreateInput {
   # priorityId: ID
 }
 
-input AppointmentExtendInput {
+input AppointmentChangeDateInput {
   date: AWSDate!
   """
   extension reason message
@@ -141,20 +154,13 @@ input AppointmentCancelInput {
   removeAvailability: Boolean
 }
 
-input AppointmentChangeAssignedDoctorInput {
-  doctorId: ID!
-  """
-  change Assignement doctors reason message
-  """
-  message: String
-}
-
-input AppointmentScheduleInput {
-  # appointmentId: ID! take it from backend (provisional one depend on the patient)
-  availabilityId: ID!
-  doctorId: ID!
-  patientId: ID!
-}
+# input AppointmentChangeAssignedDoctorInput {
+#   doctorId: ID!
+#   """
+#   change Assignement doctors reason message
+#   """
+#   message: String
+# }
 
 input AppointmentRescheduleInput {
   """
@@ -165,10 +171,6 @@ input AppointmentRescheduleInput {
   remove availability slot for the doctor
   """
   removeAvailability: Boolean
-  """
-  new availability id
-  """
-  newAvailabilityId: ID!
 }
 
 input AvailabilityCreateInput {
@@ -184,8 +186,8 @@ input AvailabilityDeleteInput {
 }
 
 input AvailabilityBulkPatchInput {
-  availabilityToCreate: [AvailabilityCreateInput!]
-  availabilityToDelete: [AvailabilityDeleteInput!]
+  create: [AvailabilityCreateInput!]
+  delete: [AvailabilityDeleteInput!]
 }
 
 type AppointmentCreatePayload {
@@ -230,7 +232,7 @@ enum AvailabilitySortKey {
   DOCTOR_ID
 }
 
-type Availability implements Node & CreatedProps {
+type Availability implements Node & Entity {
   id: ID!
   date: AWSDate!
   startTime: AWSTime!
@@ -241,6 +243,8 @@ type Availability implements Node & CreatedProps {
   type: AppointmentType!
   createdAt: AWSDateTime!
   createdBy: User!
+  updatedAt: AWSDateTime
+  updatedBy: User
 }
 
 type Appointment implements Node & Entity {
@@ -253,8 +257,8 @@ type Appointment implements Node & Entity {
   date: AWSDate!
   status: AppointmentStatus
   type: AppointmentType
-  priority: AppointmentPriority
   startTime: AWSTime
+  provisionalDate: AWSDate
   # Add cancel object / keep it see what's the perfect.
   cancelText: String
   cancelReason: AppointmentAction
@@ -268,9 +272,9 @@ type Appointment implements Node & Entity {
   updatedBy: User
   canceledBy: User
   # It would return the action for dropdown list included the next action
-  changeActions: [AppointmentAction!]!
+  secondryActions: [AppointmentAction!]!
   # This will return the next status has to be (Button).
-  nextStatusAction: AppointmentStatus!
+  primaryAction: AppointmentStatus!
 }
 
 type AppointmentType implements Node & Lookup {
@@ -357,14 +361,13 @@ type AvailabilityEdge {
 enum AppointmentActionType {
   CANCEL
   CHANGE_APPT_TYPE
+  CHANGE_DATE
   CHANGE_DOCTOR
-  EXTEND
   RESCHEDULE_APPT
-  SCHEDULE_APPT
 }
 
 enum AppointmentStatusGroupCode {
-  BOOKED
+  BOOK # schecule
   CHECKIN
   COMPLETED
   CONFIRM
