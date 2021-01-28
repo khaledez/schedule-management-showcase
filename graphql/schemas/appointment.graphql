@@ -260,8 +260,8 @@ type Appointment implements Node & Entity {
   startTime: AWSTime
   provisionalDate: AWSDate
   # Add cancel object / keep it see what's the perfect.
-  cancelText: String
-  cancelReason: AppointmentAction
+  cancelRescheduleText: String
+  cancelRescheduleId: AppointmentAction
   # Means: is_active_appointment
   upcomingAppointment: Boolean
   provisionalAppointment: Boolean # calculated
@@ -317,26 +317,6 @@ type AppointmentAction implements Node & Lookup {
   """
   code: AppointmentActionType!
 }
-
-type AppointmentPriority implements Node & Lookup {
-  id: ID!
-  nameEn: String!
-  nameFr: String!
-  """
-  This depends on the clinic and each clinic has own state machine.
-  Example:
-    A
-    B
-  """
-  code: String!
-}
-
-# type CancelReasonType implements Node & Lookup {
-#   id: ID!
-#   nameEn: String!
-#   nameFr: String!
-#   code:
-# }
 
 type AppointmentConnection {
   edges: [AppointmentEdge!]!

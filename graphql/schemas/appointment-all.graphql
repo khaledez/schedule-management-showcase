@@ -19,8 +19,8 @@ type Appointment implements Node & Entity {
   provisionalDate: AWSDate
 
   """Add cancel object / keep it see what's the perfect."""
-  cancelText: String
-  cancelReason: AppointmentAction
+  cancelRescheduleText: String
+  cancelRescheduleId: AppointmentAction
 
   """Means: is_active_appointment"""
   upcomingAppointment: Boolean
@@ -90,20 +90,6 @@ type AppointmentCreatePayload {
 type AppointmentEdge {
   cursor: String!
   node: Appointment!
-}
-
-type AppointmentPriority implements Node & Lookup {
-  id: ID!
-  nameEn: String!
-  nameFr: String!
-
-  """
-  This depends on the clinic and each clinic has own state machine.
-  Example:
-    A
-    B
-  """
-  code: String!
 }
 
 input AppointmentRescheduleInput {
