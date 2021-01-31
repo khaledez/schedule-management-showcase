@@ -14,6 +14,7 @@ export const config = () => ({
     logging: false,
     define: {
       timestamps: false,
+      underscored: true,
     },
   },
   cognito: {
@@ -21,5 +22,4 @@ export const config = () => ({
     clientId: '2egoivd9acq1nqhp18upeieubn',
     region: 'us-east-1',
   },
-
 });
