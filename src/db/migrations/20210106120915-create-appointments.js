@@ -28,15 +28,11 @@ module.exports = {
         onUpdate: 'NO ACTION',
         onDelete: 'NO ACTION',
       },
-      type_id: {
+      appointment_type_id: {
         allowNull: false,
         type: Sequelize.INTEGER,
       },
-      status_id: {
-        allowNull: false,
-        type: Sequelize.INTEGER,
-      },
-      priority_id: {
+      appointment_status_id: {
         allowNull: false,
         type: Sequelize.INTEGER,
       },
@@ -44,26 +40,15 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
       },
-      start_time: {
-        type: Sequelize.TIME,
+      provisional_date: {
+        allowNull: false,
+        type: Sequelize.DATE,
       },
-      complains: {
+      cancel_reschedule_text: {
         type: Sequelize.TEXT,
       },
-      clinical_notes: {
-        type: Sequelize.TEXT,
-      },
-      rescheduling_reason: {
-        type: Sequelize.TEXT,
-      },
-      cancellation_reason: {
-        type: Sequelize.TEXT,
-      },
-      doctor_reassignment_reason: {
-        type: Sequelize.TEXT,
-      },
-      date_extension_reason: {
-        type: Sequelize.TEXT,
+      cancel_reschedule_reason_id: {
+        type: Sequelize.INTEGER,
       },
       upcoming_appointment: {
         type: Sequelize.BOOLEAN,

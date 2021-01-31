@@ -8,8 +8,8 @@ import {
 import { BaseModel } from '../../../common/models/base-model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 
-// note that the id will auto added by sequalize.
-@Table({ tableName: 'appointments' })
+// note that the id will auto added by sequelize.
+@Table({ tableName: 'appointments', underscored: true })
 export class AppointmentsModel extends BaseModel {
   @Column
   patient_id: number;
@@ -25,7 +25,7 @@ export class AppointmentsModel extends BaseModel {
   prev_appointment_id: number;
 
   @Column
-  type_id: number;
+  appointment_type_id: number;
 
   @Column
   clinic_id: number;
@@ -34,32 +34,18 @@ export class AppointmentsModel extends BaseModel {
   @Column
   date: Date;
 
+  @IsDate
   @Column
-  status_id: number;
+  provisional_date: Date;
 
   @Column
-  priority_id: number;
+  appointment_status_id: number;
 
   @Column
-  start_time: string;
+  cancel_reschedule_text: string;
 
   @Column
-  complains: string;
-
-  @Column
-  clinical_notes: string;
-
-  @Column
-  rescheduling_reason: string;
-
-  @Column
-  cancellation_reason: string;
-
-  @Column
-  doctor_reassignment_reason: string;
-
-  @Column
-  date_extension_reason: string;
+  cancel_reschedule_reason_id: number;
 
   @BelongsTo(() => AvailabilityModel)
   availability: AvailabilityModel;
@@ -68,8 +54,8 @@ export class AppointmentsModel extends BaseModel {
   upcoming_appointment: boolean;
 
   @Column
-  canceled_by: number
+  canceled_by: number;
 
   @Column
-  canceled_at: Date
+  canceled_at: Date;
 }

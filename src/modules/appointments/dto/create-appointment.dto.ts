@@ -5,30 +5,26 @@ import { Type } from 'class-transformer';
 export class CreateAppointmentBodyDto {
   @IsNumber()
   patient_id: number;
+
+  @IsNumber()
+  clinic_id: number;
   // lookup
   @IsNumber()
-  type_id: number;
+  appointment_type_id: number;
 
   @IsDate()
   @Type(() => Date)
   @IsPastDate()
   date: Date;
 
-  // lookup
-  @IsNumber()
-  priority_id: number;
+  @IsDate()
+  @Type(() => Date)
+  @IsPastDate()
+  provisional_date: Date;
 
   // lookup
   @IsNumber()
-  status_id: number;
-
-  @IsString()
-  @IsOptional()
-  complains: string;
-
-  @IsString()
-  @IsOptional()
-  clinical_notes: string;
+  appointment_status_id: number;
 }
 
 // this dto after modify the dto.
