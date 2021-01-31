@@ -13,7 +13,7 @@ import config from '../config';
   imports: [
     TerminusModule,
     ConfigModule.forRoot({
-      load: [config],
+      load: config,
       isGlobal: true,
     }),
     DatabaseModule,
