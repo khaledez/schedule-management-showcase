@@ -29,8 +29,8 @@ export class AvailabilityService {
     try {
       const result = await this.availabilityRepository.update(
         {
-          deleted_by: 1,
-          deleted_at: new Date(),
+          deletedBy: 1,
+          deletedAt: new Date(),
         },
         { where: { id } },
       );

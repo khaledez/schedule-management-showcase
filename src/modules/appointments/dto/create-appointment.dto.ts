@@ -4,34 +4,32 @@ import { Type } from 'class-transformer';
 // this dto for the body comes from the request
 export class CreateAppointmentBodyDto {
   @IsNumber()
-  patient_id: number;
+  patientId: number;
 
-  @IsNumber()
-  clinic_id: number;
   // lookup
   @IsNumber()
-  appointment_type_id: number;
+  appointmentTypeId: number;
 
   @IsDate()
   @Type(() => Date)
   @IsPastDate()
   date: Date;
 
-  @IsDate()
-  @Type(() => Date)
-  @IsPastDate()
-  provisional_date: Date;
-
   // lookup
   @IsNumber()
-  appointment_status_id: number;
+  appointmentStatusId: number;
 }
 
 // this dto after modify the dto.
 export class CreateAppointmentDto extends CreateAppointmentBodyDto {
   @IsNumber()
-  clinic_id: number;
+  clinicId: number;
 
   @IsNumber()
-  created_by: number;
+  createdBy: number;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsPastDate()
+  provisionalDate: Date;
 }

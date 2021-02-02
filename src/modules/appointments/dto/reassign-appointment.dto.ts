@@ -10,21 +10,21 @@ import { Type } from 'class-transformer';
 // this dto for the body comes from the request
 export class ReassignAppointmentBodyDto {
   @IsNumber()
-  doctor_id: number;
+  doctorId: number;
 }
 
 // this dto after modify the dto.
 export class ReassignAppointmentDto extends ReassignAppointmentBodyDto {
   @IsNumber()
-  prev_appointment_id: number;
+  prevAppointmentId: number;
 
   // TODO: this should not come from the code, it should use the default value which is TRUE
   @IsBoolean()
-  upcoming_appointment: boolean;
+  upcomingAppointment: boolean;
 
   @IsNumber()
-  updated_by: number;
+  updatedBy: number;
 
   @IsDateString()
-  updated_at: Date;
+  updatedAt: Date;
 }

@@ -3,25 +3,25 @@ import { IsNumber, IsDate, IsString, IsMilitaryTime } from 'class-validator';
 
 export class CreateAvailabilityDto {
   @IsNumber()
-  doctor_id: number;
+  doctorId: number;
 
   @IsNumber()
-  created_by: number;
+  createdBy: number;
 
   @IsNumber()
-  clinic_id: number;
+  clinicId: number;
 
   @IsString()
   @IsMilitaryTime()
-  start_time: string;
+  startTime: string;
 
   @IsDate()
   @Type(() => Date)
   date: Date;
 
   @IsNumber()
-  duration_minutes: number;
+  durationMinutes: number;
 
   @IsNumber()
-  appointment_type_id: number;
+  appointmentTypeId: number;
 }

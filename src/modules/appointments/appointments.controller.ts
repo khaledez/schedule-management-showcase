@@ -26,11 +26,15 @@ export class AppointmentsController {
     const clinic_id: string = headers['x-mmx-clinic-id'];
     const user_lang: string = headers['x-mmx-lang'];
     const user_id: string = headers['x-cognito-user-id'];
-
+    console.log({
+      clinic_id,
+      user_id,
+    });
     return this.appointmentsService.create({
       ...appointmentData,
-      clinic_id: Number(clinic_id),
-      created_by: Number(user_id),
+      clinicId: Number(clinic_id),
+      createdBy: Number(user_id),
+      provisionalDate: appointmentData.date,
     });
   }
 
@@ -43,12 +47,12 @@ export class AppointmentsController {
   ): Promise<AppointmentsModel> {
     console.log(data, headers);
     return this.appointmentsService.extendDate({
-      upcoming_appointment: true, // added this for returning it at the response. it should be deleted.
-      date: data.provisional_date,
-      date_extension_reason: data.reason_message,
-      prev_appointment_id: Number(params.id),
-      updated_by: 1,
-      updated_at: new Date(),
+      upcomingAppointment: true, // added this for returning it at the response. it should be deleted.
+      date: data.provisionalDate,
+      dateExtensionReason: data.reasonMessage,
+      prevAppointmentId: Number(params.id),
+      updatedBy: 1,
+      updatedAt: new Date(),
     });
   }
 
@@ -58,19 +62,19 @@ export class AppointmentsController {
     @Body() data: CancelAppointmentBodyDto, // TODO: add cancel interface,
     @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
-    // TODO : is_remove_availability_slot add your own code below.
+    // TODO : isRemoveAvailability_slot add your own code below.
     /*
      * your own code
      */
     // Q: Do we have cancel status that i have to change it here?
-    // TODO: we need canceled_by, canceled_at fields?
+    // TODO: we need canceledBy, canceledAt fields?
     return this.appointmentsService.cancelAppointment({
-      date: data.provisional_date,
-      prev_appointment_id: Number(params.id),
-      upcoming_appointment: true,
-      cancellation_reason: data.reason_message,
-      canceled_by: 1,
-      canceled_at: new Date(),
+      date: data.provisionalDate,
+      prevAppointmentId: Number(params.id),
+      upcomingAppointment: true,
+      cancellationReason: data.reasonMessage,
+      canceledBy: 1,
+      canceledAt: new Date(),
     });
   }
 
@@ -81,11 +85,11 @@ export class AppointmentsController {
     @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
     return this.appointmentsService.reassignAppointment({
-      doctor_id: data.doctor_id,
-      prev_appointment_id: Number(params.id),
-      upcoming_appointment: true,
-      updated_by: 1,
-      updated_at: new Date(),
+      doctorId: data.doctorId,
+      prevAppointmentId: Number(params.id),
+      upcomingAppointment: true,
+      updatedBy: 1,
+      updatedAt: new Date(),
     });
   }
 
@@ -96,12 +100,12 @@ export class AppointmentsController {
     @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
     return this.appointmentsService.changeDoctorAppointment({
-      doctor_id: Number(data.doctor_id),
-      doctor_reassignment_reason: data.reason_message,
-      prev_appointment_id: Number(params.id),
-      upcoming_appointment: true,
-      updated_by: 1,
-      updated_at: new Date(),
+      doctorId: Number(data.doctorId),
+      doctorReassignmentReason: data.reasonMessage,
+      prevAppointmentId: Number(params.id),
+      upcomingAppointment: true,
+      updatedBy: 1,
+      updatedAt: new Date(),
     });
   }
 }

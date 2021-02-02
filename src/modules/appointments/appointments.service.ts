@@ -39,7 +39,9 @@ export class AppointmentsService {
     const appointment: AppointmentsModel = await this.appointmentsRepository.findByPk(
       appointmentId,
     );
-    if (!appointment) throw new NotFoundException('Appointment Not Found!');
+    if (!appointment) {
+      throw new NotFoundException('Appointment Not Found!');
+    }
     try {
       return await appointment.update(appointmentFields);
     } catch (error) {
@@ -61,9 +63,9 @@ export class AppointmentsService {
       // GOAL: exclude the own data for an appointment
       const {
         id,
-        created_at,
-        updated_at,
-        upcoming_appointment,
+        createdAt,
+        updatedAt,
+        upcomingAppointment,
         ...othersData
       } = oldAppointment.toJSON() as AppointmentsModel;
 

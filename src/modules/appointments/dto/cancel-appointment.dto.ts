@@ -11,13 +11,13 @@ import { Type } from 'class-transformer';
 export class CancelAppointmentBodyDto {
   @IsDate()
   @Type(() => Date)
-  provisional_date: Date;
+  provisionalDate: Date;
 
   @IsString()
-  reason_message: string;
+  reasonMessage: string;
 
   @IsBoolean()
-  is_remove_availability_slot: boolean;
+  isRemoveAvailabilitySlot: boolean;
 }
 
 // this dto after modify the dto.
@@ -27,18 +27,18 @@ export class CancelAppointmentDto {
   date: Date;
 
   @IsString()
-  cancellation_reason: string;
+  cancellationReason: string;
 
   @IsNumber()
-  prev_appointment_id: number;
+  prevAppointmentId: number;
 
   // TODO: this should not come from the code, it should use the default value which is TRUE
   @IsBoolean()
-  upcoming_appointment: boolean;
+  upcomingAppointment: boolean;
 
   @IsNumber()
-  canceled_by: number;
+  canceledBy: number;
 
   @IsDateString()
-  canceled_at: Date;
+  canceledAt: Date;
 }

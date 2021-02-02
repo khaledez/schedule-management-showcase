@@ -3,29 +3,29 @@ import { BaseModel } from '../../../common/models/base-model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
 import { IsOptional } from 'class-validator';
 
-@Table({ tableName: 'availability' })
+@Table({ tableName: 'availability', underscored: true })
 export class AvailabilityModel extends BaseModel {
   @Column
-  doctor_id: number;
+  doctorId: number;
+
+  @Column
+  clinicId: number;
 
   @Column
   @ForeignKey(() => AppointmentsModel)
-  appointment_id: number;
+  appointmentId: number;
 
   @Column
-  type: string;
+  startTime: string;
 
   @Column
-  start_time: string;
-
-  @Column
-  appointment_type_id: string
+  appointmentTypeId: string;
 
   @Column
   date: Date;
 
   @Column
-  duration_minutes: number;
+  durationMinutes: number;
 
   @HasOne(() => AppointmentsModel)
   appointment: AppointmentsModel;

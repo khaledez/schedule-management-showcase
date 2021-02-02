@@ -32,25 +32,26 @@ export class AvailabilityController {
     @Param() params: any, // TODO: add param interface
     @Headers() headers: Headers,
   ): Promise<AvailabilityModel> {
-    const clinic_id: string = headers['x-mmx-clinic-id'];
-    const user_id: string = headers['x-mmx-user-id'];
+    const clinicId: string = headers['x-mmx-clinic-id'];
+    const userId: string = headers['x-mmx-user-id'];
     console.log({
-      clinic_id,
-      user_id,
+      clinicId,
+      userId,
       headers,
     });
 
-    if (!clinic_id || !user_id)
+    if (!clinicId || !userId) {
       throw new MethodNotAllowedException(
         'ClinicId and userId could not be null or undefined',
       );
+    }
 
     const modifiedAddArray: Array<CreateAvailabilityDto> = createOrUpdateAvailabilityDto.add.map(
       (e: CreateAvailabilityDto) => ({
         ...e,
-        doctor_id: Number(params.doctorId),
-        clinic_id: Number(clinic_id),
-        created_by: Number(user_id),
+        doctorId: Number(params.doctorId),
+        clinicId: Number(clinicId),
+        createdBy: Number(userId),
       }),
     );
     return this.availabilityService.createOrUpdateAvailability({

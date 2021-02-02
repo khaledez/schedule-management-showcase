@@ -12,23 +12,23 @@ import { AvailabilityModel } from '../../availability/models/availability.model'
 @Table({ tableName: 'appointments', underscored: true })
 export class AppointmentsModel extends BaseModel {
   @Column
-  patient_id: number;
+  patientId: number;
 
   @Column
-  doctor_id: number;
+  doctorId: number;
 
   @Column
   @ForeignKey(() => AvailabilityModel)
-  availability_id: number;
+  availabilityId: number;
 
   @Column
-  prev_appointment_id: number;
+  prev_appointmentId: number;
 
   @Column
-  appointment_type_id: number;
+  appointment_typeId: number;
 
   @Column
-  clinic_id: number;
+  clinicId: number;
 
   @IsDate
   @Column
@@ -36,26 +36,26 @@ export class AppointmentsModel extends BaseModel {
 
   @IsDate
   @Column
-  provisional_date: Date;
+  provisionalDate: Date;
 
   @Column
-  appointment_status_id: number;
+  appointmentStatusId: number;
 
   @Column
-  cancel_reschedule_text: string;
+  cancelRescheduleText: string;
 
   @Column
-  cancel_reschedule_reason_id: number;
+  cancelRescheduleReasonId: number;
 
   @BelongsTo(() => AvailabilityModel)
   availability: AvailabilityModel;
 
   @Column
-  upcoming_appointment: boolean;
+  upcomingAppointment: boolean;
 
   @Column
-  canceled_by: number;
+  canceledBy: number;
 
   @Column
-  canceled_at: Date;
+  canceledAt: Date;
 }
