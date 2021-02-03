@@ -7,6 +7,7 @@ import { TerminusModule } from '@nestjs/terminus';
 import { DatabaseModule } from './modules/database/database.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
+import { LookupsModule } from './modules/lookups/lookups.module';
 import config from '../config';
 
 @Module({
@@ -19,6 +20,7 @@ import config from '../config';
     DatabaseModule,
     AppointmentsModule,
     AvailabilityModule,
+    LookupsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
