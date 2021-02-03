@@ -25,7 +25,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "migration:generate": "npx sequelize-cli migration:generate --name ${1}",
+    "seed:generate": "npx sequelize-cli seed:generate --name ${1}"
   },
   "dependencies": {
     "@mon-medic/common": "^1.0.11",
@@ -76,8 +78,7 @@
     "ts-jest": "^26.4.3",
     "ts-loader": "^8.0.8",
     "ts-node": "^9.0.0",
-    "tsconfig-paths": "^3.9.0",
-    "typescript": "^4.0.5"
+    "tsconfig-paths": "^3.9.0"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -98,7 +99,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged",
+      "pre-commit": "",
       "pre-push": ""
     }
   },

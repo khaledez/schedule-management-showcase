@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { registerApp } from '@mon-medic/common';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { CONFIG_SERVICE, PORT, SERVICE_NAME } from './common/constants';
 
 async function bootstrap() {
+  const logger = new Logger('bootstrap');
   const app = await NestFactory.create(AppModule);
 
   const appConfig = app.get(CONFIG_SERVICE);
@@ -19,6 +20,6 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`Application is running on: ${await app.getUrl()}`);
+  logger.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

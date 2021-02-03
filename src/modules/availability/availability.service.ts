@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AVAILABILITY_REPOSITORY } from 'src/common/constants';
@@ -11,6 +12,7 @@ import { CreateAvailabilityDto } from './dto/create-availability.dto';
 
 @Injectable()
 export class AvailabilityService {
+  private readonly logger = new Logger(AvailabilityService.name);
   constructor(
     @Inject(AVAILABILITY_REPOSITORY)
     private readonly availabilityRepository: typeof AvailabilityModel,
@@ -27,7 +29,7 @@ export class AvailabilityService {
 
   async deleteAvailability(id: number): Promise<void> {
     try {
-      const result = await this.availabilityRepository.update(
+      await this.availabilityRepository.update(
         {
           deletedBy: 1,
           deletedAt: new Date(),
@@ -43,7 +45,7 @@ export class AvailabilityService {
     createOrUpdateAvailability: CreateOrUpdateAvailabilityDto,
   ): Promise<any> {
     try {
-      console.log('createOrUpdateAvailability', createOrUpdateAvailability);
+      this.logger.log({ createOrUpdateAvailability });
       const { add, update, delete: deleteAv } = createOrUpdateAvailability;
       const createdAv =
         add.length && (await this.availabilityRepository.bulkCreate(add));

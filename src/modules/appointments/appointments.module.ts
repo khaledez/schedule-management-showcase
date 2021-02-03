@@ -4,6 +4,7 @@ import { AppointmentsController } from './appointments.controller';
 import { AppointmentsService } from './appointments.service';
 
 @Module({
+  // imports: [DatabaseModule],
   controllers: [AppointmentsController],
   providers: [AppointmentsService, ...appointmentsProviders],
 })

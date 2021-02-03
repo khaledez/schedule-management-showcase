@@ -3,6 +3,7 @@ import {
   Inject,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
@@ -14,6 +15,8 @@ import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto'
 
 @Injectable()
 export class AppointmentsService {
+  private readonly logger = new Logger(AppointmentsService.name);
+
   constructor(
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
@@ -68,7 +71,14 @@ export class AppointmentsService {
         upcomingAppointment,
         ...othersData
       } = oldAppointment.toJSON() as AppointmentsModel;
-
+      this.logger.log({
+        id,
+        createdAt,
+        updatedAt,
+        upcomingAppointment,
+        ...othersData,
+        ...appointmentFieldsDataToCreate,
+      });
       return await this.appointmentsRepository.create({
         ...othersData,
         ...appointmentFieldsDataToCreate,

@@ -1,14 +1,5 @@
 import { IsString, IsNumber, IsDateString, IsBoolean } from 'class-validator';
 
-// this dto for the body comes from the request
-export class ChangeDoctorAppointmentBodyDto {
-  @IsNumber()
-  doctorId: number;
-
-  @IsString()
-  reasonMessage: string;
-}
-
 // this dto after modify the dto.
 export class ChangeDoctorAppointmentDto {
   @IsNumber()

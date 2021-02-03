@@ -1,15 +1,27 @@
-import { Controller, Get, Post, Body, Headers, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Headers,
+  Param,
+  Logger,
+} from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentBodyDto } from './dto/create-appointment.dto';
+import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
-import { ExtendAppointmentBodyDto } from './dto/extend-appointment.dto';
-import { CancelAppointmentBodyDto } from './dto/cancel-appointment.dto';
-import { ReassignAppointmentBodyDto } from './dto/reassign-appointment.dto';
-import { ChangeDoctorAppointmentBodyDto } from './dto/change-doctor-appointment.dto';
+import { ExtendAppointmentBodyDto } from './dto/extend-appointment-body.dto';
+import { CancelAppointmentBodyDto } from './dto/cancel-appointment-body.dto';
+import { ReassignAppointmentBodyDto } from './dto/reassign-appointment-body.dto';
+import { ChangeDoctorAppointmentBodyDto } from './dto/change-doctor-appointment-body.dto';
+// import { Sequelize } from 'sequelize-typescript';
 
 @Controller('appointments')
 export class AppointmentsController {
-  constructor(private readonly appointmentsService: AppointmentsService) {}
+  private readonly logger = new Logger(AppointmentsController.name);
+  constructor(
+    private readonly appointmentsService: AppointmentsService, // @Inject('SEQUELIZE') // private sequelize: Sequelize,
+  ) {}
   @Get()
   findAll(): Promise<AppointmentsModel[]> {
     return this.appointmentsService.findAll();
@@ -22,11 +34,9 @@ export class AppointmentsController {
   ): Promise<AppointmentsModel> {
     // todo: create a guard to validate the headers.
     // todo: validate past date.
-    const cognito_id: string = headers['x-cognito-cognito-id'];
     const clinic_id: string = headers['x-mmx-clinic-id'];
-    const user_lang: string = headers['x-mmx-lang'];
     const user_id: string = headers['x-cognito-user-id'];
-    console.log({
+    this.logger.log({
       clinic_id,
       user_id,
     });
@@ -45,7 +55,7 @@ export class AppointmentsController {
     @Body() data: ExtendAppointmentBodyDto,
     @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
-    console.log(data, headers);
+    this.logger.log({ data, headers });
     return this.appointmentsService.extendDate({
       upcomingAppointment: true, // added this for returning it at the response. it should be deleted.
       date: data.provisionalDate,
@@ -60,7 +70,6 @@ export class AppointmentsController {
   cancelAppointment(
     @Param() params: any, // TODO: add param interface
     @Body() data: CancelAppointmentBodyDto, // TODO: add cancel interface,
-    @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
     // TODO : isRemoveAvailability_slot add your own code below.
     /*
@@ -82,7 +91,6 @@ export class AppointmentsController {
   reassign(
     @Param() params: any,
     @Body() data: ReassignAppointmentBodyDto,
-    @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
     return this.appointmentsService.reassignAppointment({
       doctorId: data.doctorId,
@@ -97,7 +105,6 @@ export class AppointmentsController {
   changeDoctor(
     @Param() params: any,
     @Body() data: ChangeDoctorAppointmentBodyDto,
-    @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
     return this.appointmentsService.changeDoctorAppointment({
       doctorId: Number(data.doctorId),

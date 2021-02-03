@@ -1,6 +1,6 @@
 import { CreateAvailabilityDto } from './create-availability.dto';
 import { UpdateAvailabilityDto } from './update-availability.dto';
-import { IsArray, IsOptional, ArrayUnique } from 'class-validator';
+import { IsArray, ArrayUnique } from 'class-validator';
 
 export class CreateOrUpdateAvailabilityDto {
   @IsArray()

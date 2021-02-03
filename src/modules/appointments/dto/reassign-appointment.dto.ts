@@ -1,17 +1,5 @@
-import {
-  IsString,
-  IsNumber,
-  IsDate,
-  IsDateString,
-  IsBoolean,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-
-// this dto for the body comes from the request
-export class ReassignAppointmentBodyDto {
-  @IsNumber()
-  doctorId: number;
-}
+import { IsNumber, IsDateString, IsBoolean } from 'class-validator';
+import { ReassignAppointmentBodyDto } from './reassign-appointment-body.dto';
 
 // this dto after modify the dto.
 export class ReassignAppointmentDto extends ReassignAppointmentBodyDto {

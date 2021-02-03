@@ -6,6 +6,7 @@ import {
   Param,
   Headers,
   MethodNotAllowedException,
+  Logger,
 } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AvailabilityService } from './availability.service';
@@ -14,6 +15,8 @@ import { CreateAvailabilityDto } from './dto/create-availability.dto';
 
 @Controller('availability')
 export class AvailabilityController {
+  private readonly logger = new Logger(AvailabilityController.name);
+
   constructor(private readonly availabilityService: AvailabilityService) {}
 
   @Get()
@@ -34,7 +37,7 @@ export class AvailabilityController {
   ): Promise<AvailabilityModel> {
     const clinicId: string = headers['x-mmx-clinic-id'];
     const userId: string = headers['x-mmx-user-id'];
-    console.log({
+    this.logger.log({
       clinicId,
       userId,
       headers,

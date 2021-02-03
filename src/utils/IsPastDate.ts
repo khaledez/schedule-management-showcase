@@ -3,7 +3,7 @@ import * as moment from 'moment';
 // will use the same logic for past data
 
 export function IsPastDate(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: any, propertyName: string) {
     registerDecorator({
       name: 'IsPastDate',
       target: object.constructor,

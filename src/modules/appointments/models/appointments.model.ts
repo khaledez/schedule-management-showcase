@@ -7,6 +7,9 @@ import {
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
+import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
+import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment-actions.model';
+import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 
 // note that the id will auto added by sequelize.
 @Table({ tableName: 'appointments', underscored: true })
@@ -25,7 +28,8 @@ export class AppointmentsModel extends BaseModel {
   prev_appointmentId: number;
 
   @Column
-  appointment_typeId: number;
+  @ForeignKey(() => AppointmentTypesLookupsModel)
+  appointmentTypeId: number;
 
   @Column
   clinicId: number;
@@ -39,12 +43,14 @@ export class AppointmentsModel extends BaseModel {
   provisionalDate: Date;
 
   @Column
+  @ForeignKey(() => AppointmentStatusLookupsModel)
   appointmentStatusId: number;
 
   @Column
   cancelRescheduleText: string;
 
   @Column
+  @ForeignKey(() => AppointmentActionsLookupsModel)
   cancelRescheduleReasonId: number;
 
   @BelongsTo(() => AvailabilityModel)
