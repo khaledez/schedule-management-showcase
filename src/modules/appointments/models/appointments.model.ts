@@ -25,7 +25,7 @@ export class AppointmentsModel extends BaseModel {
   availabilityId: number;
 
   @Column
-  prev_appointmentId: number;
+  prevAppointmentId: number;
 
   @Column
   @ForeignKey(() => AppointmentTypesLookupsModel)
@@ -64,4 +64,13 @@ export class AppointmentsModel extends BaseModel {
 
   @Column
   canceledAt: Date;
+
+  @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
+  appointmentType: AppointmentTypesLookupsModel;
+
+  @BelongsTo(() => AppointmentStatusLookupsModel, 'appointmentStatusId')
+  appointmentStatus: AppointmentStatusLookupsModel;
+
+  @BelongsTo(() => AppointmentActionsLookupsModel, 'cancelRescheduleReasonId')
+  cancelRescheduleReason: AppointmentActionsLookupsModel;
 }

@@ -1,6 +1,13 @@
-import { Table, Column, HasOne, ForeignKey } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  HasOne,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
+import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 
 @Table({ tableName: 'availability', underscored: true })
 export class AvailabilityModel extends BaseModel {
@@ -18,7 +25,8 @@ export class AvailabilityModel extends BaseModel {
   startTime: string;
 
   @Column
-  appointmentTypeId: string;
+  @ForeignKey(() => AppointmentTypesLookupsModel)
+  appointmentTypeId: number;
 
   @Column
   date: Date;
@@ -28,4 +36,7 @@ export class AvailabilityModel extends BaseModel {
 
   @HasOne(() => AppointmentsModel)
   appointment: AppointmentsModel;
+
+  @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
+  appointmentType: AppointmentTypesLookupsModel;
 }
