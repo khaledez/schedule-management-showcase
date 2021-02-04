@@ -15,6 +15,8 @@ import { CancelAppointmentBodyDto } from './dto/cancel-appointment-body.dto';
 import { ReassignAppointmentBodyDto } from './dto/reassign-appointment-body.dto';
 import { ChangeDoctorAppointmentBodyDto } from './dto/change-doctor-appointment-body.dto';
 // import { Sequelize } from 'sequelize-typescript';
+import { CognitoIdentity } from '../../common/decorators/cognitoIdentity.decorator';
+import { CognitoIdentityKeysInterface } from '../../common/interfaces/cognito-identity-keys.interface';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -22,28 +24,32 @@ export class AppointmentsController {
   constructor(
     private readonly appointmentsService: AppointmentsService, // @Inject('SEQUELIZE') // private sequelize: Sequelize,
   ) {}
+
   @Get()
-  findAll(): Promise<AppointmentsModel[]> {
+  findAll(
+    @CognitoIdentity() cognitoIdentity: CognitoIdentityKeysInterface,
+  ): Promise<AppointmentsModel[]> {
+    console.log('cognitoIdentity', cognitoIdentity);
     return this.appointmentsService.findAll();
+  }
+  @Get('manage-patients')
+  findManagePatientsTable(): Promise<any[]> {
+    return this.appointmentsService.findManagePatientTable();
   }
 
   @Post()
   createAppointment(
+    @CognitoIdentity() cognitoIdentity: CognitoIdentityKeysInterface,
     @Body() appointmentData: CreateAppointmentBodyDto,
-    @Headers() headers: Headers,
   ): Promise<AppointmentsModel> {
     // todo: create a guard to validate the headers.
     // todo: validate past date.
-    const clinic_id: string = headers['x-mmx-clinic-id'];
-    const user_id: string = headers['x-cognito-user-id'];
-    this.logger.log({
-      clinic_id,
-      user_id,
-    });
+    // TODO: what if i entered the same body dto multiple-time!
     return this.appointmentsService.create({
       ...appointmentData,
-      clinicId: Number(clinic_id),
-      createdBy: Number(user_id),
+      appointmentStatusId: 1, // TODO: get this id from appointmentStatusModel at the service.
+      clinicId: cognitoIdentity.clinicId,
+      createdBy: cognitoIdentity.userId,
       provisionalDate: appointmentData.date,
     });
   }
