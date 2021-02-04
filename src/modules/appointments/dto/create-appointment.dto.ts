@@ -11,6 +11,9 @@ export class CreateAppointmentDto extends CreateAppointmentBodyDto {
   @IsNumber()
   createdBy: number;
 
+  @IsNumber()
+  appointmentStatusId: number;
+
   @IsDate()
   @Type(() => Date)
   @IsPastDate()

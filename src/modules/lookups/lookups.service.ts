@@ -21,11 +21,11 @@ export class LookupsService {
     @Inject(TIME_GROUPS_LOOKUPS_REPOSITORY)
     private readonly timeGroupsLookupsRepository: typeof TimeGroupsLookupsModel,
     @Inject(APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY)
-    private readonly AppointmentActionsLookupsRepository: typeof AppointmentActionsLookupsModel,
+    private readonly appointmentActionsLookupsRepository: typeof AppointmentActionsLookupsModel,
     @Inject(APPOINTMENT_TYPES_LOOKUPS_REPOSITORY)
-    private readonly AppointmentTypesLookupsRepository: typeof AppointmentTypesLookupsModel,
+    private readonly appointmentTypesLookupsRepository: typeof AppointmentTypesLookupsModel,
     @Inject(APPOINTMENT_STATUS_LOOKUPS_REPOSITORY)
-    private readonly AppointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
+    private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
   ) {}
 
   //TODO: handle clinic_id logic
@@ -68,7 +68,7 @@ export class LookupsService {
     if (clinicId) {
       arrayOfOrToFind.push(clinicId);
     }
-    return this.AppointmentActionsLookupsRepository.findAll({
+    return this.appointmentActionsLookupsRepository.findAll({
       where: {
         clinicId: {
           [Op.or]: arrayOfOrToFind,
@@ -83,7 +83,7 @@ export class LookupsService {
     if (clinicId) {
       arrayOfOrToFind.push(clinicId);
     }
-    return this.AppointmentTypesLookupsRepository.findAll({
+    return this.appointmentTypesLookupsRepository.findAll({
       where: {
         clinicId: {
           [Op.or]: arrayOfOrToFind,
@@ -98,12 +98,53 @@ export class LookupsService {
     if (clinicId) {
       arrayOfOrToFind.push(clinicId);
     }
-    return this.AppointmentStatusLookupsRepository.findAll({
+    return this.appointmentStatusLookupsRepository.findAll({
       where: {
         clinicId: {
           [Op.or]: arrayOfOrToFind,
         },
       },
     });
+  }
+  public async findAppointmentPrimaryActionByStatusId(
+    statusId: number,
+  ): Promise<AppointmentStatusLookupsModel> | null {
+    const allStatus = await this.findAllAppointmentStatusLookups();
+    // TODO: handle if the id does not exits.
+    const currentStatusObject =
+      allStatus.length && allStatus.find(({ id }) => statusId === id);
+    // TODO: put the complete status as constant!
+    if (currentStatusObject && currentStatusObject.code === 'COMPLETE') {
+      return null;
+    } else {
+      return allStatus.find(({ id }) => id === statusId + 1);
+    }
+  }
+
+  public async findAppointmentSecondaryActionByStatusId(
+    statusId: number,
+  ): Promise<string[]> | null {
+    const allActions = await this.findAllAppointmentActionsLookups();
+    const currentStatus = await this.appointmentStatusLookupsRepository.findByPk(
+      statusId,
+    );
+    // TODO:: handle if the id does not exists
+    if (!currentStatus || !currentStatus.code) return null;
+    const nextAppointmentAcions = {
+      WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
+      SCHEDULE: [
+        'CANCEL',
+        'CHANGE_DATE',
+        'CHANGE_APPT_TYPE',
+        'RESCHEDULE_APPT',
+      ],
+    };
+    if (currentStatus && currentStatus.code) {
+      if (currentStatus.code === 'WAIT_LIST') {
+        allActions.find((e) =>
+          ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'].includes(e.code),
+        );
+      }
+    }
   }
 }
