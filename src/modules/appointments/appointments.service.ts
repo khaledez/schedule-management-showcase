@@ -5,13 +5,20 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
+import {
+  APPOINTMENTS_REPOSITORY,
+  SEQUELIZE,
+  PATIENTS_REPOSITORY,
+} from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
+import { LookupsService } from '../lookups/lookups.service';
+import { Sequelize } from 'sequelize-typescript';
+import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -20,16 +27,44 @@ export class AppointmentsService {
   constructor(
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
+    private readonly lookupsService: LookupsService,
+    @Inject(SEQUELIZE)
+    private readonly sequelize: Sequelize,
+    @Inject(PATIENTS_REPOSITORY)
+    private readonly patientsModel: typeof PatientsModel,
   ) {}
 
-  findAll(): Promise<AppointmentsModel[]> {
-    return this.appointmentsRepository.findAll();
+  async findAll(): Promise<AppointmentsModel[]> {
+    return this.appointmentsRepository.findAll({
+      include: [
+        {
+          model: PatientsModel,
+          as: 'patient',
+        },
+      ],
+    });
   }
 
-  create(
+  async findManagePatientTable(): Promise<any> {
+    // const query = await this.sequelize
+    //   .query('SELECT * FROM patient_view')
+    //   .spread((results) => results);
+
+    return this.patientsModel.findAll();
+  }
+
+  async create(
     createAppointmentDto: CreateAppointmentDto,
   ): Promise<AppointmentsModel> {
-    return this.appointmentsRepository.create(createAppointmentDto);
+    const result = await this.appointmentsRepository.create(
+      createAppointmentDto,
+    );
+    const primaryAction = await this.lookupsService.findAppointmentPrimaryActionByStatusId(
+      result.appointmentStatusId,
+    );
+
+    this.logger.debug({ primaryAction });
+    return result;
   }
   // find by id and update the appointment
   async findAndUpdateAppointment(

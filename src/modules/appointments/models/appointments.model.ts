@@ -10,11 +10,13 @@ import { AvailabilityModel } from '../../availability/models/availability.model'
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment-actions.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
+import { PatientsModel } from './patients.model';
 
 // note that the id will auto added by sequelize.
 @Table({ tableName: 'appointments', underscored: true })
 export class AppointmentsModel extends BaseModel {
   @Column
+  @ForeignKey(() => PatientsModel)
   patientId: number;
 
   @Column
@@ -64,6 +66,9 @@ export class AppointmentsModel extends BaseModel {
 
   @Column
   canceledAt: Date;
+
+  @BelongsTo(() => PatientsModel, "patientId")
+  patient: PatientsModel
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
   appointmentType: AppointmentTypesLookupsModel;
