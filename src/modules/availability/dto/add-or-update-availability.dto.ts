@@ -1,15 +1,20 @@
 import { CreateAvailabilityDto } from './create-availability.dto';
-import { UpdateAvailabilityDto } from './update-availability.dto';
-import { IsArray, ArrayUnique } from 'class-validator';
+import { IsArray, ArrayUnique, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateOrUpdateAvailabilityDto {
   @IsArray()
-  add: Array<CreateAvailabilityDto>;
+  @IsOptional()
+  create: Array<CreateAvailabilityDto>;
 
-  @IsArray()
-  update: Array<UpdateAvailabilityDto>;
-
+  // the reason for adding underscore is delete keyword is reserved in js
   @IsArray()
   @ArrayUnique()
-  delete: Array<number>;
+  @IsOptional()
+  _delete: Array<number>;
+
+  @IsNumber()
+  userId: number;
+
+  @IsNumber()
+  clinicId: number;
 }

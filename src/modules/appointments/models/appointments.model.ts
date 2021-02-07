@@ -67,8 +67,8 @@ export class AppointmentsModel extends BaseModel {
   @Column
   canceledAt: Date;
 
-  @BelongsTo(() => PatientsModel, "patientId")
-  patient: PatientsModel
+  @BelongsTo(() => PatientsModel, 'patientId')
+  patient: PatientsModel;
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
   appointmentType: AppointmentTypesLookupsModel;

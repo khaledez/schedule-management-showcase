@@ -13,5 +13,4 @@ export class PatientsModel extends BaseModel {
   @IsDate
   @Column
   dob: Date;
-
 }

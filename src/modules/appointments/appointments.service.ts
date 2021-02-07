@@ -5,11 +5,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import {
-  APPOINTMENTS_REPOSITORY,
-  SEQUELIZE,
-  PATIENTS_REPOSITORY,
-} from '../../common/constants/index';
+import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
@@ -17,8 +13,10 @@ import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
 import { LookupsService } from '../lookups/lookups.service';
-import { Sequelize } from 'sequelize-typescript';
 import { PatientsModel } from './models/patients.model';
+import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
+import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
+import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -27,32 +25,35 @@ export class AppointmentsService {
   constructor(
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
-    private readonly lookupsService: LookupsService,
-    @Inject(SEQUELIZE)
-    private readonly sequelize: Sequelize,
-    @Inject(PATIENTS_REPOSITORY)
-    private readonly patientsModel: typeof PatientsModel,
+    private readonly lookupsService: LookupsService, // @Inject(SEQUELIZE) // private readonly sequelize: Sequelize, // @Inject(PATIENTS_REPOSITORY) // private readonly patientsModel: typeof PatientsModel,
   ) {}
 
-  async findAll(): Promise<AppointmentsModel[]> {
+  private readonly appointmentsIncludesArray = [
+    {
+      model: PatientsModel,
+      as: 'patient',
+    },
+    {
+      model: AppointmentTypesLookupsModel,
+      as: 'appointmentType',
+    },
+    {
+      model: AppointmentStatusLookupsModel,
+      as: 'appointmentStatus',
+    },
+    {
+      model: AppointmentActionsLookupsModel,
+      as: 'cancelRescheduleReason',
+    },
+  ];
+
+  // TODO: MMX-later add scopes at the appointment types/status/actions
+  // TODO: MMX-currentSprint handle handle next-actions.
+  findAll(): Promise<AppointmentsModel[]> {
     return this.appointmentsRepository.findAll({
-      include: [
-        {
-          model: PatientsModel,
-          as: 'patient',
-        },
-      ],
+      include: this.appointmentsIncludesArray,
     });
   }
-
-  async findManagePatientTable(): Promise<any> {
-    // const query = await this.sequelize
-    //   .query('SELECT * FROM patient_view')
-    //   .spread((results) => results);
-
-    return this.patientsModel.findAll();
-  }
-
   async create(
     createAppointmentDto: CreateAppointmentDto,
   ): Promise<AppointmentsModel> {
@@ -64,8 +65,10 @@ export class AppointmentsService {
     );
 
     this.logger.debug({ primaryAction });
+    // TODO: MMX-currentSprint return full body
     return result;
   }
+  // OUT-OF-SCOPE: MMX-S3
   // find by id and update the appointment
   async findAndUpdateAppointment(
     appointmentId: number,
@@ -87,6 +90,7 @@ export class AppointmentsService {
     }
   }
 
+  // OUT-OF-SCOPE: MMX-S3
   async deprecateThenCreateAppointment(
     appointmentFieldsDataToCreate: any, //TODO create interface.
   ): Promise<AppointmentsModel> {
@@ -122,6 +126,8 @@ export class AppointmentsService {
       throw new BadRequestException(error.message);
     }
   }
+
+  // OUT-OF-SCOPE: MMX-S3
   async extendDate(
     extendAppointmentDto: ExtendAppointmentDto,
   ): Promise<AppointmentsModel> {
@@ -132,6 +138,7 @@ export class AppointmentsService {
     }
   }
 
+  // OUT-OF-SCOPE: MMX-S3
   async cancelAppointment(
     cancelAppointmentDto: CancelAppointmentDto,
   ): Promise<AppointmentsModel> {
@@ -142,6 +149,7 @@ export class AppointmentsService {
     }
   }
 
+  // OUT-OF-SCOPE: MMX-S3
   async reassignAppointment(
     reassignAppointmentDto: ReassignAppointmentDto,
   ): Promise<AppointmentsModel> {
@@ -152,6 +160,7 @@ export class AppointmentsService {
     }
   }
 
+  // OUT-OF-SCOPE: MMX-S3
   async changeDoctorAppointment(
     changeDoctorAppointmentDto: ChangeDoctorAppointmentDto,
   ): Promise<AppointmentsModel> {

@@ -28,7 +28,7 @@ export class LookupsService {
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
   ) {}
 
-  //TODO: handle clinic_id logic
+  //TODO: MMX-currentSprint handle clinic_id logic
   public findAllDurationMinutesLookups(
     clinicId?: number,
   ): Promise<DurationMinutesLookupsModel[]> {
@@ -116,11 +116,11 @@ export class LookupsService {
     // TODO: put the complete status as constant!
     if (currentStatusObject && currentStatusObject.code === 'COMPLETE') {
       return null;
-    } else {
-      return allStatus.find(({ id }) => id === statusId + 1);
     }
+    return allStatus.find(({ id }) => id === statusId + 1);
   }
 
+  // TODO: MMX-later make this like data loader receive ids and returns array.
   public async findAppointmentSecondaryActionByStatusId(
     statusId: number,
   ): Promise<string[]> | null {
@@ -129,7 +129,9 @@ export class LookupsService {
       statusId,
     );
     // TODO:: handle if the id does not exists
-    if (!currentStatus || !currentStatus.code) return null;
+    if (!currentStatus || !currentStatus.code) {
+      return null;
+    }
     const nextAppointmentAcions = {
       WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
       SCHEDULE: [
