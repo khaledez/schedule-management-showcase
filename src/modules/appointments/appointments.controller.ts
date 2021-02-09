@@ -21,7 +21,11 @@ export class AppointmentsController {
     @Identity() identity: IdentityKeysInterface,
     @Query() query: FindAppointmentsQueryParams,
   ): Promise<AppointmentResponseInterface[]> {
-    this.logger.debug({ function: 'appointment/findAll', identity, query });
+    this.logger.debug({
+      function: 'controller/appointment/findAll',
+      identity,
+      query,
+    });
     return this.appointmentsService.findAll({ query });
   }
 

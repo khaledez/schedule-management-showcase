@@ -86,6 +86,10 @@ export class AppointmentsService {
     ];
 
     Object.keys(query).forEach((filterName) => {
+      this.logger.debug({
+        function: 'handleFindAllOptions',
+        filterName,
+      });
       const {
         dbField,
         isArray = false,
@@ -133,6 +137,10 @@ export class AppointmentsService {
     });
     try {
       const appointments = await this.appointmentsRepository.findAll(options);
+      this.logger.debug({
+        function: 'service/appt/findAll',
+        appointments,
+      });
       const appointmentsStatusIds = appointments.map(
         (e): number => e.appointmentStatusId,
       );
@@ -143,6 +151,10 @@ export class AppointmentsService {
       const actions = await this.lookupsService.findAppointmentsActions(
         appointmentsStatusIds,
       );
+      this.logger.debug({
+        function: 'service/appt/findall',
+        actions,
+      });
       return appointments.map((appt, i) => ({
         ...appt,
         previousAppointment: appt.previousAppointmentId,
@@ -150,6 +162,10 @@ export class AppointmentsService {
         secondaryActions: actions[i].secondaryActions,
       }));
     } catch (error) {
+      this.logger.error({
+        function: 'service/appt/findall',
+        error,
+      });
       throw new BadRequestException(error);
     }
   }
@@ -157,16 +173,31 @@ export class AppointmentsService {
   async create(
     createAppointmentDto: CreateAppointmentDto,
   ): Promise<AppointmentsModel> {
-    const result = await this.appointmentsRepository.create(
-      createAppointmentDto,
-    );
-    const primaryAction = await this.lookupsService.findAppointmentPrimaryActionByStatusId(
-      result.appointmentStatusId,
-    );
-
-    this.logger.debug({ primaryAction });
-    // TODO: MMX-currentSprint return full body
-    return result;
+    try {
+      const result = await this.appointmentsRepository.create(
+        createAppointmentDto,
+      );
+      this.logger.debug({
+        function: 'service/appt/create',
+        result,
+      });
+      const primaryAction = await this.lookupsService.findAppointmentPrimaryActionByStatusId(
+        result.appointmentStatusId,
+      );
+      this.logger.debug({
+        function: 'service/appt/create',
+        primaryAction,
+      });
+      this.logger.debug({ primaryAction });
+      // TODO: MMX-currentSprint return full body
+      return result;
+    } catch (error) {
+      this.logger.error({
+        function: 'service/appt/createAppointmentDto',
+        error,
+      });
+      throw new BadRequestException(error);
+    }
   }
   // OUT-OF-SCOPE: MMX-S3
   // find by id and update the appointment
