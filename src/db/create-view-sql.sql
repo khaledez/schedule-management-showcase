@@ -25,7 +25,7 @@
     combine two views.
 */
 "
-    CREATE VIEW `patient_view` AS SELECT PATIENT_INFO_VIEW.patient_id, CONCAT(PATIENT_INFO_VIEW.first_name, ' ', PATIENT_INFO_VIEW.last_name) AS full_name, PATIENT_INFO_VIEW.dob, PATIENT_INFO_VIEW.created_at, PATIENT_INFO_VIEW.created_by,
+    CREATE VIEW `patient_view` AS SELECT PATIENT_INFO_VIEW.patient_id AS id, CONCAT(PATIENT_INFO_VIEW.first_name, ' ', PATIENT_INFO_VIEW.last_name) AS full_name, PATIENT_INFO_VIEW.dob, PATIENT_INFO_VIEW.created_at, PATIENT_INFO_VIEW.created_by,
     PATIENT_INFO_VIEW.updated_at, PATIENT_INFO_VIEW.updated_by, PATIENT_INFO_VIEW.deleted_at, PATIENT_INFO_VIEW.deleted_by, PATIENT_PHONE_VIEW_NUMBERS.primary, 
     PATIENT_PHONE_VIEW_NUMBERS.phone_type_code, PATIENT_PHONE_VIEW_NUMBERS.number FROM patientDB.patient_info_view as PATIENT_INFO_VIEW INNER JOIN 
     patientDB.patients_phone_number_view AS PATIENT_PHONE_VIEW_NUMBERS ON PATIENT_INFO_VIEW.patient_id=PATIENT_PHONE_VIEW_NUMBERS.patient_id 
