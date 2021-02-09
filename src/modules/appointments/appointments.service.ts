@@ -60,6 +60,18 @@ export class AppointmentsService {
     },
   };
 
+  /**
+   *
+   * @param query
+   * this function do some logic for the find appointment options.
+   * to do search at the appointment level you have to pass it with the filter
+   * to do search at the nested level like patient/availability you have to pass it inside the include array
+   * for example [{
+   *  model
+   *  as
+   *  where: {fullName: ""}
+   * }]
+   */
   handleFindAllOptions(query): FindOptions {
     const filter = {};
     const includeArray = [
@@ -107,7 +119,7 @@ export class AppointmentsService {
         const includeIndexElement = includeArray.findIndex(
           (e) => e.as === model,
         );
-        includeArray[includeIndexElement].where = {
+        includeArray[includeIndexElement]['where'] = {
           [dbField]: {
             [Op.like]: `%${query[filterName]}%`,
           },
@@ -119,6 +131,21 @@ export class AppointmentsService {
       where: {
         ...filter,
       },
+      /**
+       * reason for that is the sequelize prevent append calculated fields as primaryAction, secondaryActions
+       * raw: true, it will returned all the model with the relation fields
+       * returning example:
+       * {
+       *  ...appointmentData,
+       *  patient.fullName,
+       *  patient.phone_number,
+       *  ... and so on
+       * }
+       * nest: true, because raw returns all as raw, i need to re-shape the object
+       * {
+       *  modify the shape above to let him as {patient{fullName, phone_number},  ...}
+       * }
+       */
       raw: true,
       nest: true,
     };
@@ -169,10 +196,13 @@ export class AppointmentsService {
       throw new BadRequestException(error);
     }
   }
-
-  async create(
-    createAppointmentDto: CreateAppointmentDto,
-  ): Promise<AppointmentsModel> {
+  /**
+   *
+   * @param createAppointmentDto
+   * create an appointment
+   * this function is used to create provisional and not provisional appt
+   */
+  async create(createAppointmentDto: CreateAppointmentDto): Promise<any> {
     try {
       const result = await this.appointmentsRepository.create(
         createAppointmentDto,
@@ -181,16 +211,52 @@ export class AppointmentsService {
         function: 'service/appt/create',
         result,
       });
-      const primaryAction = await this.lookupsService.findAppointmentPrimaryActionByStatusId(
+      const actions = await this.lookupsService.findAppointmentsActions([
         result.appointmentStatusId,
-      );
+      ]);
+
       this.logger.debug({
         function: 'service/appt/create',
-        primaryAction,
+        actions,
       });
-      this.logger.debug({ primaryAction });
-      // TODO: MMX-currentSprint return full body
-      return result;
+
+      const createdAppointment = await this.appointmentsRepository.findOne({
+        where: {
+          id: result.id,
+        },
+        include: [
+          {
+            all: true,
+          },
+        ],
+        /**
+         * reason for that is the sequelize prevent append calculated fields as primaryAction, secondaryActions
+         * raw: true, it will returned all the model with the relation fields
+         * returning example:
+         * {
+         *  ...appointmentData,
+         *  patient.fullName,
+         *  patient.phone_number,
+         *  ... and so on
+         * }
+         * nest: true, because raw returns all as raw, i need to re-shape the object
+         * {
+         *  modify the shape above to let him as {patient{fullName, phone_number},  ...}
+         * }
+         */
+        raw: true,
+        nest: true,
+      });
+
+      this.logger.debug({
+        function: 'service/appt/create',
+        createdAppointment,
+      });
+      return {
+        ...createdAppointment,
+        primaryAction: actions[0].nextAction && actions[0].nextAction.code,
+        secondaryActions: actions[0].secondaryActions,
+      };
     } catch (error) {
       this.logger.error({
         function: 'service/appt/createAppointmentDto',
