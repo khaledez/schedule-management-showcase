@@ -20,6 +20,9 @@
         {
           "name": "MYSQL_PASSWORD_PARAMETER",
           "value": "%MYSQL_PASSWORD_PARAMETER%"
+        },{
+          "name": "DB_PASSWORD",
+          "value": "%DB_PASSWORD%"
         },
         {
           "name": "PORT",
@@ -58,6 +61,6 @@
   "taskRoleArn": "arn:aws:iam::%accountID%:role/ecsTaskExecutionRole",
   "executionRoleArn": "arn:aws:iam::%accountID%:role/ecsTaskExecutionRole",
   "cpu": "256",
-  "memory": "512",
+  "memory": "2048",
   "volumes": []
 }
