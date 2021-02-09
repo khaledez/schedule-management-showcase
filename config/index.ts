@@ -12,10 +12,8 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { config } = require(`./${filePath}`);
   currentConfig = config;
-} catch (error) {
-  console.log(error);
-}
+} catch (error) {}
 
 const current = currentConfig || defaultConfig;
 
-export default current;
+export default [defaultConfig, current];

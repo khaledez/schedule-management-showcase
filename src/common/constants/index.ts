@@ -1,4 +1,17 @@
-export const SERVICE_NAME = 'serviceName';
-export const SEQUELIZE = 'SEQUELIZE';
-export const CONFIG_SERVICE = 'ConfigService';
-export const PORT = 'port';
+export const SERVICE_NAME = 'serviceName'; // caution : don't change this line
+export const SEQUELIZE = 'SEQUELIZE'; // caution : don't change this line
+export const CONFIG_SERVICE = 'ConfigService'; // caution : don't change this line
+export const PORT = 'port'; // caution : don't change this line
+
+export const APPOINTMENTS_REPOSITORY = 'APPOINTMENTS_REPOSITORY';
+export const AVAILABILITY_REPOSITORY = 'AVAILABILITY_REPOSITORY';
+export const DURATION_MINUTES_LOOKUPS_REPOSITORY =
+  'DURATION_MINUTES_LOOKUPS_REPOSITORY';
+export const TIME_GROUPS_LOOKUPS_REPOSITORY = 'TIME_GROUPS_LOOKUPS_REPOSITORY';
+export const APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY =
+  'APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY';
+export const APPOINTMENT_TYPES_LOOKUPS_REPOSITORY =
+  'APPOINTMENT_TYPES_LOOKUPS_REPOSITORY';
+export const APPOINTMENT_STATUS_LOOKUPS_REPOSITORY =
+  'APPOINTMENT_STATUS_LOOKUPS_REPOSITORY';
+export const PATIENTS_REPOSITORY = 'PATIENTS_REPOSITORY';

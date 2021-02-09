@@ -1,3 +1,8 @@
 import config from '../../config';
 
-module.exports = config().database;
+let databaseConfig;
+config.forEach(
+  (value) =>
+    (databaseConfig = value().database ? value().database : databaseConfig),
+);
+module.exports = databaseConfig;

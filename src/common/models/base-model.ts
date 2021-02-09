@@ -6,22 +6,26 @@ import {
   Column,
 } from 'sequelize-typescript';
 
+// note that the id will auto added by sequelize.
 export class BaseModel extends Model<BaseModel> {
+  @Column
+  clinicId: number;
+
   @CreatedAt
-  created_at: Date;
+  createdAt: Date;
 
   @UpdatedAt
-  updated_at: Date;
+  updatedAt: Date;
 
   @DeletedAt
-  deleted_at: Date;
+  deletedAt: Date;
 
   @Column
-  created_by: number;
+  createdBy: number;
 
   @Column
-  updated_by: number;
+  updatedBy: number;
 
   @Column
-  deleted_by: number;
+  deletedBy: number;
 }

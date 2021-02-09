@@ -1,0 +1,20 @@
+{
+  "rules": [
+    "defined-types-are-used",
+    "deprecations-have-a-reason",
+    "descriptions-are-capitalized",
+    "enum-values-all-caps",
+    "enum-values-sorted-alphabetically",
+    "fields-are-camel-cased",
+    "input-object-values-are-camel-cased",
+    "relay-connection-types-spec",
+    "relay-connection-arguments-spec",
+    "types-are-capitalized"
+
+  ],
+  "schemaPaths": ["graphql/**.graphql"],
+  "customRulePaths": [],
+  "rulesOptions": {
+      "enum-values-sorted-alphabetically": { "sortOrder": "lexicographical" }
+    }
+}
