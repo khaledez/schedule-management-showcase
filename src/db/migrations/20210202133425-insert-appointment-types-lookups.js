@@ -7,14 +7,17 @@ module.exports = {
       [
         {
           name_en: 'NEW',
+          name_fr: 'NEW',
           code: 'NEW',
         },
         {
           name_en: 'FUP',
+          name_fr: 'FUP',
           code: 'FUP',
         },
         {
           name_en: 'FUP+ECG',
+          name_fr: 'FUP+ECG',
           code: 'FUP+ECG',
         },
       ],
