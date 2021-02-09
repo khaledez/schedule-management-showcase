@@ -4,5 +4,6 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 RUN chmod -R 765 /usr/src/app
-CMD [ "npm", "run", "db:create"]
+RUN chmod +x /usr/src/app/entrypoint.sh
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 CMD [ "npm", "start" ]
