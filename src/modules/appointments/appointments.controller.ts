@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Logger,
-  Query,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Logger, Query } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
@@ -61,9 +53,9 @@ export class AppointmentsController {
   }
 
   /**
-   * 
-   * @param identity 
-   * @param appointmentData 
+   *
+   * @param identity
+   * @param appointmentData
    * create not provisional appointment for testing.
    */
   @Post('/simple')
@@ -71,13 +63,13 @@ export class AppointmentsController {
     @Identity() identity: IdentityKeysInterface,
     @Body() appointmentData,
   ): Promise<AppointmentsModel> {
-    this.logger.debug({ identity, appointmentData})
+    this.logger.debug({ identity, appointmentData });
     return this.appointmentsService.create({
       ...appointmentData,
-      appointmentStatusId: appointmentData.appointmentStatusId, 
+      appointmentStatusId: appointmentData.appointmentStatusId,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
       provisionalDate: appointmentData.date,
-    })
+    });
   }
 }

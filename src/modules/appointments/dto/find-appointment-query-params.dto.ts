@@ -47,5 +47,4 @@ export class FindAppointmentsQueryParams {
   @IsOptional()
   @Matches(/^[\d+,?]+$/)
   doctorIds: number[];
-
 }

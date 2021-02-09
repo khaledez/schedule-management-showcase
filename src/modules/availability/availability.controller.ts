@@ -1,17 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Headers,
-  MethodNotAllowedException,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AvailabilityService } from './availability.service';
-import { CreateOrUpdateAvailabilityDto } from './dto/add-or-update-availability.dto';
-import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { Identity } from 'src/common/decorators/cognitoIdentity.decorator';
 import { IdentityKeysInterface } from 'src/common/interfaces/identity-keys.interface';
 import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';

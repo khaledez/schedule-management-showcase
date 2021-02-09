@@ -2,7 +2,6 @@ import { PatientsModel } from '../models/patients.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment-actions.model';
-import { AppointmentsModel } from '../models/appointments.model';
 
 export class AppointmentResponseInterface {
   id: number;

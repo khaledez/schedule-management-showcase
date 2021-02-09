@@ -26,10 +26,7 @@ export class AppointmentsController {
   ) {}
 
   @Get()
-  findAll(
-    @Identity() identity: IdentityKeysInterface,
-  ): Promise<AppointmentsModel[]> {
-    console.log('identity', identity);
+  findAll(): Promise<AppointmentsModel[]> {
     return this.appointmentsService.findAll();
   }
   // @Get('manage-patients')

@@ -103,7 +103,7 @@ export class AppointmentsService {
         const includeIndexElement = includeArray.findIndex(
           (e) => e.as === model,
         );
-        includeArray[includeIndexElement]['where'] = {
+        includeArray[includeIndexElement].where = {
           [dbField]: {
             [Op.like]: `%${query[filterName]}%`,
           },
@@ -123,7 +123,7 @@ export class AppointmentsService {
   // TODO: MMX-later add scopes at the appointment types/status/actions
   // TODO: MMX-S3 handle datatype any.
   // TODO: MMX-later handle returning null if availabilityId/patientId is null.
-  async findAll(params): Promise<any[]> {
+  async findAll(params?): Promise<any[]> {
     const { query } = params;
     const options = this.handleFindAllOptions(query);
     this.logger.debug({

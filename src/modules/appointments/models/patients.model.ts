@@ -1,6 +1,5 @@
-import { Table, Column, IsDate, HasOne } from 'sequelize-typescript';
+import { Table, Column, IsDate } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
-import { IsBoolean } from 'class-validator';
 
 // note that the id will auto added by sequelize.
 @Table({ tableName: 'patients_view', underscored: true })
