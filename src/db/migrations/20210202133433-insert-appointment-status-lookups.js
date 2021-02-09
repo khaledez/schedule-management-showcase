@@ -18,10 +18,6 @@ module.exports = {
           code: 'CONFIRM',
         },
         {
-          name_en: 'Confirm',
-          code: 'CONFIRM',
-        },
-        {
           name_en: 'Check in',
           code: 'CHECK_IN',
         },

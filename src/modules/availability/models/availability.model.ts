@@ -4,11 +4,16 @@ import {
   HasOne,
   ForeignKey,
   BelongsTo,
+  DefaultScope,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
-
+@DefaultScope(() => ({
+  attributes: {
+    exclude: ['deletedAt', 'deletedBy'],
+  },
+}))
 @Table({ tableName: 'availability', underscored: true })
 export class AvailabilityModel extends BaseModel {
   @Column

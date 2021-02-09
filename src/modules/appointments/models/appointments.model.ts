@@ -4,6 +4,7 @@ import {
   IsDate,
   ForeignKey,
   BelongsTo,
+  DefaultScope,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
@@ -13,6 +14,11 @@ import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-t
 import { PatientsModel } from './patients.model';
 
 // note that the id will auto added by sequelize.
+@DefaultScope(() => ({
+  attributes: {
+    exclude: ['deletedAt', 'deletedBy'],
+  },
+}))
 @Table({ tableName: 'appointments', underscored: true })
 export class AppointmentsModel extends BaseModel {
   @Column
@@ -78,4 +84,6 @@ export class AppointmentsModel extends BaseModel {
 
   @BelongsTo(() => AppointmentActionsLookupsModel, 'cancelRescheduleReasonId')
   cancelRescheduleReason: AppointmentActionsLookupsModel;
+
+  previousAppointmentId? = this.prevAppointmentId;
 }

@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
@@ -15,6 +15,8 @@ import { AppointmentStatusLookupsModel } from './models/appointment-status.model
 
 @Injectable()
 export class LookupsService {
+  private readonly logger = new Logger(LookupsService.name);
+
   constructor(
     @Inject(DURATION_MINUTES_LOOKUPS_REPOSITORY)
     private readonly durationMinutesLookupsRepository: typeof DurationMinutesLookupsModel,
@@ -106,6 +108,61 @@ export class LookupsService {
       },
     });
   }
+
+  /**
+   * find Appointments Primary And Secondary Actions By Array Of Status Ids
+   * @param ids AppointmentsStatusId
+   */
+  public async findAppointmentsActions(ids: Array<number>) {
+    const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll(
+      {
+        attributes: ['id', 'code'],
+      },
+    );
+    this.logger.debug({
+      function: 'service/lookup/findAppointmentsActions',
+      internalAppointmentsStatus,
+    });
+
+    // TODO: MMX-S4/S5 create fcm and check the status
+    // At S2 status are sorted in the order so the next id is next status
+    const appointmentsPrimaryActions = ids.map((id: number) => {
+      return {
+        currentActionId: id,
+        nextAction: internalAppointmentsStatus.find(
+          (statusObj) => statusObj.id === id + 1,
+        ),
+      };
+    });
+    //TODO: MMX-later change the static way to dynamic.
+    // S2 => static value
+    const nextAppointmentActions = {
+      WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
+      SCHEDULE: [
+        'CANCEL',
+        'CHANGE_DATE',
+        'CHANGE_APPT_TYPE',
+        'RESCHEDULE_APPT',
+      ],
+      CONFIRM: ['CANCEL', 'CHANGE_APPT_TYPE'],
+      CHECK_IN: ['CANCEL'],
+      READY: ['CANCEL'],
+      COMPLETED: [],
+    };
+
+    const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
+      ...action,
+      secondaryActions:
+        action.nextAction && nextAppointmentActions[action.nextAction.code],
+    }));
+    this.logger.debug({
+      function: 'service/lookup/findAppointmentsActions',
+      appointmentsPrimaryActions,
+      appointmentsActions,
+    });
+    return appointmentsActions;
+  }
+
   public async findAppointmentPrimaryActionByStatusId(
     statusId: number,
   ): Promise<AppointmentStatusLookupsModel> | null {
@@ -118,35 +175,5 @@ export class LookupsService {
       return null;
     }
     return allStatus.find(({ id }) => id === statusId + 1);
-  }
-
-  // TODO: MMX-later make this like data loader receive ids and returns array.
-  public async findAppointmentSecondaryActionByStatusId(
-    statusId: number,
-  ): Promise<string[]> | null {
-    const allActions = await this.findAllAppointmentActionsLookups();
-    const currentStatus = await this.appointmentStatusLookupsRepository.findByPk(
-      statusId,
-    );
-    // TODO:: handle if the id does not exists
-    if (!currentStatus || !currentStatus.code) {
-      return null;
-    }
-    const nextAppointmentAcions = {
-      WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
-      SCHEDULE: [
-        'CANCEL',
-        'CHANGE_DATE',
-        'CHANGE_APPT_TYPE',
-        'RESCHEDULE_APPT',
-      ],
-    };
-    if (currentStatus && currentStatus.code) {
-      if (currentStatus.code === 'WAIT_LIST') {
-        allActions.find((e) =>
-          ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'].includes(e.code),
-        );
-      }
-    }
   }
 }

@@ -13,7 +13,9 @@ import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
 import { LookupsService } from '../lookups/lookups.service';
+import { Op, FindOptions } from 'sequelize';
 import { PatientsModel } from './models/patients.model';
+import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
@@ -28,32 +30,130 @@ export class AppointmentsService {
     private readonly lookupsService: LookupsService, // @Inject(SEQUELIZE) // private readonly sequelize: Sequelize, // @Inject(PATIENTS_REPOSITORY) // private readonly patientsModel: typeof PatientsModel,
   ) {}
 
-  private readonly appointmentsIncludesArray = [
-    {
-      model: PatientsModel,
-      as: 'patient',
+  private readonly matchFiltersWithModelFields = {
+    appointmentStatusIds: {
+      isArray: true,
+      dbField: 'appointmentStatusId',
+      model: 'appointment',
     },
-    {
-      model: AppointmentTypesLookupsModel,
-      as: 'appointmentType',
+    appointmentTypeIds: {
+      isArray: true,
+      dbField: 'appointmentTypeId',
+      model: 'appointment',
     },
-    {
-      model: AppointmentStatusLookupsModel,
-      as: 'appointmentStatus',
+    doctorIds: {
+      isArray: true,
+      dbField: 'doctorId',
+      model: 'appointment',
     },
-    {
-      model: AppointmentActionsLookupsModel,
-      as: 'cancelRescheduleReason',
+    patientFullName: {
+      dbField: 'fullName',
+      model: 'patient',
     },
-  ];
+    patientPrimaryHealthPlanNumber: {
+      dbField: 'primaryHealthPlanNumber',
+      model: 'patient',
+    },
+    appointmentStartTime: {
+      dbField: 'startTime',
+      model: 'availability',
+    },
+  };
+
+  handleFindAllOptions(query): FindOptions {
+    const filter = {};
+    const includeArray = [
+      {
+        model: AvailabilityModel,
+        as: 'availability',
+      },
+      {
+        model: PatientsModel,
+        as: 'patient',
+      },
+      {
+        model: AppointmentTypesLookupsModel,
+        as: 'appointmentType',
+      },
+      {
+        model: AppointmentStatusLookupsModel,
+        as: 'appointmentStatus',
+      },
+      {
+        model: AppointmentActionsLookupsModel,
+        as: 'cancelRescheduleReason',
+      },
+    ];
+
+    Object.keys(query).forEach((filterName) => {
+      const {
+        dbField,
+        isArray = false,
+        model,
+      } = this.matchFiltersWithModelFields[filterName];
+      if (model === 'appointment') {
+        if (isArray) {
+          filter[dbField] = query[filterName].split(',');
+        } else {
+          filter[dbField] = {
+            [Op.like]: `%${query[filterName]}%`,
+          };
+        }
+      } else {
+        const includeIndexElement = includeArray.findIndex(
+          (e) => e.as === model,
+        );
+        includeArray[includeIndexElement]['where'] = {
+          [dbField]: {
+            [Op.like]: `%${query[filterName]}%`,
+          },
+        };
+      }
+    });
+    return {
+      include: includeArray,
+      where: {
+        ...filter,
+      },
+      raw: true,
+      nest: true,
+    };
+  }
 
   // TODO: MMX-later add scopes at the appointment types/status/actions
-  // TODO: MMX-currentSprint handle handle next-actions.
-  findAll(): Promise<AppointmentsModel[]> {
-    return this.appointmentsRepository.findAll({
-      include: this.appointmentsIncludesArray,
+  // TODO: MMX-S3 handle datatype any.
+  // TODO: MMX-later handle returning null if availabilityId/patientId is null.
+  async findAll(params): Promise<any[]> {
+    const { query } = params;
+    const options = this.handleFindAllOptions(query);
+    this.logger.debug({
+      function: 'BEFORE => service/appt/findAll',
+      query,
+      options,
     });
+    try {
+      const appointments = await this.appointmentsRepository.findAll(options);
+      const appointmentsStatusIds = appointments.map(
+        (e): number => e.appointmentStatusId,
+      );
+      this.logger.debug({
+        function: 'service/appt/findall',
+        appointmentsStatusIds,
+      });
+      const actions = await this.lookupsService.findAppointmentsActions(
+        appointmentsStatusIds,
+      );
+      return appointments.map((appt, i) => ({
+        ...appt,
+        previousAppointment: appt.prevAppointmentId,
+        primaryAction: actions[i].nextAction && actions[i].nextAction.code,
+        secondaryActions: actions[i].secondaryActions,
+      }));
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
   }
+
   async create(
     createAppointmentDto: CreateAppointmentDto,
   ): Promise<AppointmentsModel> {
