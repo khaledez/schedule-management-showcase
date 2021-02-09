@@ -119,11 +119,16 @@ export class AppointmentsService {
         const includeIndexElement = includeArray.findIndex(
           (e) => e.as === model,
         );
-        includeArray[includeIndexElement]['where'] = {
-          [dbField]: {
-            [Op.like]: `%${query[filterName]}%`,
+        includeArray[includeIndexElement] = Object.assign(
+          includeArray[includeIndexElement],
+          {
+            where: {
+              [dbField]: {
+                [Op.like]: `%${query[filterName]}%`,
+              },
+            },
           },
-        };
+        );
       }
     });
     return {
