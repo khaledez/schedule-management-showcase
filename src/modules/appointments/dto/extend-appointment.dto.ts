@@ -17,7 +17,7 @@ export class ExtendAppointmentDto {
   dateExtensionReason: string;
 
   @IsNumber()
-  prevAppointmentId: number;
+  previousAppointmentId: number;
 
   @IsNumber()
   updatedBy: number;

@@ -9,10 +9,10 @@ import { AvailabilityModel } from './models/availability.model';
 import { AVAILABILITY_REPOSITORY, SEQUELIZE } from 'src/common/constants';
 import { CreateOrUpdateAvailabilityDto } from './dto/add-or-update-availability.dto';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
-import { CreateOrUpdateAvailabilityResponseInterface } from '../../../dist/src/modules/availability/interfaces/create-or-update-availability-response.interface.d';
 import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { Transaction } from 'sequelize/types';
+import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
 
 @Injectable()
 export class AvailabilityService {

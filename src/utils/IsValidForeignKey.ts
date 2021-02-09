@@ -1,18 +1,20 @@
+/* eslint-disable no-unused-vars */
 import {
   registerDecorator,
   ValidationOptions,
   ValidatorConstraintInterface,
-  ValidationArguments,
+  // ValidationArguments,
   ValidatorConstraint,
 } from 'class-validator';
-import * as moment from 'moment';
+// import * as moment from 'moment';
 // will use the same logic for past data
 
 //TODO: check how you could inject repository here.
 @ValidatorConstraint({ async: true })
 export class IsValidForeignKeyConstraint
   implements ValidatorConstraintInterface {
-  validate(id: any, args: ValidationArguments) {
+  validate() {
+    // id: any, args: ValidationArguments
     return true;
     // return Repository.findOneByName(id).then((user) => {
     //   if (user) return false;

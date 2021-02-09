@@ -9,7 +9,7 @@ export class ChangeDoctorAppointmentDto {
   doctorReassignmentReason: string;
 
   @IsNumber()
-  prevAppointmentId: number;
+  previousAppointmentId: number;
 
   @IsNumber()
   updatedBy: number;

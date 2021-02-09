@@ -4,7 +4,7 @@ import { AvailabilityService } from './availability.service';
 import { Identity } from 'src/common/decorators/cognitoIdentity.decorator';
 import { IdentityKeysInterface } from 'src/common/interfaces/identity-keys.interface';
 import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';
-import { CreateOrUpdateAvailabilityResponseInterface } from '../../../dist/src/modules/availability/interfaces/create-or-update-availability-response.interface.d';
+import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
 
 @Controller('availability')
 export class AvailabilityController {

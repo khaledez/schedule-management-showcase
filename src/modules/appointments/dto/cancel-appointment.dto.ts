@@ -17,7 +17,7 @@ export class CancelAppointmentDto {
   cancellationReason: string;
 
   @IsNumber()
-  prevAppointmentId: number;
+  previousAppointmentId: number;
 
   // TODO: this should not come from the code, it should use the default value which is TRUE
   @IsBoolean()

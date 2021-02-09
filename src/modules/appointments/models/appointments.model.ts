@@ -33,7 +33,7 @@ export class AppointmentsModel extends BaseModel {
   availabilityId: number;
 
   @Column
-  prevAppointmentId: number;
+  previousAppointmentId: number;
 
   @Column
   @ForeignKey(() => AppointmentTypesLookupsModel)
@@ -84,6 +84,4 @@ export class AppointmentsModel extends BaseModel {
 
   @BelongsTo(() => AppointmentActionsLookupsModel, 'cancelRescheduleReasonId')
   cancelRescheduleReason: AppointmentActionsLookupsModel;
-
-  previousAppointmentId? = this.prevAppointmentId;
 }

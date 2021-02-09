@@ -145,7 +145,7 @@ export class AppointmentsService {
       );
       return appointments.map((appt, i) => ({
         ...appt,
-        previousAppointment: appt.prevAppointmentId,
+        previousAppointment: appt.previousAppointmentId,
         primaryAction: actions[i].nextAction && actions[i].nextAction.code,
         secondaryActions: actions[i].secondaryActions,
       }));

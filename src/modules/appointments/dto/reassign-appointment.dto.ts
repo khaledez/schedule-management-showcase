@@ -4,7 +4,7 @@ import { ReassignAppointmentBodyDto } from './reassign-appointment-body.dto';
 // this dto after modify the dto.
 export class ReassignAppointmentDto extends ReassignAppointmentBodyDto {
   @IsNumber()
-  prevAppointmentId: number;
+  previousAppointmentId: number;
 
   // TODO: this should not come from the code, it should use the default value which is TRUE
   @IsBoolean()

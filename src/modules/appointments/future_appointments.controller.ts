@@ -63,7 +63,7 @@ export class AppointmentsController {
       upcomingAppointment: true, // added this for returning it at the response. it should be deleted.
       date: data.provisionalDate,
       dateExtensionReason: data.reasonMessage,
-      prevAppointmentId: Number(params.id),
+      previousAppointmentId: Number(params.id),
       updatedBy: 1,
       updatedAt: new Date(),
     });
@@ -82,7 +82,7 @@ export class AppointmentsController {
     // TODO: we need canceledBy, canceledAt fields?
     return this.appointmentsService.cancelAppointment({
       date: data.provisionalDate,
-      prevAppointmentId: Number(params.id),
+      previousAppointmentId: Number(params.id),
       upcomingAppointment: true,
       cancellationReason: data.reasonMessage,
       canceledBy: 1,
@@ -97,7 +97,7 @@ export class AppointmentsController {
   ): Promise<AppointmentsModel> {
     return this.appointmentsService.reassignAppointment({
       doctorId: data.doctorId,
-      prevAppointmentId: Number(params.id),
+      previousAppointmentId: Number(params.id),
       upcomingAppointment: true,
       updatedBy: 1,
       updatedAt: new Date(),
@@ -112,7 +112,7 @@ export class AppointmentsController {
     return this.appointmentsService.changeDoctorAppointment({
       doctorId: Number(data.doctorId),
       doctorReassignmentReason: data.reasonMessage,
-      prevAppointmentId: Number(params.id),
+      previousAppointmentId: Number(params.id),
       upcomingAppointment: true,
       updatedBy: 1,
       updatedAt: new Date(),

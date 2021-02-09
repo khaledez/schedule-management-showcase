@@ -100,7 +100,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "",
+      "pre-commit": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
       "pre-push": ""
     }
   },
