@@ -36,7 +36,7 @@ export const databaseProviders = [
         PatientsModel,
       ]);
       // sequelize.addModels([__dirname + '../**/models/*.model{.ts,.js}']);
-      await sequelize.sync();
+      // await sequelize.sync();
       return sequelize;
     },
     inject: [ConfigService],
