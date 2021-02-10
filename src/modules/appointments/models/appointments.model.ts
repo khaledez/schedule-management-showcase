@@ -39,9 +39,6 @@ export class AppointmentsModel extends BaseModel {
   @ForeignKey(() => AppointmentTypesLookupsModel)
   appointmentTypeId: number;
 
-  @Column
-  clinicId: number;
-
   @IsDate
   @Column
   date: Date;
