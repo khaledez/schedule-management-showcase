@@ -3,7 +3,7 @@ import { Column, DefaultScope } from 'sequelize-typescript';
 
 @DefaultScope(() => ({
   attributes: {
-    include: ['id', 'clinicId', 'nameEn', 'nameFr', 'code'],
+    exclude: ['deletedAt', 'deletedBy'],
   },
 }))
 export class LookupsModel extends BaseModel {

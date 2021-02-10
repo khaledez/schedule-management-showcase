@@ -16,7 +16,7 @@ import { ReassignAppointmentBodyDto } from './dto/reassign-appointment-body.dto'
 import { ChangeDoctorAppointmentBodyDto } from './dto/change-doctor-appointment-body.dto';
 // import { Sequelize } from 'sequelize-typescript';
 import { Identity } from '../../common/decorators/cognitoIdentity.decorator';
-import { IdentityKeysInterface } from '../../common/interfaces/identity-keys.interface';
+import { IdentityDto } from 'src/common/dtos/identity.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -29,14 +29,10 @@ export class AppointmentsController {
   findAll(): Promise<AppointmentsModel[]> {
     return this.appointmentsService.findAll();
   }
-  // @Get('manage-patients')
-  // findManagePatientsTable(): Promise<any[]> {
-  //   return this.appointmentsService.findManagePatientTable();
-  // }
 
   @Post()
   createAppointment(
-    @Identity() identity: IdentityKeysInterface,
+    @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateAppointmentBodyDto,
   ): Promise<AppointmentsModel> {
     // todo: create a guard to validate the headers.

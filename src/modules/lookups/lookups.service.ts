@@ -29,81 +29,86 @@ export class LookupsService {
     @Inject(APPOINTMENT_STATUS_LOOKUPS_REPOSITORY)
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
   ) {}
-
-  //TODO: MMX-currentSprint handle clinic_id logic
+  /**
+   *
+   * Find the duration minutes in the system + clinic if it exists
+   * @param identity xmmx user identifiers
+   * duration minutes like 5 Mins, 15 Mins or 30.
+   */
   public findAllDurationMinutesLookups(
-    clinicId?: number,
+    identity,
   ): Promise<DurationMinutesLookupsModel[]> {
-    const arrayOfOrToFind = [null];
-    if (clinicId) {
-      arrayOfOrToFind.push(clinicId);
-    }
+    const { clinicId } = identity;
     return this.durationMinutesLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: arrayOfOrToFind,
+          [Op.or]: [null, clinicId],
         },
       },
     });
   }
-
-  public findAllTimeGroupsLookups(
-    clinicId?: number,
-  ): Promise<TimeGroupsLookupsModel[]> {
-    const arrayOfOrToFind = [null];
-    if (clinicId) {
-      arrayOfOrToFind.push(clinicId);
-    }
+  /**
+   * Find time groups in the system + clinic if it exists
+   * @param identity
+   * lookup example: morning, afternoon, evening
+   */
+  public findAllTimeGroupsLookups(identity): Promise<TimeGroupsLookupsModel[]> {
+    const { clinicId } = identity;
     return this.timeGroupsLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: arrayOfOrToFind,
+          [Op.or]: [null, clinicId],
         },
       },
     });
   }
-
+  /**
+   * Find appointment actions
+   * @param identity
+   * example: CANCEL, CHANGE_APPT_TYPE, CHANGE_DOCTOR
+   */
   public findAllAppointmentActionsLookups(
-    clinicId?: number,
+    identity,
   ): Promise<AppointmentActionsLookupsModel[]> {
-    const arrayOfOrToFind = [null];
-    if (clinicId) {
-      arrayOfOrToFind.push(clinicId);
-    }
+    const { clinicId } = identity;
     return this.appointmentActionsLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: arrayOfOrToFind,
+          [Op.or]: [null, clinicId],
         },
       },
     });
   }
+  /**
+   * Find Appointment types
+   * @param identity
+   * example: NEW, FUP
+   */
   public findAllAppointmentTypesLookups(
-    clinicId?: number,
+    identity,
   ): Promise<AppointmentTypesLookupsModel[]> {
-    const arrayOfOrToFind = [null];
-    if (clinicId) {
-      arrayOfOrToFind.push(clinicId);
-    }
+    const { clinicId } = identity;
     return this.appointmentTypesLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: arrayOfOrToFind,
+          [Op.or]: [null, clinicId],
         },
       },
     });
   }
+  /**
+   * Find Appointment status
+   * @param identity
+   * example: READY, CHECK-IN
+   */
   public findAllAppointmentStatusLookups(
-    clinicId?: number,
+    identity,
   ): Promise<AppointmentStatusLookupsModel[]> {
-    const arrayOfOrToFind = [null];
-    if (clinicId) {
-      arrayOfOrToFind.push(clinicId);
-    }
+    const { clinicId } = identity;
     return this.appointmentStatusLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: arrayOfOrToFind,
+          [Op.or]: [null, clinicId],
         },
       },
     });
@@ -135,7 +140,7 @@ export class LookupsService {
       };
     });
     //TODO: MMX-later change the static way to dynamic.
-    // S2 => static value
+    //TODO: MMX-CurrentSprint => static value
     const nextAppointmentActions = {
       WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
       SCHEDULE: [
@@ -161,19 +166,5 @@ export class LookupsService {
       appointmentsActions,
     });
     return appointmentsActions;
-  }
-
-  public async findAppointmentPrimaryActionByStatusId(
-    statusId: number,
-  ): Promise<AppointmentStatusLookupsModel> | null {
-    const allStatus = await this.findAllAppointmentStatusLookups();
-    // TODO: handle if the id does not exits.
-    const currentStatusObject =
-      allStatus.length && allStatus.find(({ id }) => statusId === id);
-    // TODO: put the complete status as constant!
-    if (currentStatusObject && currentStatusObject.code === 'COMPLETE') {
-      return null;
-    }
-    return allStatus.find(({ id }) => id === statusId + 1);
   }
 }

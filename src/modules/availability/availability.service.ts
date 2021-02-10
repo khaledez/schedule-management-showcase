@@ -74,25 +74,16 @@ export class AvailabilityService {
    * @returns created/updated/deleted effected rows.
    */
   // TODO: MMX-S3 check overlaps and duplicates.
-  // TODO: MMX-currentSprint add loggers.
   createOrUpdateAvailability(
     createOrUpdateAvailabilityDto: CreateOrUpdateAvailabilityDto,
   ): Promise<CreateOrUpdateAvailabilityResponseInterface> {
     try {
       return this.sequelize.transaction(async (transaction: Transaction) => {
         this.logger.log({ createOrUpdateAvailabilityDto });
-        const {
-          _delete: deleteAv,
-          clinicId,
-          userId,
-        } = createOrUpdateAvailabilityDto;
+
+        const { remove: deleteAv, identity } = createOrUpdateAvailabilityDto;
+        const { clinicId, userId } = identity;
         let { create } = createOrUpdateAvailabilityDto;
-        // TODO: move out of service to controller.
-        if (!create.length && !deleteAv.length) {
-          throw new UnprocessableEntityException(
-            'create and delete arrays could not be empty at the same time.',
-          );
-        }
 
         // add clinicId, createdBy at the availability object.
         if (create.length) {

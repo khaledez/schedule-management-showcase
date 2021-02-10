@@ -1,5 +1,11 @@
 import { CreateAvailabilityDto } from './create-availability.dto';
-import { IsArray, ArrayUnique, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  ArrayUnique,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
+import { IdentityDto } from '../../../common/dtos/identity.dto';
 
 export class CreateOrUpdateAvailabilityDto {
   @IsArray()
@@ -10,11 +16,8 @@ export class CreateOrUpdateAvailabilityDto {
   @IsArray()
   @ArrayUnique()
   @IsOptional()
-  _delete: Array<number>;
+  remove: Array<number>;
 
-  @IsNumber()
-  userId: number;
-
-  @IsNumber()
-  clinicId: number;
+  @ValidateNested()
+  identity: IdentityDto;
 }

@@ -3,9 +3,9 @@ import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
 import { Identity } from '../../common/decorators/cognitoIdentity.decorator';
-import { IdentityKeysInterface } from '../../common/interfaces/identity-keys.interface';
 import { AppointmentResponseInterface } from './interfaces/appointment-response.intreface';
 import { FindAppointmentsQueryParams } from './dto/find-appointment-query-params.dto';
+import { IdentityDto } from '../../common/dtos/identity.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -18,7 +18,7 @@ export class AppointmentsController {
    */
   @Get()
   findAll(
-    @Identity() identity: IdentityKeysInterface,
+    @Identity() identity: IdentityDto,
     @Query() query: FindAppointmentsQueryParams,
   ): Promise<AppointmentResponseInterface[]> {
     this.logger.debug({
@@ -34,11 +34,11 @@ export class AppointmentsController {
    * Create a provisional appointment
    * @param identity
    * @param appointmentData
-   * @returns Created Appointment //TODO: MMX-currentSprint return full data
+   * @returns Created Appointment
    */
   @Post()
   createProvisionalAppointment(
-    @Identity() identity: IdentityKeysInterface,
+    @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateAppointmentBodyDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({
@@ -64,7 +64,7 @@ export class AppointmentsController {
    */
   @Post('/simple')
   createSimpleAppointment(
-    @Identity() identity: IdentityKeysInterface,
+    @Identity() identity: IdentityDto,
     @Body() appointmentData,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
