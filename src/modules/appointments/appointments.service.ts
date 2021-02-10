@@ -19,6 +19,7 @@ import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
+import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 
 @Injectable()
 export class AppointmentsService {
@@ -379,5 +380,27 @@ export class AppointmentsService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+
+  getAppointmentsByPeriods(
+    clinicId: number,
+    query: QueryAppointmentsByPeriodsDto,
+  ) {
+    const where: any = {
+      clinicId,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      date: {
+        [Op.between]: [query.fromDate, query.toDate],
+      },
+    };
+    if (query.doctorIds && query.doctorIds.length) {
+      where.doctorId = { [Op.in]: query.doctorIds };
+    }
+    return this.appointmentsRepository.count({
+      attributes: ['date'],
+      group: ['date'],
+      where,
+    });
   }
 }
