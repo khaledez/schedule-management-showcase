@@ -70,7 +70,7 @@ export class AppointmentsController {
    * create not provisional appointment for testing.
    */
   @Post()
-  createSimpleAppointment(
+  createAppointment(
     @Identity() identity: IdentityDto,
     @Body() appointmentData,
   ): Promise<AppointmentsModel> {
