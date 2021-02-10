@@ -387,6 +387,9 @@ export class AppointmentsService {
     query: QueryAppointmentsByPeriodsDto,
   ) {
     const where: any = {
+      availabilityId: {
+        [Op.ne]: null,
+      },
       clinicId,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
