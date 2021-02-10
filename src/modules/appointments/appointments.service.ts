@@ -294,7 +294,9 @@ export class AppointmentsService {
       primaryAction: actions[0].nextAction && actions[0].nextAction.code,
       secondaryActions: actions[0].secondaryActions,
       provisionalAppointment: !appointment.availability.id,
-      availability: !!appointment.availabilityId ? appointment.availability : null
+      availability: appointment.availabilityId
+        ? appointment.availability
+        : null,
     };
   }
 

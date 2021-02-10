@@ -40,8 +40,8 @@ export class AvailabilityService {
       include: [
         {
           all: true,
-        }
-      ]
+        },
+      ],
     });
   }
 

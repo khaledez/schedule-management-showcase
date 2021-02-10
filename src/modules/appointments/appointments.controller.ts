@@ -40,8 +40,6 @@ export class AppointmentsController {
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    console.log("hey hey hey id", id);
-    
     return this.appointmentsService.findOne(id);
   }
 
