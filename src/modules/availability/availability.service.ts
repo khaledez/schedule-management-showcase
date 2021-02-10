@@ -13,6 +13,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { Transaction } from 'sequelize/types';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
+import { raw } from 'express';
 
 @Injectable()
 export class AvailabilityService {
@@ -28,9 +29,19 @@ export class AvailabilityService {
     return this.availabilityRepository.findAll({
       include: [
         {
-          all: true,
+          all: true, //TODO: remove appointment from the relation
         },
       ],
+    });
+  }
+
+  findOne(id: number): Promise<AvailabilityModel> {
+    return this.availabilityRepository.findByPk(id, {
+      include: [
+        {
+          all: true,
+        }
+      ]
     });
   }
 

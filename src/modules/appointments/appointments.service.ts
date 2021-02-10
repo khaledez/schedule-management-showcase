@@ -137,6 +137,7 @@ export class AppointmentsService {
         ...filter,
       },
       /**
+       * plain: true did not working here.
        * reason for that is the sequelize prevent append calculated fields as primaryAction, secondaryActions
        * raw: true, it will returned all the model with the relation fields
        * returning example:
@@ -150,7 +151,9 @@ export class AppointmentsService {
        * {
        *  modify the shape above to let him as {patient{fullName, phone_number},  ...}
        * }
+       *
        */
+      // plain: true
       raw: true,
       nest: true,
     };
@@ -271,6 +274,28 @@ export class AppointmentsService {
       });
       throw new BadRequestException(error);
     }
+  }
+
+  async findOne(id: number): Promise<any> {
+    const appointment = await this.appointmentsRepository.findByPk(id, {
+      raw: true,
+      nest: true,
+      include: [
+        {
+          all: true,
+        },
+      ],
+    });
+    const actions = await this.lookupsService.findAppointmentsActions([
+      appointment.appointmentStatusId,
+    ]);
+    return {
+      ...appointment,
+      primaryAction: actions[0].nextAction && actions[0].nextAction.code,
+      secondaryActions: actions[0].secondaryActions,
+      provisionalAppointment: !appointment.availability.id,
+      availability: !!appointment.availabilityId ? appointment.availability : null
+    };
   }
 
   // async filterAppointments(data) {
