@@ -74,10 +74,10 @@ export class AppointmentsModel extends BaseModel {
   patient: PatientsModel;
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
-  appointmentType: AppointmentTypesLookupsModel;
+  type: AppointmentTypesLookupsModel;
 
   @BelongsTo(() => AppointmentStatusLookupsModel, 'appointmentStatusId')
-  appointmentStatus: AppointmentStatusLookupsModel;
+  status: AppointmentStatusLookupsModel;
 
   @BelongsTo(() => AppointmentActionsLookupsModel, 'cancelRescheduleReasonId')
   cancelRescheduleReason: AppointmentActionsLookupsModel;

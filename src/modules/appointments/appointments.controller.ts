@@ -36,7 +36,7 @@ export class AppointmentsController {
    * @param appointmentData
    * @returns Created Appointment
    */
-  @Post()
+  @Post('provisional')
   createProvisionalAppointment(
     @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateAppointmentBodyDto,
@@ -56,13 +56,20 @@ export class AppointmentsController {
     });
   }
 
+  // @Post('filter')
+  // filterAppointments(
+  //   @Body() body
+  // ): Promise<AppointmentsModel>{
+  //   return this.appointmentsService.filterAppointments(body);
+  // }
+
   /**
    *
    * @param identity
    * @param appointmentData
    * create not provisional appointment for testing.
    */
-  @Post('/simple')
+  @Post()
   createSimpleAppointment(
     @Identity() identity: IdentityDto,
     @Body() appointmentData,

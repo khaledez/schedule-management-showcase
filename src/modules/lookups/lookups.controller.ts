@@ -1,4 +1,4 @@
-import { Controller, Get, Headers } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { LookupsService } from './lookups.service';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';

@@ -85,11 +85,11 @@ export class AppointmentsService {
       },
       {
         model: AppointmentTypesLookupsModel,
-        as: 'appointmentType',
+        as: 'type',
       },
       {
         model: AppointmentStatusLookupsModel,
-        as: 'appointmentStatus',
+        as: 'status',
       },
       {
         model: AppointmentActionsLookupsModel,
@@ -192,6 +192,7 @@ export class AppointmentsService {
         previousAppointment: appt.previousAppointmentId,
         primaryAction: actions[i].nextAction && actions[i].nextAction.code,
         secondaryActions: actions[i].secondaryActions,
+        provisionalAppointment: !appt.availability.id,
       }));
     } catch (error) {
       this.logger.error({
@@ -261,6 +262,7 @@ export class AppointmentsService {
         ...createdAppointment,
         primaryAction: actions[0].nextAction && actions[0].nextAction.code,
         secondaryActions: actions[0].secondaryActions,
+        provisionalAppointment: !createdAppointment.availability.id,
       };
     } catch (error) {
       this.logger.error({
@@ -270,6 +272,10 @@ export class AppointmentsService {
       throw new BadRequestException(error);
     }
   }
+
+  // async filterAppointments(data) {
+  //   return this.appointmentsRepository.findAll();
+  // }
   // OUT-OF-SCOPE: MMX-S3
   // find by id and update the appointment
   async findAndUpdateAppointment(
