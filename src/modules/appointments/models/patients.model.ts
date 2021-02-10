@@ -12,14 +12,5 @@ export class PatientsModel extends BaseModel {
   dob: Date;
 
   @Column
-  primary: boolean;
-
-  @Column
-  phoneTypeCode: string;
-
-  @Column
-  phoneNumber: string;
-
-  @Column
   primaryHealthPlanNumber: string;
 }

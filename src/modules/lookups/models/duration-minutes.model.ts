@@ -1,4 +1,4 @@
-import { Table, Column, DefaultScope } from 'sequelize-typescript';
+import { Table, Column } from 'sequelize-typescript';
 import { LookupsModel } from '../../../common/models/lookup-model';
 
 @Table({ tableName: 'DurationMinutesLookups', underscored: true })

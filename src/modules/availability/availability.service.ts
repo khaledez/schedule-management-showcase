@@ -25,7 +25,13 @@ export class AvailabilityService {
   ) {}
 
   findAll(): Promise<AvailabilityModel[]> {
-    return this.availabilityRepository.findAll();
+    return this.availabilityRepository.findAll({
+      include: [
+        {
+          all: true,
+        },
+      ],
+    });
   }
 
   createAvailability(data: CreateAvailabilityDto): Promise<AvailabilityModel> {

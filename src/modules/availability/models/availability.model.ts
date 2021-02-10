@@ -40,5 +40,5 @@ export class AvailabilityModel extends BaseModel {
   appointment: AppointmentsModel;
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
-  appointmentType: AppointmentTypesLookupsModel;
+  type: AppointmentTypesLookupsModel;
 }
