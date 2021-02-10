@@ -14,7 +14,7 @@ import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-t
     exclude: ['deletedAt', 'deletedBy'],
   },
 }))
-@Table({ tableName: 'availability', underscored: true })
+@Table({ tableName: 'Availability', underscored: true })
 export class AvailabilityModel extends BaseModel {
   @Column
   doctorId: number;
