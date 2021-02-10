@@ -5,9 +5,6 @@ import { BaseModel } from '../../../common/models/base-model';
 @Table({ tableName: 'patients_view', underscored: true })
 export class PatientsModel extends BaseModel {
   @Column
-  clinicId: number;
-
-  @Column
   fullName: string;
 
   @IsDate

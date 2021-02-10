@@ -20,9 +20,6 @@ export class AvailabilityModel extends BaseModel {
   doctorId: number;
 
   @Column
-  clinicId: number;
-
-  @Column
   @ForeignKey(() => AppointmentsModel)
   appointmentId: number;
 
