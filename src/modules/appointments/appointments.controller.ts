@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Logger, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Logger,
+  Query,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
@@ -27,6 +36,11 @@ export class AppointmentsController {
       query,
     });
     return this.appointmentsService.findAll({ query });
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.appointmentsService.findOne(id);
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.

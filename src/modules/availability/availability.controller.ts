@@ -5,6 +5,8 @@ import {
   Body,
   Logger,
   BadRequestException,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AvailabilityService } from './availability.service';
@@ -22,6 +24,11 @@ export class AvailabilityController {
   @Get()
   findAll(): Promise<AvailabilityModel[]> {
     return this.availabilityService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.availabilityService.findOne(id);
   }
 
   @Post()
