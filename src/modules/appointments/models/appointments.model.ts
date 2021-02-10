@@ -19,7 +19,7 @@ import { PatientsModel } from './patients.model';
     exclude: ['deletedAt', 'deletedBy'],
   },
 }))
-@Table({ tableName: 'appointments', underscored: true })
+@Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel extends BaseModel {
   @Column
   @ForeignKey(() => PatientsModel)
