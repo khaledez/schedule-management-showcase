@@ -5,6 +5,8 @@ import { TimeGroupsLookupsModel } from './models/time-groups.model';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
+import { Identity } from 'src/common/decorators/cognitoIdentity.decorator';
+import { IdentityDto } from 'src/common/dtos/identity.dto';
 
 @Controller('lookups')
 export class LookupsController {
@@ -12,44 +14,35 @@ export class LookupsController {
 
   @Get('/duration-minutes')
   public findDurationMinutes(
-    @Headers() headers?: Headers,
+    @Identity() identity: IdentityDto,
   ): Promise<DurationMinutesLookupsModel[]> {
-    const clinicId: string = headers['x-mmx-clinic-id'];
-    return this.lookupsService.findAllDurationMinutesLookups(Number(clinicId));
+    return this.lookupsService.findAllDurationMinutesLookups(identity);
   }
 
   @Get('/time-groups')
   public findTimeGroups(
-    @Headers() headers?: Headers,
+    @Identity() identity: IdentityDto,
   ): Promise<TimeGroupsLookupsModel[]> {
-    const clinicId: string = headers['x-mmx-clinic-id'];
-    return this.lookupsService.findAllTimeGroupsLookups(Number(clinicId));
+    return this.lookupsService.findAllTimeGroupsLookups(identity);
   }
 
   @Get('/appointment-actions')
   public findAppointmentActions(
-    @Headers() headers?: Headers,
+    @Identity() identity: IdentityDto,
   ): Promise<AppointmentActionsLookupsModel[]> {
-    const clinicId: string = headers['x-mmx-clinic-id'];
-    return this.lookupsService.findAllAppointmentActionsLookups(
-      Number(clinicId),
-    );
+    return this.lookupsService.findAllAppointmentActionsLookups(identity);
   }
 
   @Get('/appointment-status')
   public findAppointmentStatus(
-    @Headers() headers?: Headers,
+    @Identity() identity: IdentityDto,
   ): Promise<AppointmentStatusLookupsModel[]> {
-    const clinicId: string = headers['x-mmx-clinic-id'];
-    return this.lookupsService.findAllAppointmentTypesLookups(Number(clinicId));
+    return this.lookupsService.findAllAppointmentTypesLookups(identity);
   }
   @Get('/appointment-types')
   public findAppointmentTypes(
-    @Headers() headers?: Headers,
+    @Identity() identity: IdentityDto,
   ): Promise<AppointmentTypesLookupsModel[]> {
-    const clinicId: string = headers['x-mmx-clinic-id'];
-    return this.lookupsService.findAllAppointmentStatusLookups(
-      Number(clinicId),
-    );
+    return this.lookupsService.findAllAppointmentStatusLookups(identity);
   }
 }

@@ -1,10 +1,17 @@
-import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AvailabilityService } from './availability.service';
 import { Identity } from 'src/common/decorators/cognitoIdentity.decorator';
-import { IdentityKeysInterface } from 'src/common/interfaces/identity-keys.interface';
 import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
+import { IdentityDto } from 'src/common/dtos/identity.dto';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -21,16 +28,20 @@ export class AvailabilityController {
   createOrUpdate(
     @Body()
     createOrUpdateAvailabilityBodyDto: CreateOrUpdateAvailabilityBodyDto,
-    @Identity() identity: IdentityKeysInterface,
+    @Identity() identity: IdentityDto,
   ): Promise<CreateOrUpdateAvailabilityResponseInterface> {
     const { clinicId, userId } = identity;
+    const { create, remove } = createOrUpdateAvailabilityBodyDto;
     this.logger.debug({ clinicId, userId, createOrUpdateAvailabilityBodyDto });
+    if (!create.length && !remove.length) {
+      throw new BadRequestException(
+        'create and remove arrays could not be empty at the same time.',
+      );
+    }
     return this.availabilityService.createOrUpdateAvailability({
       ...createOrUpdateAvailabilityBodyDto,
-      _delete: createOrUpdateAvailabilityBodyDto.delete,
-      // TODO: MMX-currentSprint pass identity instead of clinicId/userId
-      clinicId,
-      userId,
+      remove: createOrUpdateAvailabilityBodyDto.remove,
+      identity,
     });
   }
 }

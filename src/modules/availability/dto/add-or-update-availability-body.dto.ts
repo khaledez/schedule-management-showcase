@@ -9,5 +9,5 @@ export class CreateOrUpdateAvailabilityBodyDto {
   @IsArray()
   @ArrayUnique()
   @IsOptional()
-  delete: Array<number>; // TODO: MMX-currentSprint rename it to remove
+  remove: Array<number>;
 }

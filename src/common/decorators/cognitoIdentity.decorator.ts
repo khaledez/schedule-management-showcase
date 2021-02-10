@@ -16,6 +16,7 @@ export const Identity = createParamDecorator(
       // userLang: request.headers['x-mmx-lang'],
       userId: +request.headers['x-mmx-user-id'],
     };
+    console.log('cognitoIdentity', cognitoIdentity);
     if (
       !cognitoIdentity.cognitoId ||
       !cognitoIdentity.clinicId ||
