@@ -245,25 +245,22 @@ export class AppointmentsService {
   }
 
   async findOne(id: number): Promise<any> {
-    let appointment = await this.appointmentsRepository.findByPk(id, {
+    const appointment = await this.appointmentsRepository.findByPk(id, {
       include: [
         {
           all: true,
         },
       ],
     });
-    const newApp = appointment.get({ plain: true });
+    const appointmentAsPlain = appointment.get({ plain: true });
     const actions = await this.lookupsService.findAppointmentsActions([
       appointment.appointmentStatusId,
     ]);
     return {
-      ...newApp,
+      ...appointmentAsPlain,
       primaryAction: actions[0].nextAction && actions[0].nextAction.code,
       secondaryActions: actions[0].secondaryActions,
       provisionalAppointment: !appointment.availabilityId,
-      availability: appointment.availabilityId
-        ? appointment.availability
-        : null,
     };
   }
 
