@@ -39,6 +39,22 @@ export class AppointmentsController {
     return this.appointmentsService.findAll({ query });
   }
 
+  // get total appointment for each day for aspecific period
+  @Get('appointments-days')
+  async getAppointmentsByPeriods(
+    @Identity() identity: IdentityDto,
+    @Query() query: QueryAppointmentsByPeriodsDto,
+  ) {
+    this.logger.log({ query });
+    this.logger.log({ identity });
+    return {
+      dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(
+        identity.clinicId,
+        query,
+      ),
+    };
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.findOne(id);
@@ -97,21 +113,5 @@ export class AppointmentsController {
       createdBy: identity.userId,
       provisionalDate: appointmentData.date,
     });
-  }
-
-  // get total appointment for each day for aspecific period
-  @Get('appointments-by-period')
-  async getAppointmentsByPeriods(
-    @Identity() identity: IdentityDto,
-    @Query() query: QueryAppointmentsByPeriodsDto,
-  ) {
-    this.logger.log({ query });
-    this.logger.log({ identity });
-    return {
-      dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(
-        identity.clinicId,
-        query,
-      ),
-    };
   }
 }

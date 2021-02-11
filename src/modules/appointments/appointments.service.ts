@@ -414,6 +414,12 @@ export class AppointmentsService {
     query: QueryAppointmentsByPeriodsDto,
   ) {
     const where: any = {
+      canceledAt: {
+        [Op.eq]: null,
+      },
+      canceledBy: {
+        [Op.eq]: null,
+      },
       availabilityId: {
         [Op.ne]: null,
       },
@@ -430,6 +436,17 @@ export class AppointmentsService {
     return this.appointmentsRepository.count({
       attributes: ['date'],
       group: ['date'],
+      include: [
+        {
+          model: AppointmentStatusLookupsModel,
+          as: 'status',
+          where: {
+            code: {
+              [Op.in]: ['SCHEDULE', 'CONFIRM', 'CHECK_IN', 'READY'],
+            },
+          },
+        },
+      ],
       where,
     });
   }
