@@ -5,7 +5,10 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
+import {
+  APPOINTMENTS_REPOSITORY,
+  SEQUELIZE,
+} from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
@@ -13,7 +16,7 @@ import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
 import { LookupsService } from '../lookups/lookups.service';
-import { Op, FindOptions } from 'sequelize';
+import { Op, FindOptions, Sequelize, Transaction } from 'sequelize';
 import { PatientsModel } from './models/patients.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
@@ -29,6 +32,8 @@ export class AppointmentsService {
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService, // @Inject(SEQUELIZE) // private readonly sequelize: Sequelize, // @Inject(PATIENTS_REPOSITORY) // private readonly patientsModel: typeof PatientsModel,
+    @Inject(SEQUELIZE)
+    private readonly sequelize: Sequelize,
   ) {}
 
   private readonly matchFiltersWithModelFields = {
@@ -177,7 +182,7 @@ export class AppointmentsService {
       return appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
         ...appt,
         previousAppointment: appt.previousAppointmentId,
-        primaryAction: actions[i].nextAction && actions[i].nextAction.code,
+        primaryAction: actions[i].nextAction && actions[i].nextAction,
         secondaryActions: actions[i].secondaryActions,
         provisionalAppointment: !appt.availabilityId,
       }));
@@ -199,6 +204,9 @@ export class AppointmentsService {
    * create an appointment
    * this function is used to create provisional and not provisional appt
    */
+  // TODO: MMX-later we need an transaction
+  // the reason why i did not make it right now because i need the full data which comes from findOne
+  // findOne will not find the element during transaction. and create did not return full data.
   async create(createAppointmentDto: CreateAppointmentDto): Promise<any> {
     try {
       const result = await this.appointmentsRepository.create(
@@ -216,7 +224,6 @@ export class AppointmentsService {
         function: 'service/appt/create',
         actions,
       });
-
       const createdAppointment = await this.appointmentsRepository.findOne({
         where: {
           id: result.id,
@@ -243,9 +250,9 @@ export class AppointmentsService {
       });
       return {
         ...appointmentPlain,
-        primaryAction: actions[0].nextAction && actions[0].nextAction.code,
+        primaryAction: actions[0].nextAction,
         secondaryActions: actions[0].secondaryActions,
-        provisionalAppointment: !createdAppointment.availability.id,
+        provisionalAppointment: createdAppointment.availabilityId,
       };
     } catch (error) {
       this.logger.error({
@@ -282,7 +289,7 @@ export class AppointmentsService {
     ]);
     return {
       ...appointmentAsPlain,
-      primaryAction: actions[0].nextAction && actions[0].nextAction.code,
+      primaryAction: actions[0].nextAction,
       secondaryActions: actions[0].secondaryActions,
       provisionalAppointment: !appointment.availabilityId,
     };
@@ -305,8 +312,8 @@ export class AppointmentsService {
     );
     if (!appointment) {
       throw new NotFoundException({
-        code:ErrorCodes.NOT_FOUND,
-        message: 'Appointment Not Found!'
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Appointment Not Found!',
       });
     }
     try {
@@ -315,7 +322,7 @@ export class AppointmentsService {
       throw new BadRequestException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
         message: error.message,
-        error
+        error,
       });
     }
   }
