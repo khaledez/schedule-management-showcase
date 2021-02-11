@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
+import { ErrorCodes } from '../enums/error-code.enum';
 
 /**
  * this decorator get the cognito arguments from the header and add it on the memory to use.
@@ -24,7 +25,7 @@ export const Identity = createParamDecorator(
       !cognitoIdentity.userId
     ) {
       throw new ForbiddenException({
-        code: 'UNAUTHORIZED_ACCESS',
+        code: ErrorCodes.UNAUTHORIZED_ACCESS,
         message: 'cognitoIdentity object is missing one or more arguments',
       });
     }

@@ -16,6 +16,7 @@ import { Transaction } from 'sequelize/types';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
 import { raw } from 'express';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
+import { ErrorCodes } from 'src/common/enums/error-code.enum';
 
 @Injectable()
 export class AvailabilityService {
@@ -90,10 +91,11 @@ export class AvailabilityService {
 
       return ids;
     } catch (error) {
-      throw new BadRequestException(
-        'Error occur while delete bulk availability',
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'Error occur while delete bulk availability',
         error,
-      );
+      });
     }
   }
   /**
@@ -141,7 +143,10 @@ export class AvailabilityService {
         };
       });
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message
+      });
     }
   }
 }

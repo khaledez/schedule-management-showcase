@@ -19,6 +19,7 @@ import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
+import { ErrorCodes } from 'src/common/enums/error-code.enum';
 
 @Injectable()
 export class AppointmentsService {
@@ -185,7 +186,11 @@ export class AppointmentsService {
         function: 'service/appt/findall',
         error,
       });
-      throw new BadRequestException(error);
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'Failed to find the appointments',
+        error,
+      });
     }
   }
   /**
@@ -225,7 +230,7 @@ export class AppointmentsService {
       if (!createdAppointment) {
         throw new BadRequestException({
           fields: [],
-          code: 'INTERNAL_SERVER_ERROR',
+          code: ErrorCodes.INTERNAL_SERVER_ERROR,
           message: 'Failed to create an appointment',
         });
       }
@@ -247,7 +252,12 @@ export class AppointmentsService {
         function: 'service/appt/createAppointmentDto',
         error,
       });
-      throw new BadRequestException(error);
+      throw new BadRequestException({
+        fields: [],
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'CatchError: Failed to create an appointment',
+        error,
+      });
     }
   }
 
@@ -294,12 +304,19 @@ export class AppointmentsService {
       appointmentId,
     );
     if (!appointment) {
-      throw new NotFoundException('Appointment Not Found!');
+      throw new NotFoundException({
+        code:ErrorCodes.NOT_FOUND,
+        message: 'Appointment Not Found!'
+      });
     }
     try {
       return await appointment.update(appointmentFields);
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
+        error
+      });
     }
   }
 
