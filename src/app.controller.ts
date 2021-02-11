@@ -5,6 +5,7 @@ import {
   DNSHealthIndicator,
   HealthCheck,
 } from '@nestjs/terminus';
+import { Public } from '@mon-medic/common';
 
 @Controller()
 export class AppController {
@@ -19,6 +20,7 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Public()
   @Get('health-check')
   @HealthCheck()
   check() {
