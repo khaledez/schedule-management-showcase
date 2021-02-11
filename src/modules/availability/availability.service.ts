@@ -145,7 +145,7 @@ export class AvailabilityService {
     } catch (error) {
       throw new BadRequestException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message: error.message
+        message: error.message,
       });
     }
   }
