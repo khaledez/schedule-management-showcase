@@ -136,26 +136,6 @@ export class AppointmentsService {
       where: {
         ...filter,
       },
-      /**
-       * plain: true did not working here.
-       * reason for that is the sequelize prevent append calculated fields as primaryAction, secondaryActions
-       * raw: true, it will returned all the model with the relation fields
-       * returning example:
-       * {
-       *  ...appointmentData,
-       *  patient.fullName,
-       *  patient.phone_number,
-       *  ... and so on
-       * }
-       * nest: true, because raw returns all as raw, i need to re-shape the object
-       * {
-       *  modify the shape above to let him as {patient{fullName, phone_number},  ...}
-       * }
-       *
-       */
-      // plain: true
-      raw: true,
-      nest: true,
     };
   }
 
@@ -176,6 +156,9 @@ export class AppointmentsService {
         function: 'service/appt/findAll',
         appointments,
       });
+      const appointmentsAsPlain = appointments.map((e) =>
+        e.get({ plain: true }),
+      );
       const appointmentsStatusIds = appointments.map(
         (e): number => e.appointmentStatusId,
       );
@@ -190,12 +173,12 @@ export class AppointmentsService {
         function: 'service/appt/findall',
         actions,
       });
-      return appointments.map((appt, i) => ({
+      return appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
         ...appt,
         previousAppointment: appt.previousAppointmentId,
         primaryAction: actions[i].nextAction && actions[i].nextAction.code,
         secondaryActions: actions[i].secondaryActions,
-        provisionalAppointment: !appt.availability.id,
+        provisionalAppointment: !appt.availabilityId,
       }));
     } catch (error) {
       this.logger.error({
@@ -238,31 +221,16 @@ export class AppointmentsService {
             all: true,
           },
         ],
-        /**
-         * reason for that is the sequelize prevent append calculated fields as primaryAction, secondaryActions
-         * raw: true, it will returned all the model with the relation fields
-         * returning example:
-         * {
-         *  ...appointmentData,
-         *  patient.fullName,
-         *  patient.phone_number,
-         *  ... and so on
-         * }
-         * nest: true, because raw returns all as raw, i need to re-shape the object
-         * {
-         *  modify the shape above to let him as {patient{fullName, phone_number},  ...}
-         * }
-         */
-        raw: true,
-        nest: true,
       });
+      const appointmentPlain = createdAppointment.get({ plain: true });
 
       this.logger.debug({
         function: 'service/appt/create',
         createdAppointment,
+        appointmentPlain,
       });
       return {
-        ...createdAppointment,
+        ...appointmentPlain,
         primaryAction: actions[0].nextAction && actions[0].nextAction.code,
         secondaryActions: actions[0].secondaryActions,
         provisionalAppointment: !createdAppointment.availability.id,
@@ -277,23 +245,22 @@ export class AppointmentsService {
   }
 
   async findOne(id: number): Promise<any> {
-    const appointment = await this.appointmentsRepository.findByPk(id, {
-      raw: true,
-      nest: true,
+    let appointment = await this.appointmentsRepository.findByPk(id, {
       include: [
         {
           all: true,
         },
       ],
     });
+    const newApp = appointment.get({ plain: true });
     const actions = await this.lookupsService.findAppointmentsActions([
       appointment.appointmentStatusId,
     ]);
     return {
-      ...appointment,
+      ...newApp,
       primaryAction: actions[0].nextAction && actions[0].nextAction.code,
       secondaryActions: actions[0].secondaryActions,
-      provisionalAppointment: !appointment.availability.id,
+      provisionalAppointment: !appointment.availabilityId,
       availability: appointment.availabilityId
         ? appointment.availability
         : null,
