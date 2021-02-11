@@ -15,6 +15,7 @@ import { Identity } from '../../common/decorators/cognitoIdentity.decorator';
 import { AppointmentResponseInterface } from './interfaces/appointment-response.intreface';
 import { FindAppointmentsQueryParams } from './dto/find-appointment-query-params.dto';
 import { IdentityDto } from '../../common/dtos/identity.dto';
+import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -36,6 +37,22 @@ export class AppointmentsController {
       query,
     });
     return this.appointmentsService.findAll({ query });
+  }
+
+  // get total appointment for each day for aspecific period
+  @Get('appointments-days')
+  async getAppointmentsByPeriods(
+    @Identity() identity: IdentityDto,
+    @Query() query: QueryAppointmentsByPeriodsDto,
+  ) {
+    this.logger.log({ query });
+    this.logger.log({ identity });
+    return {
+      dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(
+        identity.clinicId,
+        query,
+      ),
+    };
   }
 
   @Get(':id')
