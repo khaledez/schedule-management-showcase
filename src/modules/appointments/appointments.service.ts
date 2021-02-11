@@ -222,6 +222,13 @@ export class AppointmentsService {
           },
         ],
       });
+      if (!createdAppointment) {
+        throw new BadRequestException({
+          fields: [],
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create an appointment',
+        });
+      }
       const appointmentPlain = createdAppointment.get({ plain: true });
 
       this.logger.debug({
@@ -252,6 +259,13 @@ export class AppointmentsService {
         },
       ],
     });
+    if (!appointment) {
+      throw new NotFoundException({
+        fields: [],
+        code: 'NOT_FOUND',
+        message: 'This appointment does not exits!',
+      });
+    }
     const appointmentAsPlain = appointment.get({ plain: true });
     const actions = await this.lookupsService.findAppointmentsActions([
       appointment.appointmentStatusId,
