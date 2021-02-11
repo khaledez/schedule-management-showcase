@@ -5,7 +5,10 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
+import {
+  APPOINTMENTS_REPOSITORY,
+  SEQUELIZE,
+} from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
@@ -13,13 +16,14 @@ import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
 import { LookupsService } from '../lookups/lookups.service';
-import { Op, FindOptions } from 'sequelize';
+import { Op, FindOptions, Sequelize, Transaction } from 'sequelize';
 import { PatientsModel } from './models/patients.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
+import { ErrorCodes } from 'src/common/enums/error-code.enum';
 
 @Injectable()
 export class AppointmentsService {
@@ -29,6 +33,8 @@ export class AppointmentsService {
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService, // @Inject(SEQUELIZE) // private readonly sequelize: Sequelize, // @Inject(PATIENTS_REPOSITORY) // private readonly patientsModel: typeof PatientsModel,
+    @Inject(SEQUELIZE)
+    private readonly sequelize: Sequelize,
   ) {}
 
   private readonly matchFiltersWithModelFields = {
@@ -137,26 +143,6 @@ export class AppointmentsService {
       where: {
         ...filter,
       },
-      /**
-       * plain: true did not working here.
-       * reason for that is the sequelize prevent append calculated fields as primaryAction, secondaryActions
-       * raw: true, it will returned all the model with the relation fields
-       * returning example:
-       * {
-       *  ...appointmentData,
-       *  patient.fullName,
-       *  patient.phone_number,
-       *  ... and so on
-       * }
-       * nest: true, because raw returns all as raw, i need to re-shape the object
-       * {
-       *  modify the shape above to let him as {patient{fullName, phone_number},  ...}
-       * }
-       *
-       */
-      // plain: true
-      raw: true,
-      nest: true,
     };
   }
 
@@ -177,6 +163,9 @@ export class AppointmentsService {
         function: 'service/appt/findAll',
         appointments,
       });
+      const appointmentsAsPlain = appointments.map((e) =>
+        e.get({ plain: true }),
+      );
       const appointmentsStatusIds = appointments.map(
         (e): number => e.appointmentStatusId,
       );
@@ -191,19 +180,23 @@ export class AppointmentsService {
         function: 'service/appt/findall',
         actions,
       });
-      return appointments.map((appt, i) => ({
+      return appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
         ...appt,
         previousAppointment: appt.previousAppointmentId,
-        primaryAction: actions[i].nextAction && actions[i].nextAction.code,
+        primaryAction: actions[i].nextAction && actions[i].nextAction,
         secondaryActions: actions[i].secondaryActions,
-        provisionalAppointment: !appt.availability.id,
+        provisionalAppointment: !appt.availabilityId,
       }));
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall',
         error,
       });
-      throw new BadRequestException(error);
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'Failed to find the appointments',
+        error,
+      });
     }
   }
   /**
@@ -212,6 +205,9 @@ export class AppointmentsService {
    * create an appointment
    * this function is used to create provisional and not provisional appt
    */
+  // TODO: MMX-later we need an transaction
+  // the reason why i did not make it right now because i need the full data which comes from findOne
+  // findOne will not find the element during transaction. and create did not return full data.
   async create(createAppointmentDto: CreateAppointmentDto): Promise<any> {
     try {
       const result = await this.appointmentsRepository.create(
@@ -229,7 +225,6 @@ export class AppointmentsService {
         function: 'service/appt/create',
         actions,
       });
-
       const createdAppointment = await this.appointmentsRepository.findOne({
         where: {
           id: result.id,
@@ -239,65 +234,65 @@ export class AppointmentsService {
             all: true,
           },
         ],
-        /**
-         * reason for that is the sequelize prevent append calculated fields as primaryAction, secondaryActions
-         * raw: true, it will returned all the model with the relation fields
-         * returning example:
-         * {
-         *  ...appointmentData,
-         *  patient.fullName,
-         *  patient.phone_number,
-         *  ... and so on
-         * }
-         * nest: true, because raw returns all as raw, i need to re-shape the object
-         * {
-         *  modify the shape above to let him as {patient{fullName, phone_number},  ...}
-         * }
-         */
-        raw: true,
-        nest: true,
       });
+      if (!createdAppointment) {
+        throw new BadRequestException({
+          fields: [],
+          code: ErrorCodes.INTERNAL_SERVER_ERROR,
+          message: 'Failed to create an appointment',
+        });
+      }
+      const appointmentPlain = createdAppointment.get({ plain: true });
 
       this.logger.debug({
         function: 'service/appt/create',
         createdAppointment,
+        appointmentPlain,
       });
       return {
-        ...createdAppointment,
-        primaryAction: actions[0].nextAction && actions[0].nextAction.code,
+        ...appointmentPlain,
+        primaryAction: actions[0].nextAction,
         secondaryActions: actions[0].secondaryActions,
-        provisionalAppointment: !createdAppointment.availability.id,
+        provisionalAppointment: createdAppointment.availabilityId,
       };
     } catch (error) {
       this.logger.error({
         function: 'service/appt/createAppointmentDto',
         error,
       });
-      throw new BadRequestException(error);
+      throw new BadRequestException({
+        fields: [],
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'CatchError: Failed to create an appointment',
+        error,
+      });
     }
   }
 
   async findOne(id: number): Promise<any> {
     const appointment = await this.appointmentsRepository.findByPk(id, {
-      raw: true,
-      nest: true,
       include: [
         {
           all: true,
         },
       ],
     });
+    if (!appointment) {
+      throw new NotFoundException({
+        fields: [],
+        code: 'NOT_FOUND',
+        message: 'This appointment does not exits!',
+      });
+    }
+    const appointmentAsPlain = appointment.get({ plain: true });
     const actions = await this.lookupsService.findAppointmentsActions([
       appointment.appointmentStatusId,
     ]);
     return {
-      ...appointment,
-      primaryAction: actions[0].nextAction && actions[0].nextAction.code,
+      ...appointmentAsPlain,
+      primaryAction: actions[0].nextAction,
       secondaryActions: actions[0].secondaryActions,
-      provisionalAppointment: !appointment.availability.id,
-      availability: appointment.availabilityId
-        ? appointment.availability
-        : null,
+      provisionalAppointment: !appointment.availabilityId,
     };
   }
 
@@ -317,12 +312,19 @@ export class AppointmentsService {
       appointmentId,
     );
     if (!appointment) {
-      throw new NotFoundException('Appointment Not Found!');
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Appointment Not Found!',
+      });
     }
     try {
       return await appointment.update(appointmentFields);
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
+        error,
+      });
     }
   }
 

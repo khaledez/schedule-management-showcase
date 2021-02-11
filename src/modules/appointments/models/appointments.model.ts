@@ -5,6 +5,7 @@ import {
   ForeignKey,
   BelongsTo,
   DefaultScope,
+  DataType,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
@@ -12,6 +13,7 @@ import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-
 import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment-actions.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { PatientsModel } from './patients.model';
+import * as moment from 'moment';
 
 // note that the id will auto added by sequelize.
 @DefaultScope(() => ({
@@ -41,11 +43,15 @@ export class AppointmentsModel extends BaseModel {
 
   @IsDate
   @Column
-  date: Date;
+  get date(): string {
+    return moment(this.getDataValue('date')).format('YYYY-MM-DD');
+  }
 
   @IsDate
-  @Column
-  provisionalDate: Date;
+  @Column(DataType.DATE)
+  get provisionalDate(): string {
+    return moment(this.getDataValue('date')).format('YYYY-MM-DD');
+  }
 
   @Column
   @ForeignKey(() => AppointmentStatusLookupsModel)

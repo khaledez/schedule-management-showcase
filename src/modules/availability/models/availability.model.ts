@@ -5,10 +5,12 @@ import {
   ForeignKey,
   BelongsTo,
   DefaultScope,
+  IsDate,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
+import * as moment from 'moment';
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
@@ -30,8 +32,11 @@ export class AvailabilityModel extends BaseModel {
   @ForeignKey(() => AppointmentTypesLookupsModel)
   appointmentTypeId: number;
 
+  @IsDate
   @Column
-  date: Date;
+  get date(): string {
+    return moment(this.getDataValue('date')).format('YYYY-MM-DD');
+  }
 
   @Column
   durationMinutes: number;
