@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
   UnprocessableEntityException,
+  NotFoundException,
 } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AVAILABILITY_REPOSITORY, SEQUELIZE } from 'src/common/constants';
@@ -14,6 +15,8 @@ import { Op } from 'sequelize';
 import { Transaction } from 'sequelize/types';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
 import { raw } from 'express';
+import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
+import { ErrorCodes } from 'src/common/enums/error-code.enum';
 
 @Injectable()
 export class AvailabilityService {
@@ -29,20 +32,30 @@ export class AvailabilityService {
     return this.availabilityRepository.findAll({
       include: [
         {
-          all: true, //TODO: remove appointment from the relation
+          model: AppointmentTypesLookupsModel,
+          as: 'type',
         },
       ],
     });
   }
 
   findOne(id: number): Promise<AvailabilityModel> {
-    return this.availabilityRepository.findByPk(id, {
+    const availability = this.availabilityRepository.findByPk(id, {
       include: [
         {
-          all: true,
+          model: AppointmentTypesLookupsModel,
+          as: 'type',
         },
       ],
     });
+    if (!availability) {
+      throw new NotFoundException({
+        fields: [],
+        code: 'NOT_FOUND',
+        message: 'This availability does not exits!',
+      });
+    }
+    return availability;
   }
 
   createAvailability(data: CreateAvailabilityDto): Promise<AvailabilityModel> {
@@ -78,10 +91,11 @@ export class AvailabilityService {
 
       return ids;
     } catch (error) {
-      throw new BadRequestException(
-        'Error occur while delete bulk availability',
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'Error occur while delete bulk availability',
         error,
-      );
+      });
     }
   }
   /**
@@ -129,7 +143,10 @@ export class AvailabilityService {
         };
       });
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
     }
   }
 }

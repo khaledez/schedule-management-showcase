@@ -14,6 +14,7 @@ import { Identity } from 'src/common/decorators/cognitoIdentity.decorator';
 import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
 import { IdentityDto } from 'src/common/dtos/identity.dto';
+import { ErrorCodes } from 'src/common/enums/error-code.enum';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -41,9 +42,11 @@ export class AvailabilityController {
     const { create, remove } = createOrUpdateAvailabilityBodyDto;
     this.logger.debug({ clinicId, userId, createOrUpdateAvailabilityBodyDto });
     if (!create.length && !remove.length) {
-      throw new BadRequestException(
-        'create and remove arrays could not be empty at the same time.',
-      );
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message:
+          'create and remove arrays could not be empty at the same time.',
+      });
     }
     return this.availabilityService.createOrUpdateAvailability({
       ...createOrUpdateAvailabilityBodyDto,

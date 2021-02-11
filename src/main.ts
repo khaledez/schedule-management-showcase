@@ -1,6 +1,11 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { registerApp, CustomLoggerService } from '@mon-medic/common';
+import {
+  registerApp,
+  CustomLoggerService,
+  AuthGuard,
+  HttpExceptionFilter,
+} from '@mon-medic/common';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { CONFIG_SERVICE, PORT, SERVICE_NAME } from './common/constants';
 
@@ -18,9 +23,11 @@ async function bootstrap() {
   /**
    * use global pipes to be accessible by app's controllers
    */
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(new AuthGuard(reflector));
   app.setGlobalPrefix(serviceName);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
-
+  app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(port);
 
   logger.log(`Application is running on: ${await app.getUrl()}`);

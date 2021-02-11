@@ -119,10 +119,10 @@ export class LookupsService {
    * @param ids AppointmentsStatusId
    */
   public async findAppointmentsActions(ids: Array<number>) {
-    const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll(
-      {
-        attributes: ['id', 'code'],
-      },
+    const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll();
+    const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
+    const appointmentActionsPlain = internalAppointmentsActions.map((e) =>
+      e.get({ plain: true }),
     );
     this.logger.debug({
       function: 'service/lookup/findAppointmentsActions',
@@ -158,7 +158,10 @@ export class LookupsService {
     const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
       ...action,
       secondaryActions:
-        action.nextAction && nextAppointmentActions[action.nextAction.code],
+        action.nextAction &&
+        appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) =>
+          nextAppointmentActions[action.nextAction.code].includes(e.code),
+        ),
     }));
     this.logger.debug({
       function: 'service/lookup/findAppointmentsActions',
