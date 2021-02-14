@@ -3,7 +3,6 @@ import {
   Inject,
   BadRequestException,
   Logger,
-  UnprocessableEntityException,
   NotFoundException,
 } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
@@ -18,6 +17,7 @@ import { raw } from 'express';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import * as moment from 'moment';
+import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 
 @Injectable()
 export class AvailabilityService {
@@ -36,8 +36,8 @@ export class AvailabilityService {
       .format(timeFormat);
   }
 
-  findAll(): Promise<any> {
-    const availability = this.availabilityRepository.findAll({
+  async findAll(): Promise<AvailabilityEdgesInterface> {
+    const availability = await this.availabilityRepository.findAll({
       include: [
         {
           model: AppointmentTypesLookupsModel,
@@ -46,14 +46,13 @@ export class AvailabilityService {
       ],
     });
     const availabilityAsPlain = availability.map((e) => e.get({ plain: true }));
-
-    return availabilityAsPlain.map((e: AvailabilityModel) => ({
-      ...e,
-      endTime: this.calculateEndTime(e.startTime, e.durationMinutes),
-    }));
+    return {
+      edges: availabilityAsPlain.map((e: AvailabilityModel) => ({ node: e })),
+      pageInfo: {},
+    };
   }
 
-  async findOne(id: number): Promise<any> {
+  async findOne(id: number): Promise<AvailabilityModel> {
     const availability = await this.availabilityRepository.findByPk(id, {
       include: [
         {
@@ -69,12 +68,7 @@ export class AvailabilityService {
         message: 'This availability does not exits!',
       });
     }
-    const availabilityPlain = availability.get({ plain: true });
-    const { startTime, durationMinutes } = availability;
-    return {
-      ...availabilityPlain,
-      endTime: this.calculateEndTime(startTime, durationMinutes),
-    };
+    return availability;
   }
 
   createAvailability(data: CreateAvailabilityDto): Promise<AvailabilityModel> {

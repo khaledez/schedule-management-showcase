@@ -91,10 +91,8 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData });
     return this.appointmentsService.create({
       ...appointmentData,
-      appointmentStatusId: appointmentData.appointmentStatusId,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
-      provisionalDate: appointmentData.date,
     });
   }
 }

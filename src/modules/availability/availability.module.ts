@@ -8,5 +8,6 @@ import { DatabaseModule } from '../database/database.module';
   imports: [DatabaseModule],
   controllers: [AvailabilityController],
   providers: [AvailabilityService, ...availabilityProviders],
+  exports: [AvailabilityService],
 })
 export class AvailabilityModule {}

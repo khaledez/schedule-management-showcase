@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
   Logger,
+  ConflictException,
 } from '@nestjs/common';
 import {
   APPOINTMENTS_REPOSITORY,
@@ -16,13 +17,17 @@ import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
 import { LookupsService } from '../lookups/lookups.service';
-import { Op, FindOptions, Sequelize, Transaction } from 'sequelize';
+import { Op, FindOptions } from 'sequelize';
 import { PatientsModel } from './models/patients.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
+import { AvailabilityService } from '../availability/availability.service';
+import { AppointmentsEdgesInterface } from './interfaces/appointments-edges.interface';
+import { AppointmentNode } from './interfaces/appointment-node.intreface';
 
 @Injectable()
 export class AppointmentsService {
@@ -31,9 +36,8 @@ export class AppointmentsService {
   constructor(
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
-    private readonly lookupsService: LookupsService, // @Inject(SEQUELIZE) // private readonly sequelize: Sequelize, // @Inject(PATIENTS_REPOSITORY) // private readonly patientsModel: typeof PatientsModel,
-    @Inject(SEQUELIZE)
-    private readonly sequelize: Sequelize,
+    private readonly lookupsService: LookupsService,
+    private readonly availabilityService: AvailabilityService,
   ) {}
 
   private readonly matchFiltersWithModelFields = {
@@ -63,6 +67,10 @@ export class AppointmentsService {
     appointmentStartTime: {
       dbField: 'startTime',
       model: 'availability',
+    },
+    ids: {
+      dbField: 'id',
+      model: 'appointment',
     },
   };
 
@@ -148,7 +156,8 @@ export class AppointmentsService {
   // TODO: MMX-later add scopes at the appointment types/status/actions
   // TODO: MMX-S3 handle datatype any.
   // TODO: MMX-later handle returning null if availabilityId/patientId is null.
-  async findAll(params?): Promise<any[]> {
+  // TODO: MMX-currentSprint handle returning type.
+  async findAll(params?): Promise<any> {
     const { query } = params;
     const options = this.handleFindAllOptions(query);
     this.logger.debug({
@@ -179,13 +188,18 @@ export class AppointmentsService {
         function: 'service/appt/findall',
         actions,
       });
-      return appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
-        ...appt,
-        previousAppointment: appt.previousAppointmentId,
-        primaryAction: actions[i].nextAction && actions[i].nextAction,
-        secondaryActions: actions[i].secondaryActions,
-        provisionalAppointment: !appt.availabilityId,
-      }));
+      return {
+        edges: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
+          node: {
+            ...appt,
+            previousAppointment: appt.previousAppointmentId,
+            primaryAction: actions[i].nextAction && actions[i].nextAction,
+            secondaryActions: actions[i].secondaryActions,
+            provisionalAppointment: !appt.availabilityId,
+          },
+        })),
+        pageInfo: {},
+      };
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall',
@@ -209,9 +223,38 @@ export class AppointmentsService {
   // findOne will not find the element during transaction. and create did not return full data.
   async create(createAppointmentDto: CreateAppointmentDto): Promise<any> {
     try {
-      const result = await this.appointmentsRepository.create(
-        createAppointmentDto,
-      );
+      // that's mean this appt not a provisional.
+      let preparedNotProvisionalAppointmentBody;
+      if (createAppointmentDto.availabilityId) {
+        const availability = await this.availabilityService.findOne(
+          createAppointmentDto.availabilityId,
+        );
+        const {
+          date,
+          appointmentTypeId,
+          doctorId,
+          appointmentId,
+        } = availability;
+        if (appointmentId) {
+          throw new ConflictException({
+            fields: [],
+            code: ErrorCodes.CONFLICTS,
+            message: 'This availability has already booked!',
+          });
+        }
+        preparedNotProvisionalAppointmentBody = {
+          ...createAppointmentDto,
+          date,
+          appointmentTypeId,
+          doctorId,
+          provisionalDate: availability.date,
+          appointmentStatusId: 2, // TODO: MMX-currentSprint: GET this from the db instead of use it manual status 2 = schedule
+        };
+      }
+      const body = createAppointmentDto.availabilityId
+        ? preparedNotProvisionalAppointmentBody
+        : createAppointmentDto;
+      const result = await this.appointmentsRepository.create(body);
       this.logger.debug({
         function: 'service/appt/create',
         result,
@@ -252,7 +295,7 @@ export class AppointmentsService {
         ...appointmentPlain,
         primaryAction: actions[0].nextAction,
         secondaryActions: actions[0].secondaryActions,
-        provisionalAppointment: createdAppointment.availabilityId,
+        provisionalAppointment: !createdAppointment.availabilityId,
       };
     } catch (error) {
       this.logger.error({
