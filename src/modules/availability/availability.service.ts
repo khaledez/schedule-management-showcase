@@ -17,6 +17,7 @@ import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create
 import { raw } from 'express';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import * as moment from 'moment';
 
 @Injectable()
 export class AvailabilityService {
@@ -28,8 +29,15 @@ export class AvailabilityService {
     private readonly sequelize: Sequelize,
   ) {}
 
-  findAll(): Promise<AvailabilityModel[]> {
-    return this.availabilityRepository.findAll({
+  calculateEndTime(time: string, durationMin: number): string {
+    const timeFormat = 'hh:mm:ss';
+    return moment(time, timeFormat)
+      .add(durationMin, 'minutes')
+      .format(timeFormat);
+  }
+
+  findAll(): Promise<any> {
+    const availability = this.availabilityRepository.findAll({
       include: [
         {
           model: AppointmentTypesLookupsModel,
@@ -37,10 +45,16 @@ export class AvailabilityService {
         },
       ],
     });
+    const availabilityAsPlain = availability.map((e) => e.get({ plain: true }));
+
+    return availabilityAsPlain.map((e: AvailabilityModel) => ({
+      ...e,
+      endTime: this.calculateEndTime(e.startTime, e.durationMinutes),
+    }));
   }
 
-  findOne(id: number): Promise<AvailabilityModel> {
-    const availability = this.availabilityRepository.findByPk(id, {
+  async findOne(id: number): Promise<any> {
+    const availability = await this.availabilityRepository.findByPk(id, {
       include: [
         {
           model: AppointmentTypesLookupsModel,
@@ -55,7 +69,12 @@ export class AvailabilityService {
         message: 'This availability does not exits!',
       });
     }
-    return availability;
+    const availabilityPlain = availability.get({ plain: true });
+    const { startTime, durationMinutes } = availability;
+    return {
+      ...availabilityPlain,
+      endTime: this.calculateEndTime(startTime, durationMinutes),
+    };
   }
 
   createAvailability(data: CreateAvailabilityDto): Promise<AvailabilityModel> {

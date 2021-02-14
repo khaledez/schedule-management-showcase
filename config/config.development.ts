@@ -18,8 +18,8 @@ export const config = () => ({
     },
   },
   cognito: {
-    userPoolId: 'us-east-1_bnSDEoZne',
-    clientId: '2egoivd9acq1nqhp18upeieubn',
-    region: 'us-east-1',
+    userPoolId: 'ca-central-1_QdrFL8ZgJ',
+    clientId: 'pjlj97r3fkhoibcv2t7ln8doi',
+    region: 'ca-central-1',
   },
 });

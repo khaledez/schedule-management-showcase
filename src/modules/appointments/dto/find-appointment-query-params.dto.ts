@@ -38,7 +38,7 @@ export class FindAppointmentsQueryParams {
 
   @IsOptional()
   @Matches(/^[\d+,?]+$/)
-  appointmentTypeIds: Array<string>;
+  appointmentTypeIds: number[];
 
   @IsOptional()
   @Matches(/^[\d+,?]+$/)
@@ -47,4 +47,8 @@ export class FindAppointmentsQueryParams {
   @IsOptional()
   @Matches(/^[\d+,?]+$/)
   doctorIds: number[];
+
+  @IsOptional()
+  @Matches(/^[\d+,?]+$/)
+  ids: number[];
 }
