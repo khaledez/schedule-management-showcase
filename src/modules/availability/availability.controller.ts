@@ -8,13 +8,13 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
-import { AvailabilityModel } from './models/availability.model';
 import { AvailabilityService } from './availability.service';
 import { Identity } from 'src/common/decorators/cognitoIdentity.decorator';
 import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
 import { IdentityDto } from 'src/common/dtos/identity.dto';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -23,7 +23,7 @@ export class AvailabilityController {
   constructor(private readonly availabilityService: AvailabilityService) {}
   //TODO: MMX-currentSprint add auth guard
   @Get()
-  findAll(): Promise<AvailabilityModel[]> {
+  findAll(): Promise<AvailabilityEdgesInterface> {
     return this.availabilityService.findAll();
   }
 
