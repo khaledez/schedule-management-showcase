@@ -6,10 +6,7 @@ import {
   Logger,
   ConflictException,
 } from '@nestjs/common';
-import {
-  APPOINTMENTS_REPOSITORY,
-  SEQUELIZE,
-} from '../../common/constants/index';
+import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
@@ -26,8 +23,6 @@ import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-ac
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
-import { AppointmentsEdgesInterface } from './interfaces/appointments-edges.interface';
-import { AppointmentNode } from './interfaces/appointment-node.intreface';
 
 @Injectable()
 export class AppointmentsService {
