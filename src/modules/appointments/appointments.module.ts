@@ -4,9 +4,10 @@ import { AppointmentsController } from './appointments.controller';
 import { AppointmentsService } from './appointments.service';
 import { LookupsModule } from '../lookups/lookups.module';
 import { DatabaseModule } from '../database/database.module';
+import { AvailabilityModule } from '../availability/availability.module';
 
 @Module({
-  imports: [LookupsModule, DatabaseModule],
+  imports: [LookupsModule, AvailabilityModule, DatabaseModule],
   controllers: [AppointmentsController],
   providers: [AppointmentsService, ...appointmentsProviders],
 })

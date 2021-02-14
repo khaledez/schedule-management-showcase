@@ -46,6 +46,9 @@ export class AppointmentsModel extends BaseModel {
   get date(): string {
     return moment(this.getDataValue('date')).format('YYYY-MM-DD');
   }
+  set date(value: string) {
+    this.setDataValue('date', moment(value).format('YYYY-MM-DD'));
+  }
 
   @IsDate
   @Column(DataType.DATE)

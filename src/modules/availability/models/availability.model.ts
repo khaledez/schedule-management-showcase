@@ -6,6 +6,7 @@ import {
   BelongsTo,
   DefaultScope,
   IsDate,
+  DataType,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
@@ -46,4 +47,11 @@ export class AvailabilityModel extends BaseModel {
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
   type: AppointmentTypesLookupsModel;
+
+  @Column(DataType.VIRTUAL(DataType.STRING))
+  get endTime(): string {
+    return moment(this.startTime, 'hh:mm:ss')
+      .add(this.durationMinutes, 'minutes')
+      .format('hh:mm:ss');
+  }
 }

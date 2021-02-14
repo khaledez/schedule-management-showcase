@@ -4,6 +4,7 @@ import {
   IsDate,
   IsOptional,
   Matches,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -51,4 +52,7 @@ export class FindAppointmentsQueryParams {
   @IsOptional()
   @Matches(/^[\d+,?]+$/)
   ids: number[];
+
+  @IsOptional()
+  filter: any;
 }
