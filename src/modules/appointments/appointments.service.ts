@@ -35,133 +35,44 @@ export class AppointmentsService {
     private readonly availabilityService: AvailabilityService,
   ) {}
 
-  private readonly matchFiltersWithModelFields = {
-    appointmentStatusIds: {
-      isArray: true,
-      dbField: 'appointmentStatusId',
-      model: 'appointment',
-    },
-    appointmentTypeIds: {
-      isArray: true,
-      dbField: 'appointmentTypeId',
-      model: 'appointment',
-    },
-    doctorIds: {
-      isArray: true,
-      dbField: 'doctorId',
-      model: 'appointment',
-    },
-    patientFullName: {
-      dbField: 'fullName',
-      model: 'patient',
-    },
-    patientPrimaryHealthPlanNumber: {
-      dbField: 'primaryHealthPlanNumber',
-      model: 'patient',
-    },
-    appointmentStartTime: {
-      dbField: 'startTime',
-      model: 'availability',
-    },
-    ids: {
-      dbField: 'id',
-      model: 'appointment',
-    },
+  private readonly associationFieldsNames = {
+    patientFullName: `$patient.full_name$`,
+    patientHealthPlanNumber: `$patient.primary_health_plan_number$`,
+    time: `$availability.start_time$`,
   };
-
-  /**
-   *
-   * @param query
-   * this function do some logic for the find appointment options.
-   * to do search at the appointment level you have to pass it with the filter
-   * to do search at the nested level like patient/availability you have to pass it inside the include array
-   * for example [{
-   *  model
-   *  as
-   *  where: {fullName: ""}
-   * }]
-   */
-  handleFindAllOptions(query): FindOptions {
-    const filter = {};
-    const includeArray = [
-      {
-        model: AvailabilityModel,
-        as: 'availability',
-      },
-      {
-        model: PatientsModel,
-        as: 'patient',
-      },
-      {
-        model: AppointmentTypesLookupsModel,
-        as: 'type',
-      },
-      {
-        model: AppointmentStatusLookupsModel,
-        as: 'status',
-      },
-      {
-        model: AppointmentActionsLookupsModel,
-        as: 'cancelRescheduleReason',
-      },
-    ];
-
-    Object.keys(query).forEach((filterName) => {
-      this.logger.debug({
-        function: 'handleFindAllOptions',
-        filterName,
-      });
-      const {
-        dbField,
-        isArray = false,
-        model,
-      } = this.matchFiltersWithModelFields[filterName];
-      if (model === 'appointment') {
-        if (isArray) {
-          filter[dbField] = query[filterName].split(',');
-        } else {
-          filter[dbField] = {
-            [Op.like]: `%${query[filterName]}%`,
-          };
-        }
-      } else {
-        const includeIndexElement = includeArray.findIndex(
-          (e) => e.as === model,
-        );
-        includeArray[includeIndexElement] = Object.assign(
-          includeArray[includeIndexElement],
-          {
-            where: {
-              [dbField]: {
-                [Op.like]: `%${query[filterName]}%`,
-              },
-            },
-          },
-        );
-      }
-    });
-    return {
-      include: includeArray,
-      where: {
-        ...filter,
-      },
-    };
-  }
-
   // TODO: MMX-later add scopes at the appointment types/status/actions
   // TODO: MMX-S3 handle datatype any.
   // TODO: MMX-later handle returning null if availabilityId/patientId is null.
   // TODO: MMX-currentSprint handle returning type.
+  // TODO: MMX-currentSprint handle pagination
   async findAll(params?): Promise<any> {
-    const { query } = params;
-    const options = this.handleFindAllOptions(query);
     this.logger.debug({
-      function: 'BEFORE => service/appt/findAll',
+      function: 'service/appt/findAll Line0',
+      params,
+    });
+    const query = params && params.query;
+    this.logger.debug({
+      function: 'service/appt/findAll Line1',
       query,
-      options,
+    });
+    const sequelizeFilter = sequelizeFilterMapper(
+      this.logger,
+      query,
+      this.associationFieldsNames,
+    );
+    this.logger.debug({
+      function: 'BEFORE => service/appt/findAll sequelizeFilter',
+      sequelizeFilter,
     });
     try {
-      const appointments = await this.appointmentsRepository.findAll(options);
+      const appointments = await this.appointmentsRepository.findAll({
+        include: [
+          {
+            all: true,
+          },
+        ],
+        where: sequelizeFilter,
+      });
       this.logger.debug({
         function: 'service/appt/findAll',
         appointments,
