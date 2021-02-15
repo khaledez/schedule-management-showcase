@@ -4,7 +4,6 @@ import { Type, Transform } from 'class-transformer';
 // this dto for the body comes from the request
 export class CreateAppointmentProvisionalBodyDto {
   @Transform(({ value }) => {
-    console.log('asdasdasdasdasd', value);
     return Number(value);
   })
   @IsNumber()
