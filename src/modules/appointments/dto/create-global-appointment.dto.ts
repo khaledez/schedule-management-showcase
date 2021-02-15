@@ -1,23 +1,28 @@
 import { IsNumber, IsDate, IsOptional } from 'class-validator';
 import { IsPastDate } from '../../../utils/IsPastDate';
 import { Type } from 'class-transformer';
-import { CreateAppointmentBodyDto } from './create-appointment-body.dto';
 
 // this dto after modify the dto.
-export class CreateAppointmentDto extends CreateAppointmentBodyDto {
+export class CreateGlobalAppointmentDto {
+  @IsNumber()
+  patientId: number;
+
   @IsNumber()
   clinicId: number;
 
   @IsNumber()
+  @IsOptional()
   createdBy: number;
 
+  @IsOptional()
   @IsNumber()
-  appointmentStatusId: number;
+  appointmentStatusId?: number;
 
   @IsDate()
   @Type(() => Date)
+  @IsOptional()
   @IsPastDate()
-  provisionalDate: Date;
+  provisionalDate?: Date;
 
   @IsOptional()
   @IsNumber()

@@ -8,18 +8,12 @@ import {
 } from '@nestjs/common';
 import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
 import { LookupsService } from '../lookups/lookups.service';
-import { Op, FindOptions } from 'sequelize';
-import { PatientsModel } from './models/patients.model';
-import { AvailabilityModel } from '../availability/models/availability.model';
-import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
-import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
-import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
@@ -127,10 +121,12 @@ export class AppointmentsService {
   // TODO: MMX-later we need an transaction
   // the reason why i did not make it right now because i need the full data which comes from findOne
   // findOne will not find the element during transaction. and create did not return full data.
-  async create(createAppointmentDto: CreateAppointmentDto): Promise<any> {
+  async create(createAppointmentDto: CreateGlobalAppointmentDto): Promise<any> {
     try {
       // that's mean this appt not a provisional.
       let preparedNotProvisionalAppointmentBody;
+      console.log('createAppointmentDto....', createAppointmentDto);
+
       if (createAppointmentDto.availabilityId) {
         const availability = await this.availabilityService.findOne(
           createAppointmentDto.availabilityId,
@@ -198,10 +194,12 @@ export class AppointmentsService {
         appointmentPlain,
       });
       return {
-        ...appointmentPlain,
-        primaryAction: actions[0].nextAction,
-        secondaryActions: actions[0].secondaryActions,
-        provisionalAppointment: !createdAppointment.availabilityId,
+        appointment: {
+          ...appointmentPlain,
+          primaryAction: actions[0].nextAction,
+          secondaryActions: actions[0].secondaryActions,
+          provisionalAppointment: !createdAppointment.availabilityId,
+        },
       };
     } catch (error) {
       this.logger.error({
