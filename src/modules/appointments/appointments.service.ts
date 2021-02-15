@@ -356,4 +356,46 @@ export class AppointmentsService {
       throw new BadRequestException(error.message);
     }
   }
+
+  getAppointmentsByPeriods(
+    clinicId: number,
+    query: QueryAppointmentsByPeriodsDto,
+  ) {
+    const where: any = {
+      canceledAt: {
+        [Op.eq]: null,
+      },
+      canceledBy: {
+        [Op.eq]: null,
+      },
+      availabilityId: {
+        [Op.ne]: null,
+      },
+      clinicId,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      date: {
+        [Op.between]: [query.fromDate, query.toDate],
+      },
+    };
+    // if (query.doctorIds && query.doctorIds.length) {
+    //   where.doctorId = { [Op.in]: query.doctorIds };
+    // }
+    return this.appointmentsRepository.count({
+      attributes: ['date'],
+      group: ['date'],
+      include: [
+        {
+          model: AppointmentStatusLookupsModel,
+          as: 'status',
+          where: {
+            code: {
+              [Op.in]: ['SCHEDULE', 'CONFIRM', 'CHECK_IN', 'READY'],
+            },
+          },
+        },
+      ],
+      where,
+    });
+  }
 }
