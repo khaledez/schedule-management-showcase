@@ -381,9 +381,9 @@ export class AppointmentsService {
         [Op.between]: [query.fromDate, query.toDate],
       },
     };
-    // if (query.doctorIds && query.doctorIds.length) {
-    //   where.doctorId = { [Op.in]: query.doctorIds };
-    // }
+    if (query.doctorIds && query.doctorIds.length) {
+      where.doctorId = { [Op.in]: query.doctorIds };
+    }
     return this.appointmentsRepository.count({
       attributes: ['date'],
       group: ['date'],
