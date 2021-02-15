@@ -17,6 +17,9 @@ import { LookupsService } from '../lookups/lookups.service';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
+import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
+import { Op } from 'sequelize';
+import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -360,7 +363,7 @@ export class AppointmentsService {
   getAppointmentsByPeriods(
     clinicId: number,
     query: QueryAppointmentsByPeriodsDto,
-  ) {
+  ): any {
     const where: any = {
       canceledAt: {
         [Op.eq]: null,

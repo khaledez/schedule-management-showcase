@@ -72,7 +72,7 @@ export class AppointmentsController {
   @Post('provisional')
   createProvisionalAppointment(
     @Identity() identity: IdentityDto,
-    @Body('input') appointmentData: CreateAppointmentProvisionalBodyDto,
+    @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointment/createProvisionalAppointment',
@@ -105,7 +105,7 @@ export class AppointmentsController {
   @Post()
   createAppointment(
     @Identity() identity: IdentityDto,
-    @Body('input') appointmentData: CreateAppointmentBodyDto,
+    @Body() appointmentData: CreateAppointmentBodyDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
     return this.appointmentsService.create({
