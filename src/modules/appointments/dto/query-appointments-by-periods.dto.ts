@@ -12,7 +12,7 @@ export class QueryAppointmentsByPeriodsDto {
   toDate: Date;
 
   @IsOptional()
-  @IsArray()
-  @Transform((value) => JSON.parse(value).map((ele) => ~~ele))
-  doctorIds: number[];
+  // @IsArray()
+  // @Transform((value) => JSON.parse(value).map((ele) => ~~ele))
+  doctorIds: any;
 }

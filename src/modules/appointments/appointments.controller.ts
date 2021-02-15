@@ -47,6 +47,7 @@ export class AppointmentsController {
   ) {
     this.logger.log({ query });
     this.logger.log({ identity });
+    console.log(query);
     return {
       dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(
         identity.clinicId,
