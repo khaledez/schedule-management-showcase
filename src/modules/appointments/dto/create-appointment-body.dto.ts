@@ -1,7 +1,4 @@
-import { IsNumber, IsDate } from 'class-validator';
-import { IsPastDate } from '../../../utils/IsPastDate';
-import { Type } from 'class-transformer';
-import { IsValidForeignKey } from 'src/utils/IsValidForeignKey';
+import { IsNumber } from 'class-validator';
 // this dto for the body comes from the request
 export class CreateAppointmentBodyDto {
   @IsNumber()
@@ -9,11 +6,5 @@ export class CreateAppointmentBodyDto {
 
   // lookup
   @IsNumber()
-  @IsValidForeignKey()
-  appointmentTypeId: number;
-
-  @IsDate()
-  @Type(() => Date)
-  @IsPastDate()
-  date: Date;
+  availabilityId: number;
 }

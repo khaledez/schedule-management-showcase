@@ -9,12 +9,13 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
+import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
 import { Identity } from '../../common/decorators/cognitoIdentity.decorator';
-import { AppointmentResponseInterface } from './interfaces/appointment-response.intreface';
+import { AppointmentResponseInterface } from './interfaces/appointment-response.interface';
 import { FindAppointmentsQueryParams } from './dto/find-appointment-query-params.dto';
 import { IdentityDto } from '../../common/dtos/identity.dto';
+import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 
 @Controller('appointments')
@@ -71,7 +72,7 @@ export class AppointmentsController {
   @Post('provisional')
   createProvisionalAppointment(
     @Identity() identity: IdentityDto,
-    @Body() appointmentData: CreateAppointmentBodyDto,
+    @Body('input') appointmentData: CreateAppointmentProvisionalBodyDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointment/createProvisionalAppointment',
@@ -104,7 +105,7 @@ export class AppointmentsController {
   @Post()
   createAppointment(
     @Identity() identity: IdentityDto,
-    @Body() appointmentData,
+    @Body('input') appointmentData: CreateAppointmentBodyDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
     return this.appointmentsService.create({

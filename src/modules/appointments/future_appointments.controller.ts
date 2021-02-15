@@ -8,7 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
+import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
 import { ExtendAppointmentBodyDto } from './dto/extend-appointment-body.dto';
 import { CancelAppointmentBodyDto } from './dto/cancel-appointment-body.dto';
@@ -33,7 +33,7 @@ export class AppointmentsController {
   @Post()
   createAppointment(
     @Identity() identity: IdentityDto,
-    @Body() appointmentData: CreateAppointmentBodyDto,
+    @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
   ): Promise<AppointmentsModel> {
     // todo: create a guard to validate the headers.
     // todo: validate past date.
