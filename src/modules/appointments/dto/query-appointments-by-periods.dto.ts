@@ -14,5 +14,5 @@ export class QueryAppointmentsByPeriodsDto {
   @IsOptional()
   @IsArray()
   @Transform((value) => JSON.parse(value).map((ele) => ~~ele))
-  doctorIds: any;
+  doctorIds: number[];
 }
