@@ -11,12 +11,12 @@ import {
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
-import { Identity } from '../../common/decorators/cognitoIdentity.decorator';
 import { AppointmentResponseInterface } from './interfaces/appointment-response.interface';
 import { FindAppointmentsQueryParams } from './dto/find-appointment-query-params.dto';
 import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
+import { Identity } from '@mon-medic/common';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -89,18 +89,10 @@ export class AppointmentsController {
     });
   }
 
-  // @Post('filter')
-  // filterAppointments(
-  //   @Body() body
-  // ): Promise<AppointmentsModel>{
-  //   return this.appointmentsService.filterAppointments(body);
-  // }
-
   /**
    *
    * @param identity
    * @param appointmentData
-   * create not provisional appointment for testing.
    */
   @Post()
   createAppointment(
@@ -112,6 +104,27 @@ export class AppointmentsController {
       ...appointmentData,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
+    });
+  }
+
+  /**
+   *
+   * @param identity
+   * @param appointmentData
+   * create not provisional appointment for backdoor.
+   */
+  @Post('backdoor')
+  createAppointmentApi(
+    @Identity() identity: IdentityDto,
+    @Body() appointmentData,
+  ): Promise<AppointmentsModel> {
+    this.logger.debug({ identity, appointmentData });
+    return this.appointmentsService.create({
+      ...appointmentData,
+      appointmentStatusId: appointmentData.appointmentStatusId,
+      clinicId: identity.clinicId,
+      createdBy: identity.userId,
+      provisionalDate: appointmentData.date,
     });
   }
 }
