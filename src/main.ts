@@ -12,7 +12,7 @@ import { CONFIG_SERVICE, PORT, SERVICE_NAME } from './common/constants';
 async function bootstrap() {
   const logger = new Logger('bootstrap');
   const app = await NestFactory.create(AppModule, {
-    logger: new CustomLoggerService(),
+    // logger: new CustomLoggerService(),
     cors: true,
   });
 
@@ -24,7 +24,7 @@ async function bootstrap() {
    * use global pipes to be accessible by app's controllers
    */
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(new AuthGuard(reflector));
+  // app.useGlobalGuards(new AuthGuard(reflector));
   app.setGlobalPrefix(serviceName);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
