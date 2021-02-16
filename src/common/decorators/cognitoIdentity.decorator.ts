@@ -12,10 +12,9 @@ export const Identity = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const cognitoIdentity = {
-      cognitoId: request.headers['x-mmx-cognito-id'],
-      clinicId: +request.headers['x-mmx-clinic-id'],
-      // userLang: request.headers['x-mmx-lang'],
-      userId: +request.headers['x-mmx-user-id'],
+      cognitoId: request.headers['custom:x-mmx-cognito-id'],
+      clinicId: +request.headers['custom:x-mmx-clinic-id'],
+      userId: +request.headers['custom:x-mmx-user-id'],
     };
     console.log('cognitoIdentity', cognitoIdentity);
     if (
