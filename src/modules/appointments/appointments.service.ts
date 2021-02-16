@@ -118,11 +118,10 @@ export class AppointmentsService {
         pageInfo: {
           hasNextPage: '',
           hasPreviousPage: '',
-          startCursor:
-            appointmentsAsPlain.length && appointmentsAsPlain[0]['id'],
-          endCursor:
-            appointmentsAsPlain.length &&
-            appointmentsAsPlain[appointmentsAsPlain.length - 1]['id'],
+          // startCursor: appointmentsAsPlain.length && appointmentsAsPlain[0]['id'],
+          // endCursor:
+          //   appointmentsAsPlain.length &&
+          //   appointmentsAsPlain[appointmentsAsPlain.length - 1]['id'],
         },
       };
     } catch (error) {
