@@ -4,11 +4,11 @@ import { Type, Transform } from 'class-transformer';
 
 // this dto after modify the dto.
 export class CreateGlobalAppointmentDto {
-  @Transform(({ value }) => Number(value))
+  @Transform((value) => Number(value))
   @IsNumber()
   patientId: number;
 
-  @Transform(({ value }) => Number(value))
+  @Transform((value) => Number(value))
   @IsNumber()
   clinicId: number;
 
@@ -16,7 +16,7 @@ export class CreateGlobalAppointmentDto {
   @IsOptional()
   createdBy: number;
 
-  @Transform(({ value }) => Number(value))
+  @Transform((value) => Number(value))
   @IsOptional()
   @IsNumber()
   appointmentStatusId?: number;
@@ -27,12 +27,12 @@ export class CreateGlobalAppointmentDto {
   @IsPastDate()
   provisionalDate?: Date;
 
-  @Transform(({ value }) => Number(value))
+  @Transform((value) => Number(value))
   @IsOptional()
   @IsNumber()
   availabilityId?: number;
 
-  @Transform(({ value }) => Number(value))
+  @Transform((value) => Number(value))
   @IsOptional()
   @IsNumber()
   doctorId?: number;

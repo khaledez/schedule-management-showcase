@@ -20,6 +20,7 @@ import { AvailabilityService } from '../availability/availability.service';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { Op } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
+import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 
 @Injectable()
 export class AppointmentsService {
@@ -32,10 +33,16 @@ export class AppointmentsService {
     private readonly availabilityService: AvailabilityService,
   ) {}
 
-  private readonly associationFieldsNames = {
+  private readonly associationFieldsFilterNames = {
     patientFullName: `$patient.full_name$`,
     patientHealthPlanNumber: `$patient.primary_health_plan_number$`,
     time: `$availability.start_time$`,
+  };
+  private readonly associationFieldsSortNames = {
+    STATUS: {
+      relation: 'status',
+      column: 'code',
+    },
   };
   // TODO: MMX-later add scopes at the appointment types/status/actions
   // TODO: MMX-S3 handle datatype any.
@@ -55,11 +62,17 @@ export class AppointmentsService {
     const sequelizeFilter = sequelizeFilterMapper(
       this.logger,
       query,
-      this.associationFieldsNames,
+      this.associationFieldsFilterNames,
+    );
+    const sequelizeSort = sequelizeSortMapper(
+      this.logger,
+      query,
+      this.associationFieldsSortNames,
     );
     this.logger.debug({
-      function: 'BEFORE => service/appt/findAll sequelizeFilter',
+      function: 'BEFORE => service/appt/findAll sequelizeFilter, sequelizeSort',
       sequelizeFilter,
+      sequelizeSort,
     });
     try {
       const appointments = await this.appointmentsRepository.findAll({
@@ -69,6 +82,7 @@ export class AppointmentsService {
           },
         ],
         where: sequelizeFilter,
+        order: sequelizeSort,
       });
       this.logger.debug({
         function: 'service/appt/findAll',
@@ -101,7 +115,14 @@ export class AppointmentsService {
             provisionalAppointment: !appt.availabilityId,
           },
         })),
-        pageInfo: {},
+        pageInfo: {
+          hasNextPage: '',
+          hasPreviousPage: '',
+          startCursor: appointmentsAsPlain.length && appointmentsAsPlain[0].id,
+          endCursor:
+            appointmentsAsPlain.length &&
+            appointmentsAsPlain[appointmentsAsPlain.length - 1].id,
+        },
       };
     } catch (error) {
       this.logger.error({

@@ -5,54 +5,26 @@ import {
   IsOptional,
   Matches,
   ValidateNested,
+  IsNumber,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class FindAppointmentsQueryParams {
-  @IsOptional()
-  @IsString()
-  patientFullName: string;
-
-  @IsOptional()
-  @IsString()
-  patientPrimaryHealthPlanNumber: string;
-
-  @IsString()
-  @IsOptional()
-  @IsMilitaryTime()
-  timeFrom: string;
-
-  @IsString()
-  @IsOptional()
-  @IsMilitaryTime()
-  timeTo: string;
-
-  @IsDate()
-  @IsOptional()
-  @Type(() => Date)
-  dateFrom: string;
-
-  @IsDate()
-  @IsOptional()
-  @Type(() => Date)
-  dateTo: string;
-
-  @IsOptional()
-  @Matches(/^[\d+,?]+$/)
-  appointmentTypeIds: number[];
-
-  @IsOptional()
-  @Matches(/^[\d+,?]+$/)
-  appointmentStatusIds: number[];
-
-  @IsOptional()
-  @Matches(/^[\d+,?]+$/)
-  doctorIds: number[];
-
-  @IsOptional()
-  @Matches(/^[\d+,?]+$/)
-  ids: number[];
-
+  // TODO: create dto for the filters
   @IsOptional()
   filter: any;
+
+  // TODO: create dto for the filters
+  @IsOptional()
+  sort: any;
+
+  @IsOptional()
+  @Transform((value) => Number(value))
+  @IsNumber()
+  first: number;
+
+  @IsOptional()
+  @Transform((value) => Number(value))
+  @IsNumber()
+  last: number;
 }

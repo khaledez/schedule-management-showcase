@@ -20,7 +20,6 @@ import * as moment from 'moment';
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
   },
-  order: [['date', 'DESC']],
 }))
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel extends BaseModel {
