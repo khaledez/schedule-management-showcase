@@ -1,25 +1,34 @@
 import { Op } from 'sequelize';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { InternalServerErrorException, Logger } from '@nestjs/common';
+import { QueryParamsDto } from '../common/dtos/query-params.dto';
 
 const arrayToObject = (arr) =>
   Object.assign({}, ...arr.map((item) => ({ ...item })));
 
+// eslint-disable-next-line complexity
 export function sequelizeFilterMapper(
   logger: Logger,
-  query,
+  query: QueryParamsDto,
   associationFieldsNames,
 ) {
   try {
+    let where = {};
     let filters = query && query.filter;
+    const beforeAfterObj = handleBeforeAfter(query);
+    if (Object.keys(beforeAfterObj)) {
+      where = beforeAfterObj;
+    }
     logger.debug({
-      function: 'sequelizeFilterMapper',
+      function: 'sequelizeFilterMapper START',
+      where,
+      query,
       filters,
       associationFieldsNames,
       condition: !filters || !filters.length,
     });
     if (!filters || !filters.length) {
-      return {};
+      return where;
     }
 
     filters = JSON.parse(filters);
@@ -27,10 +36,7 @@ export function sequelizeFilterMapper(
       function: 'sequelizeFilterMapper',
       filtersJSON: filters,
     });
-    const where = {};
-    const associationFieldsKeys = Object.keys(associationFieldsNames).map(
-      (e) => e,
-    );
+    const associationFieldsKeys = Object.keys(associationFieldsNames);
     logger.debug({
       function: 'sequelizeFilterMapper',
       associationFieldsKeys,
@@ -100,3 +106,22 @@ function mapToSequelizeFilter(key, filter) {
       return filter[key];
   }
 }
+
+const handleBeforeAfter = ({ before, after }) => {
+  let result = {};
+  if (before) {
+    result = {
+      id: {
+        [Op.lt]: before,
+      },
+    };
+  }
+  if (after) {
+    result = {
+      id: {
+        [Op.gt]: after,
+      },
+    };
+  }
+  return result;
+};

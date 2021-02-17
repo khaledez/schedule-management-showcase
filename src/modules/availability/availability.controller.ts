@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
-import { Identity } from 'src/common/decorators/cognitoIdentity.decorator';
+import { Identity } from '@mon-medic/common';
 import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
 import { IdentityDto } from 'src/common/dtos/identity.dto';

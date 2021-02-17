@@ -11,12 +11,15 @@ import {
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
-import { Identity } from '../../common/decorators/cognitoIdentity.decorator';
 import { AppointmentResponseInterface } from './interfaces/appointment-response.interface';
-import { FindAppointmentsQueryParams } from './dto/find-appointment-query-params.dto';
 import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
+import { Identity } from '@mon-medic/common';
+import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
+import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
+import { BadRequestException } from '@nestjs/common';
+import { ErrorCodes } from 'src/common/enums/error-code.enum';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -30,13 +33,20 @@ export class AppointmentsController {
   @Get()
   findAll(
     @Identity() identity: IdentityDto,
-    @Query() query: FindAppointmentsQueryParams,
+    @Query() query: QueryParamsDto,
   ): Promise<AppointmentResponseInterface[]> {
     this.logger.debug({
       function: 'controller/appointment/findAll',
       identity,
       query,
     });
+    const { first, last, before, after } = query;
+    if ((!!first && !!last) || (!!before && !!after)) {
+      throw new BadRequestException({
+        code: ErrorCodes.INVALID_INPUT,
+        message: 'Invalid Query filters!',
+      });
+    }
     return this.appointmentsService.findAll({ query });
   }
 
@@ -89,18 +99,10 @@ export class AppointmentsController {
     });
   }
 
-  // @Post('filter')
-  // filterAppointments(
-  //   @Body() body
-  // ): Promise<AppointmentsModel>{
-  //   return this.appointmentsService.filterAppointments(body);
-  // }
-
   /**
    *
    * @param identity
    * @param appointmentData
-   * create not provisional appointment for testing.
    */
   @Post()
   createAppointment(
@@ -112,6 +114,26 @@ export class AppointmentsController {
       ...appointmentData,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
+    });
+  }
+
+  /**
+   *
+   * @param identity
+   * @param appointmentData
+   * create not provisional appointment for backdoor.
+   */
+  @Post('backdoor')
+  createAppointmentApi(
+    @Identity() identity: IdentityDto,
+    @Body() appointmentData: CreateGlobalAppointmentDto,
+  ): Promise<AppointmentsModel> {
+    this.logger.debug({ identity, appointmentData });
+    return this.appointmentsService.create({
+      ...appointmentData,
+      clinicId: identity.clinicId,
+      createdBy: identity.userId,
+      provisionalDate: appointmentData.date,
     });
   }
 }

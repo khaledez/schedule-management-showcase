@@ -15,7 +15,7 @@ import { CancelAppointmentBodyDto } from './dto/cancel-appointment-body.dto';
 import { ReassignAppointmentBodyDto } from './dto/reassign-appointment-body.dto';
 import { ChangeDoctorAppointmentBodyDto } from './dto/change-doctor-appointment-body.dto';
 // import { Sequelize } from 'sequelize-typescript';
-import { Identity } from '../../common/decorators/cognitoIdentity.decorator';
+import { Identity } from '@mon-medic/common';
 import { IdentityDto } from 'src/common/dtos/identity.dto';
 
 @Controller('appointments')
