@@ -21,6 +21,8 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { Op } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
+import { AvailabilityModel } from '../availability/models/availability.model';
+import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 const defaultPage = 10;
 @Injectable()
 export class AppointmentsService {
@@ -151,106 +153,74 @@ export class AppointmentsService {
       });
     }
   }
-  /**
-   *
-   * @param createAppointmentDto
-   * create an appointment
-   * this function is used to create provisional and not provisional appt
-   */
-  // TODO: MMX-later we need an transaction
-  // the reason why i did not make it right now because i need the full data which comes from findOne
-  // findOne will not find the element during transaction. and create did not return full data.
-  async create(createAppointmentDto: CreateGlobalAppointmentDto): Promise<any> {
-    try {
-      // that's mean this appt not a provisional.
-      let preparedNotProvisionalAppointmentBody;
-      console.log('createAppointmentDto....', createAppointmentDto);
 
-      if (createAppointmentDto.availabilityId) {
-        const availability = await this.availabilityService.findOne(
-          createAppointmentDto.availabilityId,
-        );
-        const {
-          date,
-          appointmentTypeId,
-          doctorId,
-          appointmentId,
-        } = availability;
-        if (appointmentId) {
-          throw new ConflictException({
-            fields: [],
-            code: ErrorCodes.CONFLICTS,
-            message: 'This availability has already booked!',
-          });
-        }
-        preparedNotProvisionalAppointmentBody = {
-          ...createAppointmentDto,
-          date,
-          appointmentTypeId,
-          doctorId,
-          provisionalDate: availability.date,
-          appointmentStatusId: 2, // TODO: MMX-currentSprint: GET this from the db instead of use it manual status 2 = schedule
-        };
-      }
-      const body = createAppointmentDto.availabilityId
-        ? preparedNotProvisionalAppointmentBody
-        : createAppointmentDto;
-      const result = await this.appointmentsRepository.create(body);
+  async createProvisionalAppointment(
+    createProvisionalApptDto: CreateGlobalAppointmentDto,
+  ): Promise<any> {
+    // check if this patient has a provisional appt.
+    const { patientId } = createProvisionalApptDto;
+    const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(
+      patientId,
+    );
+    if (hasAProvisional) {
+      throw new NotFoundException({
+        fields: [],
+        code: ErrorCodes.CONFLICTS,
+        message: 'This Patient has a provisional appointment',
+      });
+    }
+    return this.createAnAppointmentWithFullResponse(createProvisionalApptDto);
+  }
+
+  async createNonProvisionalAppointment(
+    createNonProvisionalAppointmentDto: CreateNonProvisionalAppointmentDto,
+  ): Promise<any> {
+    let body;
+    const { availabilityId } = createNonProvisionalAppointmentDto;
+    this.logger.debug({
+      function: 'createNonProvisionalAppointment 1',
+      availabilityId,
+    });
+    const nonProvisionalAvailability = await this.availabilityService.findNotBookedAvailability(
+      availabilityId,
+    );
+    if (!nonProvisionalAvailability) {
+      throw new ConflictException({
+        fields: [],
+        code: ErrorCodes.CONFLICTS,
+        message: 'This availability has already booked!',
+      });
+    } else {
+      const { date, appointmentTypeId, doctorId } = nonProvisionalAvailability;
+
+      body = {
+        date,
+        appointmentTypeId,
+        doctorId,
+        provisionalDate: date,
+        appointmentStatusId: 2, // TODO: MMX-currentSprint: GET this from the db instead of use it manual status 2 = schedule
+        ...createNonProvisionalAppointmentDto,
+      };
       this.logger.debug({
-        function: 'service/appt/create',
+        function: 'createNonProvisionalAppointment 2',
+        nonProvisionalAvailability,
+      });
+
+      const result = await this.createAnAppointmentWithFullResponse(body);
+      this.logger.debug({
+        function: 'createNonProvisionalAppointment',
         result,
       });
-      const actions = await this.lookupsService.findAppointmentsActions([
-        result.appointmentStatusId,
-      ]);
-
-      this.logger.debug({
-        function: 'service/appt/create',
-        actions,
-      });
-      const createdAppointment = await this.appointmentsRepository.findOne({
-        where: {
-          id: result.id,
-        },
-        include: [
-          {
-            all: true,
-          },
-        ],
-      });
-      if (!createdAppointment) {
-        throw new BadRequestException({
-          fields: [],
-          code: ErrorCodes.INTERNAL_SERVER_ERROR,
-          message: 'Failed to create an appointment',
+      if (result && result.appointment && result.appointment.id) {
+        const updateAvailability = await nonProvisionalAvailability.update({
+          appointmentId: result.appointment.id,
+        });
+        this.logger.debug({
+          function: 'updateAvailability',
+          updateAvailability,
         });
       }
-      const appointmentPlain = createdAppointment.get({ plain: true });
-
-      this.logger.debug({
-        function: 'service/appt/create',
-        createdAppointment,
-        appointmentPlain,
-      });
-      return {
-        appointment: {
-          ...appointmentPlain,
-          primaryAction: actions[0].nextAction,
-          secondaryActions: actions[0].secondaryActions,
-          provisionalAppointment: !createdAppointment.availabilityId,
-        },
-      };
-    } catch (error) {
-      this.logger.error({
-        function: 'service/appt/createAppointmentDto',
-        error,
-      });
-      throw new BadRequestException({
-        fields: [],
-        code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message: 'CatchError: Failed to create an appointment',
-        error,
-      });
+      return result;
     }
   }
 
@@ -278,6 +248,47 @@ export class AppointmentsService {
       primaryAction: actions[0].nextAction,
       secondaryActions: actions[0].secondaryActions,
       provisionalAppointment: !appointment.availabilityId,
+    };
+  }
+
+  async checkPatientHasAProvisionalAppointment(
+    patientId: number,
+  ): Promise<boolean> {
+    const appt = await this.appointmentsRepository.findOne({
+      attributes: ['id'],
+      where: {
+        patientId,
+        availabilityId: {
+          [Op.eq]: null,
+        },
+      },
+    });
+    this.logger.debug({
+      function: 'checkPatientHasAProvisionalAppointment',
+      appt,
+      condition: !!appt && !!appt.id,
+    });
+    return !!appt && !!appt.id;
+  }
+
+  async createAnAppointmentWithFullResponse(
+    appointmentToCreate: CreateGlobalAppointmentDto,
+  ): Promise<{ appointment: AppointmentsModel }> {
+    this.logger.debug({
+      function: 'appointmentToCreate',
+      appointmentToCreate,
+    });
+    const result = await this.appointmentsRepository.create(
+      appointmentToCreate,
+    );
+
+    this.logger.debug({
+      function: 'createAnAppointmentWithFullResponse',
+      result,
+      appointmentToCreate,
+    });
+    return {
+      appointment: await this.findOne(result.id),
     };
   }
 

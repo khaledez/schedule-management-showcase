@@ -71,6 +71,20 @@ export class AvailabilityService {
     return availability;
   }
 
+  async findNotBookedAvailability(
+    availabilityId: number,
+  ): Promise<AvailabilityModel> {
+    const availability = await this.availabilityRepository.findOne({
+      where: {
+        id: availabilityId,
+        appointmentId: {
+          [Op.eq]: null,
+        },
+      },
+    });
+    return availability;
+  }
+
   createAvailability(data: CreateAvailabilityDto): Promise<AvailabilityModel> {
     // TODO 1- availability must not be overlapped
     return this.availabilityRepository.create(data);
@@ -111,6 +125,7 @@ export class AvailabilityService {
       });
     }
   }
+
   /**
    * create or delete availability
    * if there is an id at the create array element thats mean there is update.

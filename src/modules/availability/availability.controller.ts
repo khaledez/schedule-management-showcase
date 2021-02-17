@@ -23,7 +23,10 @@ export class AvailabilityController {
   constructor(private readonly availabilityService: AvailabilityService) {}
   //TODO: MMX-currentSprint add auth guard
   @Get()
-  findAll(): Promise<AvailabilityEdgesInterface> {
+  findAll(
+    @Identity() identity: IdentityDto,
+  ): Promise<AvailabilityEdgesInterface> {
+    this.logger.debug({ identity });
     return this.availabilityService.findAll();
   }
 

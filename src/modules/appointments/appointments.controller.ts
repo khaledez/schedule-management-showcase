@@ -20,6 +20,7 @@ import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto'
 import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
 import { BadRequestException } from '@nestjs/common';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -58,7 +59,6 @@ export class AppointmentsController {
   ) {
     this.logger.log({ query });
     this.logger.log({ identity });
-    console.log(query);
     return {
       dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(
         identity.clinicId,
@@ -90,7 +90,7 @@ export class AppointmentsController {
       appointmentData,
     });
     // TODO: what if i entered the same body dto multiple-time!
-    return this.appointmentsService.create({
+    return this.appointmentsService.createProvisionalAppointment({
       ...appointmentData,
       appointmentStatusId: 1, // TODO: get this id from appointmentStatusModel at the service.
       clinicId: identity.clinicId,
@@ -110,7 +110,7 @@ export class AppointmentsController {
     @Body() appointmentData: CreateAppointmentBodyDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
-    return this.appointmentsService.create({
+    return this.appointmentsService.createNonProvisionalAppointment({
       ...appointmentData,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
@@ -124,12 +124,12 @@ export class AppointmentsController {
    * create not provisional appointment for backdoor.
    */
   @Post('backdoor')
-  createAppointmentApi(
+  createAppointmentBackdoorApi(
     @Identity() identity: IdentityDto,
-    @Body() appointmentData: CreateGlobalAppointmentDto,
+    @Body() appointmentData: CreateNonProvisionalAppointmentDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
-    return this.appointmentsService.create({
+    return this.appointmentsService.createNonProvisionalAppointment({
       ...appointmentData,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
