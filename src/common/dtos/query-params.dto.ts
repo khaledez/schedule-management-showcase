@@ -1,15 +1,7 @@
-import {
-  IsString,
-  IsMilitaryTime,
-  IsDate,
-  IsOptional,
-  Matches,
-  ValidateNested,
-  IsNumber,
-} from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { IsOptional, IsNumber } from 'class-validator';
+import { Transform } from 'class-transformer';
 
-export class FindAppointmentsQueryParams {
+export class QueryParamsDto {
   // TODO: create dto for the filters
   @IsOptional()
   filter: any;

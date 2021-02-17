@@ -12,12 +12,12 @@ import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
 import { AppointmentResponseInterface } from './interfaces/appointment-response.interface';
-import { FindAppointmentsQueryParams } from './dto/find-appointment-query-params.dto';
 import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { Identity } from '@mon-medic/common';
 import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
+import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -31,7 +31,7 @@ export class AppointmentsController {
   @Get()
   findAll(
     @Identity() identity: IdentityDto,
-    @Query() query: FindAppointmentsQueryParams,
+    @Query() query: QueryParamsDto,
   ): Promise<AppointmentResponseInterface[]> {
     this.logger.debug({
       function: 'controller/appointment/findAll',
