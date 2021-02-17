@@ -2,8 +2,7 @@ import { IsNumber, IsDate, IsOptional } from 'class-validator';
 import { IsPastDate } from '../../../utils/IsPastDate';
 import { Type, Transform } from 'class-transformer';
 
-// this dto after modify the dto.
-export class CreateGlobalAppointmentDto {
+export class CreateNonProvisionalAppointmentDto {
   @Transform((value) => Number(value))
   @IsNumber()
   patientId: number;
@@ -11,8 +10,10 @@ export class CreateGlobalAppointmentDto {
   @Transform((value) => Number(value))
   clinicId: number;
 
+  @Transform((value) => Number(value))
   @IsNumber()
-  @IsOptional()
+  availabilityId: number;
+
   @Transform((value) => Number(value))
   createdBy: number;
 
@@ -32,11 +33,6 @@ export class CreateGlobalAppointmentDto {
   @IsOptional()
   @IsPastDate()
   provisionalDate?: Date;
-
-  @Transform((value) => Number(value))
-  @IsOptional()
-  @IsNumber()
-  availabilityId?: number;
 
   @Transform((value) => Number(value))
   @IsOptional()
