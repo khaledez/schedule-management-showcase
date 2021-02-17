@@ -29,9 +29,7 @@ export function sequelizeFilterMapper(
       filtersJSON: filters,
     });
     const where = {};
-    const associationFieldsKeys = Object.keys(associationFieldsNames).map(
-      (e) => e,
-    );
+    const associationFieldsKeys = Object.keys(associationFieldsNames);
     logger.debug({
       function: 'sequelizeFilterMapper',
       associationFieldsKeys,

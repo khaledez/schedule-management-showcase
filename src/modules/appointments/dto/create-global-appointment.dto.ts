@@ -26,7 +26,7 @@ export class CreateGlobalAppointmentDto {
   @IsOptional()
   @IsPastDate()
   date?: Date;
-  
+
   @IsDate()
   @Type(() => Date)
   @IsOptional()
