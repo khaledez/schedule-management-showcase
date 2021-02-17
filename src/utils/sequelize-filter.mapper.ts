@@ -13,7 +13,8 @@ export function sequelizeFilterMapper(
   try {
     let filters = query && query.filter;
     logger.debug({
-      function: 'sequelizeFilterMapper',
+      function: 'sequelizeFilterMapper START',
+      query,
       filters,
       associationFieldsNames,
       condition: !filters || !filters.length,

@@ -27,4 +27,14 @@ export class FindAppointmentsQueryParams {
   @Transform((value) => Number(value))
   @IsNumber()
   last: number;
+
+  @IsOptional()
+  @Transform((value) => Number(value))
+  @IsNumber()
+  after: number;
+
+  @IsOptional()
+  @Transform((value) => Number(value))
+  @IsNumber()
+  before: number;
 }

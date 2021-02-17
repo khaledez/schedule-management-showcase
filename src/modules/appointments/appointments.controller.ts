@@ -17,6 +17,7 @@ import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { Identity } from '@mon-medic/common';
+import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -116,7 +117,7 @@ export class AppointmentsController {
   @Post('backdoor')
   createAppointmentApi(
     @Identity() identity: IdentityDto,
-    @Body() appointmentData,
+    @Body() appointmentData: CreateGlobalAppointmentDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
     return this.appointmentsService.create({
