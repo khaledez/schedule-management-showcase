@@ -162,12 +162,13 @@ export class AppointmentsService {
     const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(
       patientId,
     );
-    if (hasAProvisional)
+    if (hasAProvisional) {
       throw new NotFoundException({
         fields: [],
         code: ErrorCodes.CONFLICTS,
         message: 'This Patient has a provisional appointment',
       });
+    }
     return this.createAnAppointmentWithFullResponse(createProvisionalApptDto);
   }
 
@@ -183,13 +184,13 @@ export class AppointmentsService {
     const nonProvisionalAvailability = await this.availabilityService.findNotBookedAvailability(
       availabilityId,
     );
-    if (!nonProvisionalAvailability)
+    if (!nonProvisionalAvailability) {
       throw new ConflictException({
         fields: [],
         code: ErrorCodes.CONFLICTS,
         message: 'This availability has already booked!',
       });
-    else {
+    } else {
       const { date, appointmentTypeId, doctorId } = nonProvisionalAvailability;
 
       body = {
