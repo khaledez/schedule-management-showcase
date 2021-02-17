@@ -21,7 +21,7 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { Op } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
-
+const defaultPage = 10;
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -46,15 +46,18 @@ export class AppointmentsService {
   };
   // TODO: MMX-later add scopes at the appointment types/status/actions
   // TODO: MMX-S3 handle datatype any.
-  // TODO: MMX-later handle returning null if availabilityId/patientId is null.
   // TODO: MMX-currentSprint handle returning type.
-  // TODO: MMX-currentSprint handle pagination
+  // TODO: MMX-later handle pagination
+  // eslint-disable-next-line complexity
   async findAll(params?): Promise<any> {
     this.logger.debug({
       function: 'service/appt/findAll Line0',
       params,
     });
     const query = params && params.query;
+    const limit =
+      (query && query.first) || (query && query.last) || defaultPage;
+    let hasNextPage = false;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
       query,
@@ -83,6 +86,8 @@ export class AppointmentsService {
         ],
         where: sequelizeFilter,
         order: sequelizeSort,
+        // i added 1 here because i need to know if there is next page or not!
+        limit: limit + 1,
       });
       this.logger.debug({
         function: 'service/appt/findAll',
@@ -91,6 +96,10 @@ export class AppointmentsService {
       const appointmentsAsPlain = appointments.map((e) =>
         e.get({ plain: true }),
       );
+      if (appointmentsAsPlain.length > limit) {
+        hasNextPage = true;
+        appointmentsAsPlain.pop();
+      }
       const appointmentsStatusIds = appointments.map(
         (e): number => e.appointmentStatusId,
       );
@@ -105,6 +114,14 @@ export class AppointmentsService {
         function: 'service/appt/findall',
         actions,
       });
+      const { id: startCursor } =
+        appointmentsAsPlain.length &&
+        (appointmentsAsPlain[0] as AppointmentsModel);
+      const { id: endCursor } =
+        appointmentsAsPlain.length &&
+        (appointmentsAsPlain[
+          appointmentsAsPlain.length - 1
+        ] as AppointmentsModel);
       return {
         edges: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
           node: {
@@ -116,12 +133,10 @@ export class AppointmentsService {
           },
         })),
         pageInfo: {
-          hasNextPage: '',
-          hasPreviousPage: '',
-          // startCursor: appointmentsAsPlain.length && appointmentsAsPlain[0]['id'],
-          // endCursor:
-          //   appointmentsAsPlain.length &&
-          //   appointmentsAsPlain[appointmentsAsPlain.length - 1]['id'],
+          hasNextPage,
+          hasPreviousPage: false,
+          startCursor,
+          endCursor,
         },
       };
     } catch (error) {

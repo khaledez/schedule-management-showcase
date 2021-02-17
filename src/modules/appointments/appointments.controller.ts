@@ -18,6 +18,8 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { Identity } from '@mon-medic/common';
 import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
 import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
+import { BadRequestException } from '@nestjs/common';
+import { ErrorCodes } from 'src/common/enums/error-code.enum';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -38,6 +40,13 @@ export class AppointmentsController {
       identity,
       query,
     });
+    const { first, last, before, after } = query;
+    if ((!!first && !!last) || (!!before && !!after)) {
+      throw new BadRequestException({
+        code: ErrorCodes.INVALID_INPUT,
+        message: 'Invalid Query filters!',
+      });
+    }
     return this.appointmentsService.findAll({ query });
   }
 

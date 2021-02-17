@@ -6,7 +6,13 @@ import { InternalServerErrorException, Logger } from '@nestjs/common';
 export function sequelizeSortMapper(logger: Logger, query, associationFields) {
   try {
     let sort = query && query.sort;
-    const defaultOrder = [['date', 'DESC']];
+    // to get the last elements i need to reverse sort and git the limit
+    const shouldReverseSort: boolean = query && !!query.last;
+    let defaultOrder = [['date', 'DESC']];
+    // reverse sort
+    if (shouldReverseSort) {
+      defaultOrder = [['date', 'ASC']];
+    }
     logger.debug({
       function: 'sequelizeSortMapper before parse',
       sort,
@@ -25,9 +31,9 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields) {
     const associationFieldsKeys = Object.keys(associationFields).map((e) => e);
     if (associationFieldsKeys.includes(sort.key)) {
       const { relation, column } = associationFields[sort.key];
-      order = [[relation, column, sort.order]];
+      order = [[relation, column, reverseSort(sort.order, shouldReverseSort)]];
     } else {
-      order = [[sort.key, sort.order]];
+      order = [[sort.key, reverseSort(sort.order, shouldReverseSort)]];
     }
     return order;
   } catch (error) {
@@ -38,3 +44,12 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields) {
     });
   }
 }
+
+// reverse sort order.
+const reverseSort = (sort: string, reverse: boolean) => {
+  let defaultSort = sort;
+  if (reverse) {
+    defaultSort = defaultSort === 'ASC' ? 'DESC' : 'ASC';
+  }
+  return defaultSort;
+};
