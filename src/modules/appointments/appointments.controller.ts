@@ -29,10 +29,10 @@ export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   // search using post method
-  @Post('filter')
+  @Post('search')
   search(@Identity() identity: IdentityDto, @Body() body: FiletrBodyDto) {
     this.logger.debug({
-      function: 'controller/appointment/filetr',
+      function: 'controller/appointment/search',
       identity,
       body,
     });
@@ -49,6 +49,7 @@ export class AppointmentsController {
    * Find all appointments
    * @param identity
    */
+  // TODO: Remove this function
   @Get()
   findAll(
     @Identity() identity: IdentityDto,

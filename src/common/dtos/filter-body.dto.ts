@@ -12,7 +12,7 @@ export class FiletrBodyDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => AppointmentSortDto)
-  sort: AppointmentSortDto;
+  sort: AppointmentSortDto[];
 
   @IsOptional()
   @Transform((value) => Number(value))
