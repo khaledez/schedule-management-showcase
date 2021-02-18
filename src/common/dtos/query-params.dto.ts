@@ -6,12 +6,10 @@ import { AppointmentSortDto } from '../../modules/appointments/dto/appointment-s
 export class QueryParamsDto {
   @IsOptional()
   @Transform((value) => JSON.parse(value))
-  @ValidateNested()
   filter: AppointmentFilterDto;
 
   @IsOptional()
   @Transform((value) => JSON.parse(value))
-  @ValidateNested()
   sort: AppointmentSortDto;
 
   @IsOptional()
