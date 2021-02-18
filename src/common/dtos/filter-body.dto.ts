@@ -3,13 +3,15 @@ import { Transform, Type } from 'class-transformer';
 import { AppointmentFilterDto } from '../../modules/appointments/dto/appointment-filter.dto';
 import { AppointmentSortDto } from '../../modules/appointments/dto/appointment-sort.dto';
 
-export class QueryParamsDto {
+export class FiletrBodyDto {
   @IsOptional()
-  @Transform((value) => JSON.parse(value))
+  @ValidateNested()
+  @Type(() => AppointmentFilterDto)
   filter: AppointmentFilterDto;
 
   @IsOptional()
-  @Transform((value) => JSON.parse(value))
+  @ValidateNested()
+  @Type(() => AppointmentSortDto)
   sort: AppointmentSortDto;
 
   @IsOptional()
