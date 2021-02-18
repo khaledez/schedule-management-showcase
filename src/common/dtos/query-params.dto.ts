@@ -10,7 +10,7 @@ export class QueryParamsDto {
 
   @IsOptional()
   @Transform((value) => JSON.parse(value))
-  sort: AppointmentSortDto;
+  sort: AppointmentSortDto[];
 
   @IsOptional()
   @Transform((value) => Number(value))
