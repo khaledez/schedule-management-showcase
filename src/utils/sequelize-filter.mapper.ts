@@ -14,7 +14,7 @@ export function sequelizeFilterMapper(
 ) {
   try {
     let where = {};
-    let filters = query && query.filter;
+    const filters = query && query.filter;
     const beforeAfterObj = handleBeforeAfter(query);
     if (Object.keys(beforeAfterObj)) {
       where = beforeAfterObj;
@@ -25,13 +25,13 @@ export function sequelizeFilterMapper(
       query,
       filters,
       associationFieldsNames,
-      condition: !filters || !filters.length,
+      condition: !filters,
     });
-    if (!filters || !filters.length) {
+    if (!filters) {
       return where;
     }
 
-    filters = JSON.parse(filters);
+    // filters = JSON.parse(filters);
     logger.debug({
       function: 'sequelizeFilterMapper',
       filtersJSON: filters,

@@ -1,14 +1,18 @@
-import { IsOptional, IsNumber } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsOptional, IsNumber, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { AppointmentFilterDto } from '../../modules/appointments/dto/appointment-filter.dto';
+import { AppointmentSortDto } from '../../modules/appointments/dto/appointment-sort.dto';
 
 export class QueryParamsDto {
-  // TODO: create dto for the filters
   @IsOptional()
-  filter: any;
+  @Transform((value) => JSON.parse(value))
+  @ValidateNested()
+  filter: AppointmentFilterDto;
 
-  // TODO: create dto for the filters
   @IsOptional()
-  sort: any;
+  @Transform((value) => JSON.parse(value))
+  @ValidateNested()
+  sort: AppointmentSortDto;
 
   @IsOptional()
   @Transform((value) => Number(value))
