@@ -22,7 +22,7 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields) {
     if (!sort || !sort.length) {
       return defaultOrder;
     }
-    sort = JSON.parse(sort)[0];
+    sort = sort[0];
     logger.debug({
       function: 'sequelizeSortMapper sortJSON',
       sortJSON: sort,
@@ -37,6 +37,7 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields) {
     }
     return order;
   } catch (error) {
+    console.log(11111111111111, error)
     throw new InternalServerErrorException({
       code: ErrorCodes.INTERNAL_SERVER_ERROR,
       message: 'Failed to create sort mapper',
