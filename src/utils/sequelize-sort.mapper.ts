@@ -16,9 +16,9 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields) {
       function: 'sequelizeSortMapper before parse',
       sort,
       associationFields,
-      condition: !sort || !sort.length,
+      condition: !sort,
     });
-    if (!sort || !sort.length) {
+    if (!sort) {
       return defaultOrder;
     }
     logger.debug({
