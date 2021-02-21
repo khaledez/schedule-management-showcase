@@ -20,16 +20,35 @@ import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
 import { BadRequestException } from '@nestjs/common';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
+import { FiletrBodyDto } from 'src/common/dtos/filter-body.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
   private readonly logger = new Logger(AppointmentsController.name);
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
+  // search using post method
+  @Post('search')
+  search(@Identity() identity: IdentityDto, @Body() body: FiletrBodyDto) {
+    this.logger.debug({
+      function: 'controller/appointment/search',
+      identity,
+      body,
+    });
+    const { first, last, before, after } = body;
+    if ((!!first && !!last) || (!!before && !!after)) {
+      throw new BadRequestException({
+        code: ErrorCodes.INVALID_INPUT,
+        message: 'Invalid Query filters!',
+      });
+    }
+    return this.appointmentsService.findAll({ query: body });
+  }
   /**
    * Find all appointments
    * @param identity
    */
+  // TODO: Remove this function
   @Get()
   findAll(
     @Identity() identity: IdentityDto,

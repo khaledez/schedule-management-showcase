@@ -19,7 +19,11 @@ export function sequelizeFilterMapper(
 ) {
   try {
     let filters = query && query.filter;
-    const where = handleBeforeAfter(query);
+    let where = handleBeforeAfter(query);
+    const beforeAfterObj = handleBeforeAfter(query);
+    if (Object.keys(beforeAfterObj)) {
+      where = beforeAfterObj;
+    }
     logger.debug({
       function: 'sequelizeFilterMapper START',
       where,
@@ -42,6 +46,7 @@ export function sequelizeFilterMapper(
       filters = Object.assign(where, filter);
     }
 
+    // filters = JSON.parse(filters);
     logger.debug({
       function: 'sequelizeFilterMapper',
       filtersJSON: filters,
