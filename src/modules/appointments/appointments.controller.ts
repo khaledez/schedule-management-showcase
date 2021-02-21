@@ -20,7 +20,7 @@ import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
 import { BadRequestException } from '@nestjs/common';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
-import { FiletrBodyDto } from 'src/common/dtos/filter-body.dto';
+import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -29,7 +29,7 @@ export class AppointmentsController {
 
   // search using post method
   @Post('search')
-  search(@Identity() identity: IdentityDto, @Body() body: FiletrBodyDto) {
+  search(@Identity() identity: IdentityDto, @Body() body: FilterBodyDto) {
     this.logger.debug({
       function: 'controller/appointment/search',
       identity,

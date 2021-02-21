@@ -67,6 +67,7 @@ export class AppointmentsService {
     // custom filter by appointmentCategory
     const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(
       query,
+      this.logger,
     );
 
     // common filters
@@ -133,6 +134,7 @@ export class AppointmentsService {
         ] as AppointmentsModel);
       return {
         edges: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
+          cursor: appt.id,
           node: {
             ...appt,
             previousAppointment: appt.previousAppointmentId,
@@ -300,9 +302,10 @@ export class AppointmentsService {
   }
 
   // eslint-disable-next-line complexity
-  readonly handleAppointmentCategoryFilter = ({
-    filter = {},
-  }):
+  readonly handleAppointmentCategoryFilter = (
+    { filter = {} },
+    logger: Logger,
+  ):
     | { name: string; filter: Record<string, unknown> }
     | Record<string, unknown> => {
     try {
@@ -311,15 +314,26 @@ export class AppointmentsService {
       const appt = 'APPOINTMENT';
       const isApptCategoryFilterExist =
         Object.keys(filter).findIndex((e) => e === filterName) !== -1;
+      logger.debug({
+        function: 'handleAppointmentCategoryFilter START',
+        filter,
+        isApptCategoryFilterExist,
+      });
       if (!isApptCategoryFilterExist) {
         return {};
       }
       const comingOperator: string = Object.keys(filter[filterName])[0];
       const operatorValue = filter[filterName][comingOperator];
       const supportedOperators = ['eq', 'ne', 'in'];
+      logger.debug({
+        function: 'handleAppointmentCategoryFilter next 1',
+        comingOperator,
+        operatorValue,
+        condition: !supportedOperators.includes(comingOperator),
+      });
       if (!supportedOperators.includes(comingOperator)) {
         throw new BadRequestException(
-          `${comingOperator} not supported to filter at appointmentCategory`,
+          `Not supported filter on appointmentCategory`,
         );
       }
       // check wait list is needed!

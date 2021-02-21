@@ -52,4 +52,9 @@ export class FilterIdsInputDto {
   @Transform((value) => Number(value))
   @IsNumber()
   beginsWith: number;
+
+  @IsOptional()
+  @Transform((value) => value.map((ele) => Number(ele)))
+  @IsArray()
+  in: number[];
 }

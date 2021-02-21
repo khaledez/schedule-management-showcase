@@ -7,10 +7,16 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields) {
     const sort = query && query.sort && query.sort[0];
     // to get the last elements i need to reverse sort and git the limit
     const shouldReverseSort: boolean = query && !!query.last;
-    let defaultOrder = [['date', 'DESC']];
+    let defaultOrder = [
+      ['date', 'DESC'],
+      ['availability', 'start_time', 'DESC'],
+    ];
     // reverse sort
     if (shouldReverseSort) {
-      defaultOrder = [['date', 'ASC']];
+      defaultOrder = [
+        ['date', 'ASC'],
+        ['availability', 'start_time', 'ASC'],
+      ];
     }
     logger.debug({
       function: 'sequelizeSortMapper before parse',
