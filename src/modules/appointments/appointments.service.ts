@@ -57,6 +57,7 @@ export class AppointmentsService {
       params,
     });
     const query = params && params.query;
+    const { clinicId } = params && params.identity;
     const limit =
       (query && query.first) || (query && query.last) || defaultPage;
     let hasNextPage = false;
@@ -94,7 +95,10 @@ export class AppointmentsService {
             all: true,
           },
         ],
-        where: sequelizeFilter,
+        where: {
+          ...sequelizeFilter,
+          clinicId,
+        },
         order: sequelizeSort,
         // i added 1 here because i need to know if there is next page or not!
         limit: limit + 1,

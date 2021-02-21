@@ -152,7 +152,7 @@ export class LookupsService {
       CONFIRM: ['CANCEL', 'CHANGE_APPT_TYPE'],
       CHECK_IN: ['CANCEL'],
       READY: ['CANCEL'],
-      COMPLETED: [],
+      COMPLETE: [],
     };
 
     const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
