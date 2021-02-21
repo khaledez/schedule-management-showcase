@@ -17,6 +17,7 @@ import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-type
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import * as moment from 'moment';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
+import { IdentityDto } from '../../common/dtos/identity.dto';
 
 @Injectable()
 export class AvailabilityService {
@@ -35,7 +36,8 @@ export class AvailabilityService {
       .format(timeFormat);
   }
 
-  async findAll(): Promise<AvailabilityEdgesInterface> {
+  async findAll({ identity }): Promise<AvailabilityEdgesInterface> {
+    const { clinicId } = identity;
     const availability = await this.availabilityRepository.findAll({
       include: [
         {
@@ -43,10 +45,16 @@ export class AvailabilityService {
           as: 'type',
         },
       ],
+      where: {
+        clinicId,
+      },
     });
     const availabilityAsPlain = availability.map((e) => e.get({ plain: true }));
     return {
-      edges: availabilityAsPlain.map((e: AvailabilityModel) => ({ node: e })),
+      edges: availabilityAsPlain.map((e: AvailabilityModel) => ({
+        cursor: e.id,
+        node: e,
+      })),
       pageInfo: {},
     };
   }

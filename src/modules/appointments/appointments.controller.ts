@@ -42,7 +42,7 @@ export class AppointmentsController {
         message: 'Invalid Query filters!',
       });
     }
-    return this.appointmentsService.findAll({ query: body });
+    return this.appointmentsService.findAll({ query: body, identity });
   }
   /**
    * Find all appointments
@@ -66,7 +66,7 @@ export class AppointmentsController {
         message: 'Invalid Query filters!',
       });
     }
-    return this.appointmentsService.findAll({ query });
+    return this.appointmentsService.findAll({ query, identity });
   }
 
   // get total appointment for each day for aspecific period
