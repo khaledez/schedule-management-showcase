@@ -1,6 +1,10 @@
 import { Op } from 'sequelize';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
-import { InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { QueryParamsDto } from '../common/dtos/query-params.dto';
 
 const arrayToObject = (arr) =>
@@ -11,10 +15,11 @@ export function sequelizeFilterMapper(
   logger: Logger,
   query: QueryParamsDto,
   associationFieldsNames,
+  customFilters,
 ) {
   try {
-    let where = {};
-    const filters = query && query.filter;
+    let filters = query && query.filter;
+    let where = handleBeforeAfter(query);
     const beforeAfterObj = handleBeforeAfter(query);
     if (Object.keys(beforeAfterObj)) {
       where = beforeAfterObj;
@@ -29,6 +34,16 @@ export function sequelizeFilterMapper(
     });
     if (!filters) {
       return where;
+    }
+    if (Object.keys(customFilters).length) {
+      const { filter, name } = customFilters;
+      logger.debug({
+        function: 'sequelizeFilterMapper Object.keys(customFilters)',
+        filters,
+        customFilters,
+      });
+      delete filters[name];
+      filters = Object.assign(where, filter);
     }
 
     // filters = JSON.parse(filters);
@@ -103,7 +118,7 @@ function mapToSequelizeFilter(key, filter) {
     case 'or':
       return { [Op.or]: filter[key] };
     default:
-      return filter[key];
+      throw new BadRequestException('Invalid filter key!');
   }
 }
 

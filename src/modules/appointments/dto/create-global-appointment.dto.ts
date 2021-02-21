@@ -9,6 +9,8 @@ export class CreateGlobalAppointmentDto {
   patientId: number;
 
   @Transform((value) => Number(value))
+  @IsNumber()
+  @IsOptional()
   clinicId: number;
 
   @IsNumber()

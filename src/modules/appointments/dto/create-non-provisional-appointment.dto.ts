@@ -7,14 +7,18 @@ export class CreateNonProvisionalAppointmentDto {
   @IsNumber()
   patientId: number;
 
+  @IsOptional()
   @Transform((value) => Number(value))
+  @IsNumber()
   clinicId: number;
 
   @Transform((value) => Number(value))
   @IsNumber()
   availabilityId: number;
 
+  @IsOptional()
   @Transform((value) => Number(value))
+  @IsNumber()
   createdBy: number;
 
   @Transform((value) => Number(value))

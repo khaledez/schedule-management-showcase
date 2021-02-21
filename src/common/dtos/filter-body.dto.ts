@@ -3,7 +3,7 @@ import { Transform, Type } from 'class-transformer';
 import { AppointmentFilterDto } from '../../modules/appointments/dto/appointment-filter.dto';
 import { AppointmentSortDto } from '../../modules/appointments/dto/appointment-sort.dto';
 
-export class FiletrBodyDto {
+export class FilterBodyDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => AppointmentFilterDto)

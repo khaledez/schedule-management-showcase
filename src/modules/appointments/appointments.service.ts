@@ -21,7 +21,6 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { Op } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
-import { AvailabilityModel } from '../availability/models/availability.model';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 const defaultPage = 10;
 @Injectable()
@@ -46,6 +45,7 @@ export class AppointmentsService {
       column: 'code',
     },
   };
+
   // TODO: MMX-later add scopes at the appointment types/status/actions
   // TODO: MMX-S3 handle datatype any.
   // TODO: MMX-currentSprint handle returning type.
@@ -64,10 +64,18 @@ export class AppointmentsService {
       function: 'service/appt/findAll Line1',
       query,
     });
+    // custom filter by appointmentCategory
+    const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(
+      query,
+      this.logger,
+    );
+
+    // common filters
     const sequelizeFilter = sequelizeFilterMapper(
       this.logger,
       query,
       this.associationFieldsFilterNames,
+      filterByAppointmentCategory,
     );
     const sequelizeSort = sequelizeSortMapper(
       this.logger,
@@ -126,6 +134,7 @@ export class AppointmentsService {
         ] as AppointmentsModel);
       return {
         edges: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
+          cursor: appt.id,
           node: {
             ...appt,
             previousAppointment: appt.previousAppointmentId,
@@ -291,6 +300,82 @@ export class AppointmentsService {
       appointment: await this.findOne(result.id),
     };
   }
+
+  // eslint-disable-next-line complexity
+  readonly handleAppointmentCategoryFilter = (
+    { filter = {} },
+    logger: Logger,
+  ):
+    | { name: string; filter: Record<string, unknown> }
+    | Record<string, unknown> => {
+    try {
+      const filterName = 'appointmentCategory';
+      const waitlist = 'WAITLIST';
+      const appt = 'APPOINTMENT';
+      const isApptCategoryFilterExist =
+        Object.keys(filter).findIndex((e) => e === filterName) !== -1;
+      logger.debug({
+        function: 'handleAppointmentCategoryFilter START',
+        filter,
+        isApptCategoryFilterExist,
+      });
+      if (!isApptCategoryFilterExist) {
+        return {};
+      }
+      const comingOperator: string = Object.keys(filter[filterName])[0];
+      const operatorValue = filter[filterName][comingOperator];
+      const supportedOperators = ['eq', 'ne', 'in'];
+      logger.debug({
+        function: 'handleAppointmentCategoryFilter next 1',
+        comingOperator,
+        operatorValue,
+        condition: !supportedOperators.includes(comingOperator),
+      });
+      if (!supportedOperators.includes(comingOperator)) {
+        throw new BadRequestException(
+          `Not supported filter on appointmentCategory`,
+        );
+      }
+      // check wait list is needed!
+      if (
+        (comingOperator === 'eq' && operatorValue === waitlist) ||
+        (comingOperator === 'ne' && operatorValue === appt) ||
+        (comingOperator === 'in' && operatorValue.includes(waitlist))
+      ) {
+        return {
+          name: filterName,
+          filter: {
+            availabilityId: {
+              eq: null,
+            },
+          },
+        };
+      }
+      // check appointment is needed!
+      else if (
+        (comingOperator === 'eq' && operatorValue === appt) ||
+        (comingOperator === 'ne' && operatorValue === waitlist) ||
+        (comingOperator === 'in' && operatorValue.includes(appt))
+      ) {
+        return {
+          name: filterName,
+          filter: {
+            availabilityId: {
+              ne: null,
+            },
+          },
+        };
+      }
+      // by default returning all.
+
+      return {
+        name: filterName,
+        filter: {},
+      };
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
+  };
 
   // async filterAppointments(data) {
   //   return this.appointmentsRepository.findAll();

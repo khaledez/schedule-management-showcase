@@ -3,6 +3,7 @@ import { Type, Transform } from 'class-transformer';
 import { FilterDateInputDto } from './filter-date-input.dto';
 import { FilterStringInputDto } from './filter-string-input.dto';
 import { FilterIdsInputDto } from './filter-ids-input.dto';
+import { CustomFilterByAppointmentCategoryDto } from './custom-filter-by-appointment-category.dto';
 // TODO: currentSprint
 export class AppointmentFilterDto {
   @IsOptional()
@@ -40,10 +41,14 @@ export class AppointmentFilterDto {
   @Type(() => FilterIdsInputDto)
   appointmentStatusId: FilterIdsInputDto;
 
+  // @IsOptional()
+  // @ValidateNested()
+  // @Type(() => FilterIdsInputDto)
+  // availabilityId: FilterIdsInputDto;
   @IsOptional()
   @ValidateNested()
-  @Type(() => FilterIdsInputDto)
-  availabilityId: FilterIdsInputDto;
+  @Type(() => CustomFilterByAppointmentCategoryDto)
+  appointmentCategory: CustomFilterByAppointmentCategoryDto;
 
   @IsOptional()
   @ValidateNested()
