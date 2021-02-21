@@ -34,7 +34,7 @@
         },
         {
           "name": "NODE_ENV",
-          "value": "development"
+          "value": "qa"
         },
         {
           "name": "DB_HOST",
