@@ -7,6 +7,8 @@ import {
   Query,
   Param,
   ParseIntPipe,
+  UseInterceptors,
+  SetMetadata,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
@@ -21,6 +23,7 @@ import { BadRequestException } from '@nestjs/common';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
+import { PaginationInterceptor } from '../../common/interceptor/pagination.interceptor';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -28,6 +31,8 @@ export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   // search using post method
+  @UseInterceptors(PaginationInterceptor)
+  @SetMetadata('modle', 'AppointmentsModel')
   @Post('search')
   search(@Identity() identity: IdentityDto, @Body() body: FilterBodyDto) {
     this.logger.debug({
