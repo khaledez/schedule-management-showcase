@@ -2,12 +2,13 @@ import { IsOptional, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class QueryParamsDto {
-  // TODO: create dto for the filters
   @IsOptional()
+  @Transform((value) => JSON.parse(value))
   filter: any;
 
   // TODO: create dto for the filters
   @IsOptional()
+  @Transform((value) => JSON.parse(value))
   sort: any;
 
   @IsOptional()

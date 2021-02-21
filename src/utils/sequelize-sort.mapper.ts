@@ -1,11 +1,10 @@
-import { Op, Order } from 'sequelize';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 
 // eslint-disable-next-line complexity
 export function sequelizeSortMapper(logger: Logger, query, associationFields) {
   try {
-    let sort = query && query.sort;
+    const sort = query && query.sort && query.sort[0];
     // to get the last elements i need to reverse sort and git the limit
     const shouldReverseSort: boolean = query && !!query.last;
     let defaultOrder = [['date', 'DESC']];
@@ -22,7 +21,6 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields) {
     if (!sort || !sort.length) {
       return defaultOrder;
     }
-    sort = JSON.parse(sort)[0];
     logger.debug({
       function: 'sequelizeSortMapper sortJSON',
       sortJSON: sort,

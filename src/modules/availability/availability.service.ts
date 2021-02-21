@@ -13,7 +13,6 @@ import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { Transaction } from 'sequelize/types';
 import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
-import { raw } from 'express';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import * as moment from 'moment';

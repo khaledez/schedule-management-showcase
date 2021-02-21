@@ -16,7 +16,6 @@ import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { Identity } from '@mon-medic/common';
-import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
 import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
 import { BadRequestException } from '@nestjs/common';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
