@@ -32,7 +32,7 @@ export class AppointmentsService {
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService,
     private readonly availabilityService: AvailabilityService,
-  ) {}
+  ) { }
 
   private readonly associationFieldsFilterNames = {
     patientFullName: `$patient.full_name$`,
@@ -60,6 +60,7 @@ export class AppointmentsService {
     const { clinicId } = params && params.identity;
     const limit =
       (query && query.first) || (query && query.last) || defaultPage;
+    const offset = (query && query.before) || (query && query.after) || 0;
     let hasNextPage = false;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
@@ -102,6 +103,7 @@ export class AppointmentsService {
         order: sequelizeSort,
         // i added 1 here because i need to know if there is next page or not!
         limit: limit + 1,
+        offset
       });
       this.logger.debug({
         function: 'service/appt/findAll',
@@ -128,17 +130,10 @@ export class AppointmentsService {
         function: 'service/appt/findall',
         actions,
       });
-      const { id: startCursor } =
-        appointmentsAsPlain.length &&
-        (appointmentsAsPlain[0] as AppointmentsModel);
-      const { id: endCursor } =
-        appointmentsAsPlain.length &&
-        (appointmentsAsPlain[
-          appointmentsAsPlain.length - 1
-        ] as AppointmentsModel);
+
       return {
         edges: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
-          cursor: appt.id,
+          cursor: offset + i,
           node: {
             ...appt,
             previousAppointment: appt.previousAppointmentId,
@@ -150,8 +145,8 @@ export class AppointmentsService {
         pageInfo: {
           hasNextPage,
           hasPreviousPage: false,
-          startCursor,
-          endCursor,
+          startCursor: offset,
+          endCursor: offset + limit - 1,
         },
       };
     } catch (error) {
@@ -380,6 +375,18 @@ export class AppointmentsService {
       throw new BadRequestException(error);
     }
   };
+
+  // TODO: delete this after ability to change status
+  async patchAppointment(id: number, data: any): Promise<AppointmentsModel> {
+    await this.appointmentsRepository.update(data,
+      {
+        where: {
+          id
+        }
+      }
+    )
+    return this.findOne(id)
+  }
 
   // async filterAppointments(data) {
   //   return this.appointmentsRepository.findAll();

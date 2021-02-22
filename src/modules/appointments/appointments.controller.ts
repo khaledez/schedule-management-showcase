@@ -7,6 +7,7 @@ import {
   Query,
   Param,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
@@ -25,7 +26,7 @@ import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
 @Controller('appointments')
 export class AppointmentsController {
   private readonly logger = new Logger(AppointmentsController.name);
-  constructor(private readonly appointmentsService: AppointmentsService) {}
+  constructor(private readonly appointmentsService: AppointmentsService) { }
 
   // search using post method
   @Post('search')
@@ -88,6 +89,12 @@ export class AppointmentsController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.findOne(id);
+  }
+
+  // TODO: delete this after ability to change status
+  @Patch(":id")
+  PatchOne(@Param('id', ParseIntPipe) id: number, @Body() body) {
+    return this.appointmentsService.patchAppointment(id, body)
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.
