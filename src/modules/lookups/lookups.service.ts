@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
@@ -12,6 +12,8 @@ import { Op } from 'sequelize';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
+import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
+import { AppointmentActionEnum } from 'src/common/enums/appointment-action.enum';
 
 @Injectable()
 export class LookupsService {
@@ -28,7 +30,7 @@ export class LookupsService {
     private readonly appointmentTypesLookupsRepository: typeof AppointmentTypesLookupsModel,
     @Inject(APPOINTMENT_STATUS_LOOKUPS_REPOSITORY)
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
-  ) {}
+  ) { }
   /**
    *
    * Find the duration minutes in the system + clinic if it exists
@@ -114,6 +116,21 @@ export class LookupsService {
     });
   }
 
+  //TODO: MMX-CurrentSprint => static value
+  nextAppointmentActions = {
+    WAIT_LIST: [AppointmentActionEnum.CHANGE_DATE, AppointmentActionEnum.CHANGE_APPT_TYPE, AppointmentActionEnum.CHANGE_DOCTOR],
+    SCHEDULE: [
+      AppointmentActionEnum.CANCEL,
+      AppointmentActionEnum.CHANGE_DATE,
+      AppointmentActionEnum.CHANGE_APPT_TYPE,
+      AppointmentActionEnum.RESCHEDULE_APPT,
+    ],
+    CONFIRM: [AppointmentActionEnum.CANCEL, AppointmentActionEnum.CHANGE_APPT_TYPE],
+    CHECK_IN: [AppointmentActionEnum.CANCEL],
+    READY: [AppointmentActionEnum.CANCEL],
+    COMPLETE: [],
+  };
+
   /**
    * find Appointments Primary And Secondary Actions By Array Of Status Ids
    * @param ids AppointmentsStatusId
@@ -140,27 +157,13 @@ export class LookupsService {
       };
     });
     //TODO: MMX-later change the static way to dynamic.
-    //TODO: MMX-CurrentSprint => static value
-    const nextAppointmentActions = {
-      WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
-      SCHEDULE: [
-        'CANCEL',
-        'CHANGE_DATE',
-        'CHANGE_APPT_TYPE',
-        'RESCHEDULE_APPT',
-      ],
-      CONFIRM: ['CANCEL', 'CHANGE_APPT_TYPE'],
-      CHECK_IN: ['CANCEL'],
-      READY: ['CANCEL'],
-      COMPLETE: [],
-    };
 
     const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
       ...action,
       secondaryActions:
         action.nextAction &&
         appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) =>
-          nextAppointmentActions[action.nextAction.code].includes(e.code),
+          this.nextAppointmentActions[action.nextAction.code].includes(e.code),
         ),
     }));
     this.logger.debug({
@@ -169,5 +172,21 @@ export class LookupsService {
       appointmentsActions,
     });
     return appointmentsActions;
+  }
+
+  public async getStatusIdByCode(code: string): Promise<number> {
+    if (!Object.keys(AppointmentStatusEnum).includes(code))
+      throw new BadRequestException({
+        fields: [],
+        code: 'NOT_FOUND',
+        message: 'This status does not exits!',
+      });
+    const result = await this.appointmentStatusLookupsRepository.findOne({
+      where: {
+        code
+      },
+      attributes: ['id']
+    })
+    return result.id;
   }
 }
