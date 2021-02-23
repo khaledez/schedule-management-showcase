@@ -95,6 +95,8 @@ export class AppointmentsService {
       sequelizeFilter,
       sequelizeSort,
     });
+    const completedStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE)
+
     try {
       const appointments = await this.appointmentsRepository.findAll({
         include: [
@@ -106,7 +108,7 @@ export class AppointmentsService {
           ...sequelizeFilter,
           clinicId,
           appointmentStatusId: {
-            [Op.ne]: 5
+            [Op.ne]: completedStatusId
           }
         },
 

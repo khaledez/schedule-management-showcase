@@ -10,7 +10,7 @@ import { IdentityDto } from 'src/common/dtos/identity.dto';
 
 @Controller('lookups')
 export class LookupsController {
-  constructor(private readonly lookupsService: LookupsService) {}
+  constructor(private readonly lookupsService: LookupsService) { }
 
   @Get('/duration-minutes')
   public findDurationMinutes(
@@ -37,12 +37,12 @@ export class LookupsController {
   public findAppointmentStatus(
     @Identity() identity: IdentityDto,
   ): Promise<AppointmentStatusLookupsModel[]> {
-    return this.lookupsService.findAllAppointmentTypesLookups(identity);
+    return this.lookupsService.findAllAppointmentStatusLookups(identity);
   }
   @Get('/appointment-types')
   public findAppointmentTypes(
     @Identity() identity: IdentityDto,
   ): Promise<AppointmentTypesLookupsModel[]> {
-    return this.lookupsService.findAllAppointmentStatusLookups(identity);
+    return this.lookupsService.findAllAppointmentTypesLookups(identity);
   }
 }
