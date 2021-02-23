@@ -10,7 +10,7 @@ import { IdentityDto } from 'src/common/dtos/identity.dto';
 
 @Controller('lookups')
 export class LookupsController {
-  constructor(private readonly lookupsService: LookupsService) { }
+  constructor(private readonly lookupsService: LookupsService) {}
 
   @Get('/duration-minutes')
   public findDurationMinutes(

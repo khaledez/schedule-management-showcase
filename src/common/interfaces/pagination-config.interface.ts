@@ -1,4 +1,4 @@
 export interface PaginationConfig {
-    default: number;
-    max: number;
+  default: number;
+  max: number;
 }

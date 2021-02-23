@@ -36,8 +36,8 @@ export class AppointmentsService {
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService,
     private readonly availabilityService: AvailabilityService,
-    private configService: ConfigService
-  ) { }
+    private configService: ConfigService,
+  ) {}
 
   private readonly associationFieldsFilterNames = {
     patientFullName: `$patient.full_name$`,
@@ -61,7 +61,10 @@ export class AppointmentsService {
       function: 'service/appt/findAll Line0',
       params,
     });
-    const { max, default: defaultLimit } = this.configService.get<PaginationConfig>('paginationInfo');
+    const {
+      max,
+      default: defaultLimit,
+    } = this.configService.get<PaginationConfig>('paginationInfo');
     const query = params && params.query;
     const { clinicId } = params && params.identity;
     const limit =
@@ -95,7 +98,9 @@ export class AppointmentsService {
       sequelizeFilter,
       sequelizeSort,
     });
-    const completedStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE)
+    const completedStatusId = await this.lookupsService.getStatusIdByCode(
+      AppointmentStatusEnum.COMPLETE,
+    );
 
     try {
       const appointments = await this.appointmentsRepository.findAll({
@@ -108,8 +113,8 @@ export class AppointmentsService {
           ...sequelizeFilter,
           clinicId,
           appointmentStatusId: {
-            [Op.ne]: completedStatusId
-          }
+            [Op.ne]: completedStatusId,
+          },
         },
 
         order: sequelizeSort,
@@ -212,7 +217,9 @@ export class AppointmentsService {
       });
     } else {
       const { date, appointmentTypeId, doctorId } = nonProvisionalAvailability;
-      const scheduleStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.SCHEDULE)
+      const scheduleStatusId = await this.lookupsService.getStatusIdByCode(
+        AppointmentStatusEnum.SCHEDULE,
+      );
       body = {
         date,
         appointmentTypeId,

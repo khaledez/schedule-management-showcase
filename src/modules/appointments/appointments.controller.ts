@@ -28,7 +28,10 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
 @Controller('appointments')
 export class AppointmentsController {
   private readonly logger = new Logger(AppointmentsController.name);
-  constructor(private readonly appointmentsService: AppointmentsService, private readonly lookupsService: LookupsService) { }
+  constructor(
+    private readonly appointmentsService: AppointmentsService,
+    private readonly lookupsService: LookupsService,
+  ) {}
 
   // search using post method
   @Post('search')
@@ -117,7 +120,9 @@ export class AppointmentsController {
       appointmentData,
     });
 
-    const waitlistStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST)
+    const waitlistStatusId = await this.lookupsService.getStatusIdByCode(
+      AppointmentStatusEnum.WAIT_LIST,
+    );
     // TODO: what if i entered the same body dto multiple-time!
     return this.appointmentsService.createProvisionalAppointment({
       ...appointmentData,

@@ -1,4 +1,9 @@
-import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
@@ -30,7 +35,7 @@ export class LookupsService {
     private readonly appointmentTypesLookupsRepository: typeof AppointmentTypesLookupsModel,
     @Inject(APPOINTMENT_STATUS_LOOKUPS_REPOSITORY)
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
-  ) { }
+  ) {}
   /**
    *
    * Find the duration minutes in the system + clinic if it exists
@@ -118,14 +123,21 @@ export class LookupsService {
 
   //TODO: MMX-CurrentSprint => static value
   nextAppointmentActions = {
-    WAIT_LIST: [AppointmentActionEnum.CHANGE_DATE, AppointmentActionEnum.CHANGE_APPT_TYPE, AppointmentActionEnum.CHANGE_DOCTOR],
+    WAIT_LIST: [
+      AppointmentActionEnum.CHANGE_DATE,
+      AppointmentActionEnum.CHANGE_APPT_TYPE,
+      AppointmentActionEnum.CHANGE_DOCTOR,
+    ],
     SCHEDULE: [
       AppointmentActionEnum.CANCEL,
       AppointmentActionEnum.CHANGE_DATE,
       AppointmentActionEnum.CHANGE_APPT_TYPE,
       AppointmentActionEnum.RESCHEDULE_APPT,
     ],
-    CONFIRM: [AppointmentActionEnum.CANCEL, AppointmentActionEnum.CHANGE_APPT_TYPE],
+    CONFIRM: [
+      AppointmentActionEnum.CANCEL,
+      AppointmentActionEnum.CHANGE_APPT_TYPE,
+    ],
     CHECK_IN: [AppointmentActionEnum.CANCEL],
     READY: [AppointmentActionEnum.CANCEL],
     COMPLETE: [],
@@ -175,18 +187,19 @@ export class LookupsService {
   }
 
   public async getStatusIdByCode(code: string): Promise<number> {
-    if (!Object.keys(AppointmentStatusEnum).includes(code))
+    if (!Object.keys(AppointmentStatusEnum).includes(code)) {
       throw new BadRequestException({
         fields: [],
         code: 'NOT_FOUND',
         message: 'This status does not exits!',
       });
+    }
     const result = await this.appointmentStatusLookupsRepository.findOne({
       where: {
-        code
+        code,
       },
-      attributes: ['id']
-    })
+      attributes: ['id'],
+    });
     return result.id;
   }
 }
