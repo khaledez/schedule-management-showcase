@@ -22,11 +22,16 @@ import { BadRequestException } from '@nestjs/common';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
+import { LookupsService } from '../lookups/lookups.service';
+import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
 
 @Controller('appointments')
 export class AppointmentsController {
   private readonly logger = new Logger(AppointmentsController.name);
-  constructor(private readonly appointmentsService: AppointmentsService) { }
+  constructor(
+    private readonly appointmentsService: AppointmentsService,
+    private readonly lookupsService: LookupsService,
+  ) {}
 
   // search using post method
   @Post('search')
@@ -92,9 +97,9 @@ export class AppointmentsController {
   }
 
   // TODO: delete this after ability to change status
-  @Patch(":id")
+  @Patch(':id')
   PatchOne(@Param('id', ParseIntPipe) id: number, @Body() body) {
-    return this.appointmentsService.patchAppointment(id, body)
+    return this.appointmentsService.patchAppointment(id, body);
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.
@@ -105,7 +110,7 @@ export class AppointmentsController {
    * @returns Created Appointment
    */
   @Post('provisional')
-  createProvisionalAppointment(
+  async createProvisionalAppointment(
     @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
   ): Promise<AppointmentsModel> {
@@ -114,10 +119,14 @@ export class AppointmentsController {
       identity,
       appointmentData,
     });
+
+    const waitlistStatusId = await this.lookupsService.getStatusIdByCode(
+      AppointmentStatusEnum.WAIT_LIST,
+    );
     // TODO: what if i entered the same body dto multiple-time!
     return this.appointmentsService.createProvisionalAppointment({
       ...appointmentData,
-      appointmentStatusId: 1, // TODO: get this id from appointmentStatusModel at the service.
+      appointmentStatusId: waitlistStatusId, // TODO: get this id from appointmentStatusModel at the service.
       clinicId: identity.clinicId,
       createdBy: identity.userId,
       provisionalDate: appointmentData.date,
