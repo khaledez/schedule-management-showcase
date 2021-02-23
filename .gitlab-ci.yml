@@ -16,6 +16,7 @@ build:
     - "master"
     - "development"
     - "prod"
+    - "qa"
     - "gitlab"
     - "devops"
   services:
@@ -47,6 +48,8 @@ deploy:
   environment:
     name: development
     url: http://api.dev.monmedx.com
+  except:
+    - "qa"
   only:
     - "master"
     - "development"
@@ -83,6 +86,7 @@ QA:
     name: qa
     url: http://api.qa.monmedx.com
   only:
+    - "qa"
     - "master"
     - "development"
     - "gitlab"
