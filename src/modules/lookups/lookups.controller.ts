@@ -37,12 +37,12 @@ export class LookupsController {
   public findAppointmentStatus(
     @Identity() identity: IdentityDto,
   ): Promise<AppointmentStatusLookupsModel[]> {
-    return this.lookupsService.findAllAppointmentTypesLookups(identity);
+    return this.lookupsService.findAllAppointmentStatusLookups(identity);
   }
   @Get('/appointment-types')
   public findAppointmentTypes(
     @Identity() identity: IdentityDto,
   ): Promise<AppointmentTypesLookupsModel[]> {
-    return this.lookupsService.findAllAppointmentStatusLookups(identity);
+    return this.lookupsService.findAllAppointmentTypesLookups(identity);
   }
 }
