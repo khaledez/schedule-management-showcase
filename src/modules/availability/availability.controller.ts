@@ -27,7 +27,9 @@ export class AvailabilityController {
     @Identity() identity: IdentityDto,
   ): Promise<AvailabilityEdgesInterface> {
     this.logger.debug({ identity });
-    return this.availabilityService.findAll();
+    return this.availabilityService.findAll({
+      identity,
+    });
   }
 
   @Get(':id')

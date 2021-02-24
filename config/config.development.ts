@@ -22,4 +22,8 @@ export const config = () => ({
     clientId: 'pjlj97r3fkhoibcv2t7ln8doi',
     region: 'ca-central-1',
   },
+  paginationInfo: {
+    default: 10,
+    max: 100
+  }
 });

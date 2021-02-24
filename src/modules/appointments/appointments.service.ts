@@ -22,6 +22,12 @@ import { Op } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
+import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
+import { ConfigService } from '@nestjs/config';
+import { PaginationConfig } from 'src/common/interfaces/pagination-config.interface';
+import { map } from 'lodash';
+import * as moment from 'moment';
+
 const defaultPage = 10;
 @Injectable()
 export class AppointmentsService {
@@ -32,6 +38,7 @@ export class AppointmentsService {
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService,
     private readonly availabilityService: AvailabilityService,
+    private configService: ConfigService,
   ) {}
 
   private readonly associationFieldsFilterNames = {
@@ -56,9 +63,15 @@ export class AppointmentsService {
       function: 'service/appt/findAll Line0',
       params,
     });
+    const {
+      max,
+      default: defaultLimit,
+    } = this.configService.get<PaginationConfig>('paginationInfo');
     const query = params && params.query;
+    const { clinicId } = params && params.identity;
     const limit =
-      (query && query.first) || (query && query.last) || defaultPage;
+      (query && query.first) || (query && query.last) || defaultLimit;
+    const offset = (query && query.before) || (query && query.after) || 0;
     let hasNextPage = false;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
@@ -87,6 +100,10 @@ export class AppointmentsService {
       sequelizeFilter,
       sequelizeSort,
     });
+    const completedStatusId = await this.lookupsService.getStatusIdByCode(
+      AppointmentStatusEnum.COMPLETE,
+    );
+
     try {
       const appointments = await this.appointmentsRepository.findAll({
         include: [
@@ -94,10 +111,18 @@ export class AppointmentsService {
             all: true,
           },
         ],
-        where: sequelizeFilter,
+        where: {
+          ...sequelizeFilter,
+          clinicId,
+          appointmentStatusId: {
+            [Op.ne]: completedStatusId,
+          },
+        },
+
         order: sequelizeSort,
         // i added 1 here because i need to know if there is next page or not!
-        limit: limit + 1,
+        limit: limit > max ? max : limit + 1,
+        offset,
       });
       this.logger.debug({
         function: 'service/appt/findAll',
@@ -124,17 +149,10 @@ export class AppointmentsService {
         function: 'service/appt/findall',
         actions,
       });
-      const { id: startCursor } =
-        appointmentsAsPlain.length &&
-        (appointmentsAsPlain[0] as AppointmentsModel);
-      const { id: endCursor } =
-        appointmentsAsPlain.length &&
-        (appointmentsAsPlain[
-          appointmentsAsPlain.length - 1
-        ] as AppointmentsModel);
+
       return {
         edges: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
-          cursor: appt.id,
+          cursor: offset + i,
           node: {
             ...appt,
             previousAppointment: appt.previousAppointmentId,
@@ -146,8 +164,8 @@ export class AppointmentsService {
         pageInfo: {
           hasNextPage,
           hasPreviousPage: false,
-          startCursor,
-          endCursor,
+          startCursor: appointmentsAsPlain.length && offset,
+          endCursor: appointmentsAsPlain.length && offset + limit - 1,
         },
       };
     } catch (error) {
@@ -201,13 +219,15 @@ export class AppointmentsService {
       });
     } else {
       const { date, appointmentTypeId, doctorId } = nonProvisionalAvailability;
-
+      const scheduleStatusId = await this.lookupsService.getStatusIdByCode(
+        AppointmentStatusEnum.SCHEDULE,
+      );
       body = {
         date,
         appointmentTypeId,
         doctorId,
         provisionalDate: date,
-        appointmentStatusId: 2, // TODO: MMX-currentSprint: GET this from the db instead of use it manual status 2 = schedule
+        appointmentStatusId: scheduleStatusId,
         ...createNonProvisionalAppointmentDto,
       };
       this.logger.debug({
@@ -244,7 +264,7 @@ export class AppointmentsService {
     if (!appointment) {
       throw new NotFoundException({
         fields: [],
-        code: 'NOT_FOUND',
+        code: ErrorCodes.NOT_FOUND,
         message: 'This appointment does not exits!',
       });
     }
@@ -377,6 +397,16 @@ export class AppointmentsService {
     }
   };
 
+  // TODO: delete this after ability to change status
+  async patchAppointment(id: number, data: any): Promise<AppointmentsModel> {
+    await this.appointmentsRepository.update(data, {
+      where: {
+        id,
+      },
+    });
+    return this.findOne(id);
+  }
+
   // async filterAppointments(data) {
   //   return this.appointmentsRepository.findAll();
   // }
@@ -492,10 +522,10 @@ export class AppointmentsService {
     }
   }
 
-  getAppointmentsByPeriods(
+  async getAppointmentsByPeriods(
     clinicId: number,
     query: QueryAppointmentsByPeriodsDto,
-  ): any {
+  ): Promise<any> {
     const where: any = {
       canceledAt: {
         [Op.eq]: null,
@@ -516,7 +546,7 @@ export class AppointmentsService {
     if (query.doctorIds && query.doctorIds.length) {
       where.doctorId = { [Op.in]: query.doctorIds };
     }
-    return this.appointmentsRepository.count({
+    const result = await this.appointmentsRepository.count({
       attributes: ['date'],
       group: ['date'],
       include: [
@@ -532,5 +562,10 @@ export class AppointmentsService {
       ],
       where,
     });
+
+    return map(result, ({ count, date }: { count: number; date: string }) => ({
+      count,
+      date: moment(date).format('YYYY-MM-DD'),
+    }));
   }
 }
