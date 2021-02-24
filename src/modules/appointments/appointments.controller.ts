@@ -7,7 +7,10 @@ import {
   Query,
   Param,
   ParseIntPipe,
+  UseInterceptors,
+  SetMetadata,
   Patch,
+  Req,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
@@ -22,8 +25,11 @@ import { BadRequestException } from '@nestjs/common';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
+import { PaginationInterceptor } from '../../common/interceptor/pagination.interceptor';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
+import { PagingInfo } from '../../common/decorators/pagingInfo.decorator';
+import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -34,48 +40,27 @@ export class AppointmentsController {
   ) {}
 
   // search using post method
+  @UseInterceptors(PaginationInterceptor)
+  @SetMetadata('model', 'AppointmentsModel')
   @Post('search')
-  search(@Identity() identity: IdentityDto, @Body() body: FilterBodyDto) {
+  search(
+    @Identity() identity: IdentityDto,
+    @PagingInfo() pagingInfo: PagingInfoInterface,
+    @Body() body: FilterBodyDto,
+  ) {
     this.logger.debug({
       function: 'controller/appointment/search',
       identity,
       body,
     });
-    const { first, last, before, after } = body;
-    if ((!!first && !!last) || (!!before && !!after)) {
-      throw new BadRequestException({
-        code: ErrorCodes.INVALID_INPUT,
-        message: 'Invalid Query filters!',
-      });
-    }
-    return this.appointmentsService.findAll({ query: body, identity });
-  }
-  /**
-   * Find all appointments
-   * @param identity
-   */
-  // TODO: Remove this function
-  @Get()
-  findAll(
-    @Identity() identity: IdentityDto,
-    @Query() query: QueryParamsDto,
-  ): Promise<AppointmentResponseInterface[]> {
-    this.logger.debug({
-      function: 'controller/appointment/findAll',
+    return this.appointmentsService.findAll({
+      query: body,
       identity,
-      query,
+      pagingInfo,
     });
-    const { first, last, before, after } = query;
-    if ((!!first && !!last) || (!!before && !!after)) {
-      throw new BadRequestException({
-        code: ErrorCodes.INVALID_INPUT,
-        message: 'Invalid Query filters!',
-      });
-    }
-    return this.appointmentsService.findAll({ query, identity });
   }
 
-  // get total appointment for each day for aspecific period
+  // get total appointment for each day for a specific period
   @Get('appointments-days')
   async getAppointmentsByPeriods(
     @Identity() identity: IdentityDto,

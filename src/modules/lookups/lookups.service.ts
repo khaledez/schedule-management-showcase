@@ -148,42 +148,63 @@ export class LookupsService {
    * @param ids AppointmentsStatusId
    */
   public async findAppointmentsActions(ids: Array<number>) {
-    const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll();
-    const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
-    const appointmentActionsPlain = internalAppointmentsActions.map((e) =>
-      e.get({ plain: true }),
-    );
-    this.logger.debug({
-      function: 'service/lookup/findAppointmentsActions',
-      internalAppointmentsStatus,
-    });
+    try {
+      const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll();
+      const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
+      const appointmentActionsPlain = internalAppointmentsActions.map((e) =>
+        e.get({ plain: true }),
+      );
+      this.logger.debug({
+        function: 'service/lookup/findAppointmentsActions',
+        internalAppointmentsStatus,
+      });
 
-    // TODO: MMX-S4/S5 create fcm and check the status
-    // At S2 status are sorted in the order so the next id is next status
-    const appointmentsPrimaryActions = ids.map((id: number) => {
-      return {
-        currentActionId: id,
-        nextAction: internalAppointmentsStatus.find(
-          (statusObj) => statusObj.id === id + 1,
-        ),
+      // TODO: MMX-S4/S5 create fcm and check the status
+      // At S2 status are sorted in the order so the next id is next status
+      const appointmentsPrimaryActions = ids.map((id: number) => {
+        return {
+          currentActionId: id,
+          nextAction: internalAppointmentsStatus.find(
+            (statusObj) => statusObj.id === id + 1,
+          ),
+        };
+      });
+      //TODO: MMX-later change the static way to dynamic.
+      //TODO: MMX-CurrentSprint => static value
+      const nextAppointmentActions = {
+        WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
+        SCHEDULE: [
+          'CANCEL',
+          'CHANGE_DATE',
+          'CHANGE_APPT_TYPE',
+          'RESCHEDULE_APPT',
+        ],
+        CONFIRM: ['CANCEL', 'CHANGE_APPT_TYPE'],
+        CHECK_IN: ['CANCEL'],
+        READY: ['CANCEL'],
+        COMPLETE: [],
       };
-    });
-    //TODO: MMX-later change the static way to dynamic.
 
-    const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
-      ...action,
-      secondaryActions:
-        action.nextAction &&
-        appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) =>
-          this.nextAppointmentActions[action.nextAction.code].includes(e.code),
-        ),
-    }));
-    this.logger.debug({
-      function: 'service/lookup/findAppointmentsActions',
-      appointmentsPrimaryActions,
-      appointmentsActions,
-    });
-    return appointmentsActions;
+      const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
+        ...action,
+        secondaryActions:
+          action.nextAction &&
+          appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) =>
+            nextAppointmentActions[action.nextAction.code].includes(e.code),
+          ),
+      }));
+      this.logger.debug({
+        function: 'service/lookup/findAppointmentsActions',
+        appointmentsPrimaryActions,
+        appointmentsActions,
+      });
+      return appointmentsActions;
+    } catch (error) {
+      throw new BadRequestException({
+        function: 'findAppointmentsActions error',
+        error,
+      });
+    }
   }
 
   public async getStatusIdByCode(code: string): Promise<number> {

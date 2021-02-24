@@ -18,17 +18,16 @@ import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Op } from 'sequelize';
+import { Op, FindOptions } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
 import { ConfigService } from '@nestjs/config';
-import { PaginationConfig } from 'src/common/interfaces/pagination-config.interface';
 import { map } from 'lodash';
 import * as moment from 'moment';
+import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
 
-const defaultPage = 10;
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -38,7 +37,6 @@ export class AppointmentsService {
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService,
     private readonly availabilityService: AvailabilityService,
-    private configService: ConfigService,
   ) {}
 
   private readonly associationFieldsFilterNames = {
@@ -58,23 +56,16 @@ export class AppointmentsService {
   // TODO: MMX-currentSprint handle returning type.
   // TODO: MMX-later handle pagination
   // eslint-disable-next-line complexity
-  async findAll(params?): Promise<any> {
+  async findAll(args?): Promise<any> {
     this.logger.debug({
       function: 'service/appt/findAll Line0',
-      params,
+      args,
     });
-    const {
-      max,
-      default: defaultLimit,
-    } = this.configService.get<PaginationConfig>('paginationInfo');
-    const query = params && params.query;
-    const { clinicId } = params && params.identity;
-    const limit =
-      (query && query.first) || (query && query.last) || defaultLimit;
-    const offset = (query && query.before) || (query && query.after) || 0;
-    let hasNextPage = false;
+    const { query, identity, pagingInfo } = args;
+    const { limit, offset } = pagingInfo as PagingInfoInterface;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
+      pagingInfo,
       query,
     });
     // custom filter by appointmentCategory
@@ -103,9 +94,8 @@ export class AppointmentsService {
     const completedStatusId = await this.lookupsService.getStatusIdByCode(
       AppointmentStatusEnum.COMPLETE,
     );
-
     try {
-      const appointments = await this.appointmentsRepository.findAll({
+      const options: FindOptions = {
         include: [
           {
             all: true,
@@ -113,64 +103,58 @@ export class AppointmentsService {
         ],
         where: {
           ...sequelizeFilter,
-          clinicId,
+          clinicId: identity.clinicId,
           appointmentStatusId: {
             [Op.ne]: completedStatusId,
           },
         },
-
         order: sequelizeSort,
-        // i added 1 here because i need to know if there is next page or not!
-        limit: limit > max ? max : limit + 1,
+        limit,
         offset,
-      });
+      };
+      const {
+        rows: appointments,
+        count,
+      } = await this.appointmentsRepository.findAndCountAll(options);
       this.logger.debug({
-        function: 'service/appt/findAll',
+        function: 'service/appt/findAll options',
+        options,
         appointments,
       });
       const appointmentsAsPlain = appointments.map((e) =>
         e.get({ plain: true }),
       );
-      if (appointmentsAsPlain.length > limit) {
-        hasNextPage = true;
-        appointmentsAsPlain.pop();
-      }
+
       const appointmentsStatusIds = appointments.map(
         (e): number => e.appointmentStatusId,
       );
       this.logger.debug({
-        function: 'service/appt/findall',
+        function: 'service/appt/findall status',
         appointmentsStatusIds,
       });
       const actions = await this.lookupsService.findAppointmentsActions(
         appointmentsStatusIds,
       );
       this.logger.debug({
-        function: 'service/appt/findall',
+        function: 'service/appt/findall action',
         actions,
       });
 
       return {
-        edges: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
-          cursor: offset + i,
-          node: {
-            ...appt,
-            previousAppointment: appt.previousAppointmentId,
-            primaryAction: actions[i].nextAction && actions[i].nextAction,
-            secondaryActions: actions[i].secondaryActions,
-            provisionalAppointment: !appt.availabilityId,
-          },
+        data: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
+          ...appt,
+          previousAppointment: appt.previousAppointmentId,
+          primaryAction: actions[i].nextAction && actions[i].nextAction,
+          secondaryActions: actions[i].secondaryActions,
+          provisionalAppointment: !appt.availabilityId,
         })),
-        pageInfo: {
-          hasNextPage,
-          hasPreviousPage: false,
-          startCursor: appointmentsAsPlain.length && offset,
-          endCursor: appointmentsAsPlain.length && offset + limit - 1,
-        },
+        // TODO: calculate has previous data
+        hasPreviousPage: false,
+        count,
       };
     } catch (error) {
       this.logger.error({
-        function: 'service/appt/findall',
+        function: 'service/appt/findall catch error',
         error,
       });
       throw new BadRequestException({
