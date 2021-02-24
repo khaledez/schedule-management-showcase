@@ -25,6 +25,8 @@ import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
 import { ConfigService } from '@nestjs/config';
 import { PaginationConfig } from 'src/common/interfaces/pagination-config.interface';
+import { map } from 'lodash';
+import * as moment from 'moment';
 
 const defaultPage = 10;
 @Injectable()
@@ -520,10 +522,10 @@ export class AppointmentsService {
     }
   }
 
-  getAppointmentsByPeriods(
+  async getAppointmentsByPeriods(
     clinicId: number,
     query: QueryAppointmentsByPeriodsDto,
-  ): any {
+  ): Promise<any> {
     const where: any = {
       canceledAt: {
         [Op.eq]: null,
@@ -544,7 +546,7 @@ export class AppointmentsService {
     if (query.doctorIds && query.doctorIds.length) {
       where.doctorId = { [Op.in]: query.doctorIds };
     }
-    return this.appointmentsRepository.count({
+    const result = await this.appointmentsRepository.count({
       attributes: ['date'],
       group: ['date'],
       include: [
@@ -560,5 +562,10 @@ export class AppointmentsService {
       ],
       where,
     });
+
+    return map(result, ({ count, date }: { count: number; date: string }) => ({
+      count,
+      date: moment(date).format('YYYY-MM-DD'),
+    }));
   }
 }
