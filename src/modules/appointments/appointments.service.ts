@@ -91,12 +91,6 @@ export class AppointmentsService {
       sequelizeFilter,
       sequelizeSort,
     });
-    const completedStatusId = await this.lookupsService.getStatusIdByCode(
-      AppointmentStatusEnum.COMPLETE,
-    );
-    const {
-      appointmentStatusId: apptStatusFilter = {},
-    } = sequelizeFilter as Record<string, unknown>;
     try {
       const options: FindOptions = {
         include: [
@@ -107,10 +101,6 @@ export class AppointmentsService {
         where: {
           ...sequelizeFilter,
           clinicId: identity.clinicId,
-          appointmentStatusId: {
-            [Op.ne]: completedStatusId,
-            ...apptStatusFilter,
-          },
         },
         order: sequelizeSort,
         limit,

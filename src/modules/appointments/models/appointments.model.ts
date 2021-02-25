@@ -14,11 +14,18 @@ import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { PatientsModel } from './patients.model';
 import * as moment from 'moment';
+import { Op } from 'sequelize';
+import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
 
 // note that the id will auto added by sequelize.
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
+  },
+  where: {
+    [`$status.code$`]: {
+      [Op.ne]: AppointmentStatusEnum.COMPLETE,
+    },
   },
 }))
 @Table({ tableName: 'Appointments', underscored: true })
