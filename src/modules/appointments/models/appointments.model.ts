@@ -14,11 +14,17 @@ import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { PatientsModel } from './patients.model';
 import * as moment from 'moment';
+import { Op } from 'sequelize';
 
 // note that the id will auto added by sequelize.
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
+  },
+  where: {
+    appointmentStatusId: {
+      [Op.ne]: 6,
+    },
   },
 }))
 @Table({ tableName: 'Appointments', underscored: true })
