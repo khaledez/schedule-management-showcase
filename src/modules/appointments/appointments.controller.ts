@@ -41,7 +41,6 @@ export class AppointmentsController {
 
   // search using post method
   @UseInterceptors(PaginationInterceptor)
-  @SetMetadata('model', 'AppointmentsModel')
   @Post('search')
   search(
     @Identity() identity: IdentityDto,

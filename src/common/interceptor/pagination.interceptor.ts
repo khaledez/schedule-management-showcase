@@ -27,26 +27,40 @@ export class PaginationInterceptor implements NestInterceptor {
   ) {}
   // eslint-disable-next-line complexity
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+    const {
+      first: _first,
+      last: _last,
+      before: _before,
+      after: _after,
+    } = request.body;
+    // convert it to number here because the request comes here before dto.
+    const first = +_first;
+    const last = +_last;
+    const before = +_before;
+    const after = +_after;
+    if (
+      (!!first && !!last) ||
+      (!!before && !!after) ||
+      first < 0 ||
+      last < 0 ||
+      (first && !Number.isInteger(first)) ||
+      (last && !Number.isInteger(last)) ||
+      (before && !Number.isInteger(before)) ||
+      (after && !Number.isInteger(after))
+    ) {
+      throw new BadRequestException({
+        code: ErrorCodes.INVALID_INPUT,
+        message: 'Invalid Query filters!',
+      });
+    }
+    if ((!!first && !!before) || (!!last && !!after)) {
+      throw new BadRequestException({
+        code: ErrorCodes.INVALID_INPUT,
+        message: 'Unsupported pagination way!',
+      });
+    }
     try {
-      const request = context.switchToHttp().getRequest();
-      const { first, last, before, after } = request.body;
-      if (
-        (!!first && !!last) ||
-        (!!before && !!after) ||
-        first < 0 ||
-        last < 0
-      ) {
-        throw new BadRequestException({
-          code: ErrorCodes.INVALID_INPUT,
-          message: 'Invalid Query filters!',
-        });
-      }
-      if ((!!first && !!before) || (!!last && !!after)) {
-        throw new BadRequestException({
-          code: ErrorCodes.INVALID_INPUT,
-          message: 'UnSupported pagination way!',
-        });
-      }
       const {
         max,
         default: defaultLimit,
@@ -70,28 +84,6 @@ export class PaginationInterceptor implements NestInterceptor {
         // eslint-disable-next-line complexity
         map((res) => {
           const { data, hasPreviousPage = false, count: total } = res;
-          // get the incoming model
-          const model = this.reflector.get<string>(
-            'model',
-            context.getHandler(),
-          );
-          this.logger.debug(`incomming model is ${model}`);
-          if (!model) {
-            this.logger.error('model not set in the meta data');
-            throw new InternalServerErrorException({
-              code: 'SERVER_ERROR',
-              message: 'Internal Server Error',
-            });
-          }
-          const dbModel = this.sequelize.models[model];
-          // check if the model already exists
-          if (!dbModel) {
-            this.logger.error(`model: ${model} not set in the system`);
-            throw new InternalServerErrorException({
-              code: 'SERVER_ERROR',
-              message: 'Internal Server Error',
-            });
-          }
           const modifiedDataAsEdges = data.map((node: any, index) => ({
             // start cursor from 1
             cursor: (!last ? offset + index : total + offset - index) + 1,
@@ -127,8 +119,8 @@ export class PaginationInterceptor implements NestInterceptor {
         error,
       });
       throw new InternalServerErrorException({
-        code: 'SERVER_ERROR',
-        message: 'Internal Server Error',
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
       });
     }
   }
