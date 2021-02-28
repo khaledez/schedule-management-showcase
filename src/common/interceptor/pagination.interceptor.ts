@@ -15,7 +15,7 @@ import { map } from 'rxjs/operators';
 import { ErrorCodes } from '../enums/error-code.enum';
 import { ConfigService } from '@nestjs/config';
 import { PaginationConfig } from '../interfaces/pagination-config.interface';
-import { AppointmentsModel } from '../../modules/appointments/models/appointments.model';
+import { BaseModel } from '../models/base-model';
 
 @Injectable()
 export class PaginationInterceptor implements NestInterceptor {
@@ -23,7 +23,7 @@ export class PaginationInterceptor implements NestInterceptor {
   constructor(
     @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
     private configService: ConfigService,
-  ) {}
+  ) { }
   // eslint-disable-next-line complexity
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
@@ -87,7 +87,7 @@ export class PaginationInterceptor implements NestInterceptor {
             // start cursor from 1
             cursor: (!last ? offset + index : total + offset - index) + 1,
             node,
-          })) as [{ node: AppointmentsModel; cursor: number }];
+          })) as [{ node: BaseModel; cursor: number }];
           this.logger.debug({
             function: 'PaginationInterceptor modifiedDataAsEdges',
             modifiedDataAsEdges,
