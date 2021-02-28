@@ -40,8 +40,8 @@ export class AppointmentsController {
   ) {}
 
   // search using post method
-  @UseInterceptors(PaginationInterceptor)
   @Post('search')
+  @UseInterceptors(PaginationInterceptor)
   search(
     @Identity() identity: IdentityDto,
     @PagingInfo() pagingInfo: PagingInfoInterface,

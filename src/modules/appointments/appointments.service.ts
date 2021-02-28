@@ -110,7 +110,7 @@ export class AppointmentsService {
         rows: appointments,
         count,
       } = await this.appointmentsRepository.findAndCountAll(options);
-      this.logger.debug({
+      this.logger.log({
         function: 'service/appt/findAll options',
         options,
         appointments,
