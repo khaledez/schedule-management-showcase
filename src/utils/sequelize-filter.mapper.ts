@@ -19,11 +19,7 @@ export function sequelizeFilterMapper(
 ) {
   try {
     let filters = query && query.filter;
-    let where = handleBeforeAfter(query);
-    const beforeAfterObj = handleBeforeAfter(query);
-    if (Object.keys(beforeAfterObj)) {
-      where = beforeAfterObj;
-    }
+    const where = {};
     logger.debug({
       function: 'sequelizeFilterMapper START',
       where,
@@ -121,22 +117,3 @@ function mapToSequelizeFilter(key, filter) {
       throw new BadRequestException('Invalid filter key!');
   }
 }
-
-const handleBeforeAfter = ({ before, after }) => {
-  let result = {};
-  if (before) {
-    result = {
-      id: {
-        [Op.lt]: before,
-      },
-    };
-  }
-  if (after) {
-    result = {
-      id: {
-        [Op.gt]: after,
-      },
-    };
-  }
-  return result;
-};

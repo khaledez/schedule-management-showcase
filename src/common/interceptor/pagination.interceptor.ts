@@ -11,20 +11,19 @@ import {
 import { SEQUELIZE } from '../constants';
 import { Observable } from 'rxjs';
 import { Sequelize } from 'sequelize-typescript';
-import { Reflector } from '@nestjs/core';
 import { map } from 'rxjs/operators';
 import { ErrorCodes } from '../enums/error-code.enum';
 import { ConfigService } from '@nestjs/config';
 import { PaginationConfig } from '../interfaces/pagination-config.interface';
+import { BaseModel } from '../models/base-model';
 
 @Injectable()
 export class PaginationInterceptor implements NestInterceptor {
   private readonly logger = new Logger('PaginationInterceptor');
   constructor(
     @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
-    private reflector: Reflector,
     private configService: ConfigService,
-  ) {}
+  ) { }
   // eslint-disable-next-line complexity
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
@@ -88,7 +87,7 @@ export class PaginationInterceptor implements NestInterceptor {
             // start cursor from 1
             cursor: (!last ? offset + index : total + offset - index) + 1,
             node,
-          }));
+          })) as [{ node: BaseModel; cursor: number }];
           this.logger.debug({
             function: 'PaginationInterceptor modifiedDataAsEdges',
             modifiedDataAsEdges,
@@ -101,7 +100,14 @@ export class PaginationInterceptor implements NestInterceptor {
           const endCursor = modifiedDataAsEdges.length
             ? modifiedDataAsEdges[modifiedDataAsEdges.length - 1].cursor
             : null;
-
+          this.logger.log({
+            arrayTotalLength: modifiedDataAsEdges.length,
+            total,
+            pagingInfo: request.pagingInfo,
+            appointmentsIds:
+              modifiedDataAsEdges.length &&
+              modifiedDataAsEdges.map((e) => e.node.id),
+          });
           return {
             edges: modifiedDataAsEdges,
             pageInfo: {
