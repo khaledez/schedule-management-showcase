@@ -4,6 +4,7 @@ import { FilterDateInputDto } from './filter-date-input.dto';
 import { FilterStringInputDto } from './filter-string-input.dto';
 import { FilterIdsInputDto } from './filter-ids-input.dto';
 import { CustomFilterByAppointmentCategoryDto } from './custom-filter-by-appointment-category.dto';
+import { FilterTimeInputDto } from './filter-time-input.dto';
 // TODO: currentSprint
 export class AppointmentFilterDto {
   @IsOptional()
@@ -13,8 +14,8 @@ export class AppointmentFilterDto {
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => FilterDateInputDto)
-  time: FilterDateInputDto;
+  @Type(() => FilterTimeInputDto)
+  time: FilterTimeInputDto;
 
   @IsOptional()
   @ValidateNested()
