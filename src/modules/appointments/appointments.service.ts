@@ -377,7 +377,7 @@ export class AppointmentsService {
 
   // TODO: delete this after ability to change status
   async patchAppointment(id: number, data: any): Promise<AppointmentsModel> {
-    await this.appointmentsRepository.update(data, {
+    await this.appointmentsRepository.scope('id').update(data, {
       where: {
         id,
       },

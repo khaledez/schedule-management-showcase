@@ -6,6 +6,7 @@ import {
   BelongsTo,
   DefaultScope,
   DataType,
+  Scopes,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
@@ -25,6 +26,13 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
   where: {
     [`$status.code$`]: {
       [Op.ne]: AppointmentStatusEnum.COMPLETE,
+    },
+  },
+}))
+@Scopes(() => ({
+  id: {
+    attributes: {
+      include: ['id'],
     },
   },
 }))
