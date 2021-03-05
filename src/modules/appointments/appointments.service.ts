@@ -285,7 +285,7 @@ export class AppointmentsService {
       function: 'appointmentToCreate',
       appointmentToCreate,
     });
-    const result = await this.appointmentsRepository.create(
+    const result = await this.appointmentsRepository.scope('id').create(
       appointmentToCreate,
     );
 
