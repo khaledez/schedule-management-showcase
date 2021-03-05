@@ -261,7 +261,7 @@ export class AppointmentsService {
   async checkPatientHasAProvisionalAppointment(
     patientId: number,
   ): Promise<boolean> {
-    const appt = await this.appointmentsRepository.findOne({
+    const appt = await this.appointmentsRepository.scope('id').findOne({
       attributes: ['id'],
       where: {
         patientId,
@@ -285,9 +285,9 @@ export class AppointmentsService {
       function: 'appointmentToCreate',
       appointmentToCreate,
     });
-    const result = await this.appointmentsRepository.scope('id').create(
-      appointmentToCreate,
-    );
+    const result = await this.appointmentsRepository
+      .scope('id')
+      .create(appointmentToCreate);
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',
