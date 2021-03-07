@@ -31,7 +31,7 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
 import { PagingInfo } from '../../common/decorators/pagingInfo.decorator';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
 
-@Controller('appointments')
+@Controller('')
 export class AppointmentsController {
   private readonly logger = new Logger(AppointmentsController.name);
   constructor(
@@ -40,7 +40,7 @@ export class AppointmentsController {
   ) {}
 
   // search using post method
-  @Post('search')
+  @Post('appointments/search')
   @UseInterceptors(PaginationInterceptor)
   search(
     @Identity() identity: IdentityDto,
@@ -60,7 +60,7 @@ export class AppointmentsController {
   }
 
   // get total appointment for each day for a specific period
-  @Get('appointments-days')
+  @Get('appointments/appointments-days')
   async getAppointmentsByPeriods(
     @Identity() identity: IdentityDto,
     @Query() query: QueryAppointmentsByPeriodsDto,
@@ -75,20 +75,26 @@ export class AppointmentsController {
     };
   }
 
-  @Get(':id')
+  @Get('appointments/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.findOne(id);
   }
 
   // TODO: delete this after ability to change status
-  @Patch(':id')
+  @Patch('appointments/:id')
   PatchOne(@Param('id', ParseIntPipe) id: number, @Body() body) {
     return this.appointmentsService.patchAppointment(id, body);
   }
 
-  @Get('patient/:patientId')
-  getByPatientId(@Param('patientId', ParseIntPipe) patientId: number) {
-    return this.appointmentsService.findAppointmentByPatientId(patientId);
+  @Get('patient-upcoming-appointments/:patientId')
+  getAppointmentByPatientId(
+    @Param('patientId', ParseIntPipe) patientId: number,
+    @Identity() identity: IdentityDto,
+  ) {
+    return this.appointmentsService.findAppointmentByPatientId(
+      patientId,
+      identity,
+    );
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.
@@ -98,7 +104,7 @@ export class AppointmentsController {
    * @param appointmentData
    * @returns Created Appointment
    */
-  @Post('provisional')
+  @Post('appointments/provisional')
   async createProvisionalAppointment(
     @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
@@ -127,7 +133,7 @@ export class AppointmentsController {
    * @param identity
    * @param appointmentData
    */
-  @Post()
+  @Post('appointments')
   createAppointment(
     @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateAppointmentBodyDto,
@@ -146,7 +152,7 @@ export class AppointmentsController {
    * @param appointmentData
    * create not provisional appointment for backdoor.
    */
-  @Post('backdoor')
+  @Post('appointments/backdoor')
   createAppointmentBackdoorApi(
     @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateNonProvisionalAppointmentDto,

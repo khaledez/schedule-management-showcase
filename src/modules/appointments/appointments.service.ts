@@ -61,7 +61,7 @@ export class AppointmentsService {
       function: 'service/appt/findAll Line0',
       args,
     });
-    const { query, identity, pagingInfo } = args;
+    const { query, identity, pagingInfo = {} } = args;
     const { limit, offset } = pagingInfo as PagingInfoInterface;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
@@ -147,6 +147,7 @@ export class AppointmentsService {
         count,
       };
     } catch (error) {
+      console.log('errorerrorerror', error);
       this.logger.error({
         function: 'service/appt/findall catch error',
         error,
@@ -385,34 +386,22 @@ export class AppointmentsService {
     return this.findOne(id);
   }
 
-  async findAppointmentByPatientId(id: number): Promise<any> {
-    const appointment = await this.appointmentsRepository.findOne({
-      where: {
-        patientId: id,
-      },
-      include: [
-        {
-          all: true,
+  async findAppointmentByPatientId(
+    id: number,
+    identity,
+  ): Promise<AppointmentsModel> {
+    const query = {
+      filter: {
+        patientId: {
+          eq: id,
         },
-      ],
-    });
-    if (!appointment) {
-      throw new NotFoundException({
-        fields: [],
-        code: ErrorCodes.NOT_FOUND,
-        message: 'This appointment does not exits!',
-      });
-    }
-    const appointmentAsPlain = appointment.get({ plain: true });
-    const actions = await this.lookupsService.findAppointmentsActions([
-      appointment.appointmentStatusId,
-    ]);
-    return {
-      ...appointmentAsPlain,
-      primaryAction: actions[0].nextAction,
-      secondaryActions: actions[0].secondaryActions,
-      provisionalAppointment: !appointment.availabilityId,
+      },
     };
+    const { data } = await this.findAll({
+      identity,
+      query,
+    });
+    return data[0];
   }
 
   // async filterAppointments(data) {
