@@ -93,6 +93,8 @@ export class AppointmentsService {
     });
     try {
       const options: FindOptions = {
+        benchmark: true,
+        logging: console.log,
         include: [
           {
             all: true,
