@@ -93,6 +93,8 @@ export class AppointmentsService {
     });
     try {
       const options: FindOptions = {
+        benchmark: true,
+        logging: console.log,
         include: [
           {
             all: true,
@@ -115,13 +117,11 @@ export class AppointmentsService {
         options,
         appointments,
       });
-      const appointmentsAsPlain = appointments.map((e) =>
-        e.get({ plain: true }),
-      );
-
-      const appointmentsStatusIds = appointments.map(
-        (e): number => e.appointmentStatusId,
-      );
+      const appointmentsStatusIds = [];
+      const appointmentsAsPlain = appointments.map((e) => {
+        appointmentsStatusIds.push(e.status.id);
+        return e.get({ plain: true });
+      });
       this.logger.debug({
         function: 'service/appt/findall status',
         appointmentsStatusIds,

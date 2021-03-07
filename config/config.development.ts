@@ -11,7 +11,7 @@ export const config = () => ({
     username: process.env.DB_USERNAME || 'root',
     password: process.env.DB_PASSWORD || 'password',
     database: process.env.DB_NAME || 'dash',
-    logging: false,
+    logging: true,
     define: {
       timestamps: false,
       underscored: true,
