@@ -385,6 +385,36 @@ export class AppointmentsService {
     return this.findOne(id);
   }
 
+  async findAppointmentByPatientId(id: number): Promise<any> {
+    const appointment = await this.appointmentsRepository.findOne({
+      where: {
+        patientId: id,
+      },
+      include: [
+        {
+          all: true,
+        },
+      ],
+    });
+    if (!appointment) {
+      throw new NotFoundException({
+        fields: [],
+        code: ErrorCodes.NOT_FOUND,
+        message: 'This appointment does not exits!',
+      });
+    }
+    const appointmentAsPlain = appointment.get({ plain: true });
+    const actions = await this.lookupsService.findAppointmentsActions([
+      appointment.appointmentStatusId,
+    ]);
+    return {
+      ...appointmentAsPlain,
+      primaryAction: actions[0].nextAction,
+      secondaryActions: actions[0].secondaryActions,
+      provisionalAppointment: !appointment.availabilityId,
+    };
+  }
+
   // async filterAppointments(data) {
   //   return this.appointmentsRepository.findAll();
   // }

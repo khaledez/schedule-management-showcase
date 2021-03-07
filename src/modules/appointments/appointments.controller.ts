@@ -86,6 +86,11 @@ export class AppointmentsController {
     return this.appointmentsService.patchAppointment(id, body);
   }
 
+  @Get('patient/:patientId')
+  getByPatientId(@Param('patientId', ParseIntPipe) patientId: number) {
+    return this.appointmentsService.findAppointmentByPatientId(patientId);
+  }
+
   //TODO: MMX-S3 create a function for not provisional appointments only.
   /**
    * Create a provisional appointment
