@@ -12,11 +12,6 @@ module.exports = {
         transaction: t,
       });
 
-      await queryInterface.addIndex('Appointments', ['id', 'clinic_id'], {
-        name: 'appointment_id_clinic_id_idx',
-        transaction: t,
-      });
-
       await queryInterface.addIndex('Appointments', ['date'], {
         name: 'date_idx',
         transaction: t,
@@ -60,13 +55,6 @@ module.exports = {
       await queryInterface.removeIndex('Appointments', 'clinic_id_idx', {
         transaction: t,
       });
-      await queryInterface.removeIndex(
-        'Appointments',
-        'appointment_id_clinic_id_idx',
-        {
-          transaction: t,
-        },
-      );
 
       await queryInterface.removeIndex('Appointments', 'date_idx', {
         transaction: t,
