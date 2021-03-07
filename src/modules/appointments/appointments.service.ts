@@ -147,15 +147,14 @@ export class AppointmentsService {
         count,
       };
     } catch (error) {
-      console.log('errorerrorerror', error);
       this.logger.error({
         function: 'service/appt/findall catch error',
-        error,
+        error: error.message,
       });
       throw new BadRequestException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
         message: 'Failed to find the appointments',
-        error,
+        error: error.message,
       });
     }
   }
