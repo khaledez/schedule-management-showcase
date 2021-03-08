@@ -23,7 +23,7 @@ export class PaginationInterceptor implements NestInterceptor {
   constructor(
     @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
     private configService: ConfigService,
-  ) { }
+  ) {}
   // eslint-disable-next-line complexity
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
@@ -34,15 +34,17 @@ export class PaginationInterceptor implements NestInterceptor {
       after: _after,
     } = request.body;
     // convert it to number here because the request comes here before dto.
-    const first = +_first;
-    const last = +_last;
-    const before = +_before;
+    let first = +_first;
+    let last = +_last;
+    let before = +_before;
     const after = +_after;
     if (
       (!!first && !!last) ||
       (!!before && !!after) ||
       first < 0 ||
       last < 0 ||
+      before < 1 ||
+      last > before ||
       (first && !Number.isInteger(first)) ||
       (last && !Number.isInteger(last)) ||
       (before && !Number.isInteger(before)) ||
@@ -70,14 +72,22 @@ export class PaginationInterceptor implements NestInterceptor {
       let offset: number;
       if (first && after) {
         offset = after;
+      } else if (last && before) {
+        first = before;
+        offset = before - last;
+        last = null;
+        before = null;
       } else {
         offset = 0;
       }
       request.pagingInfo = {
         limit: finalLimit,
         offset: offset < 0 ? 0 : offset,
+        reverseSort: !!last,
       };
-      this.logger.debug(`request.pagingInfo ${request.pagingInfo}`);
+      this.logger.debug(
+        `request.pagingInfo ${JSON.stringify(request.pagingInfo)}`,
+      );
 
       return next.handle().pipe(
         // eslint-disable-next-line complexity
@@ -86,7 +96,8 @@ export class PaginationInterceptor implements NestInterceptor {
           const modifiedDataAsEdges = data.map((node: any, index) => ({
             // start cursor from 1
             cursor: (!last ? offset + index : total + offset - index) + 1,
-            node,
+            // cursor: (!last ? offset + index : !!last && !!before ? before - last : total + offset - index) + 1,
+            node: node.id,
           })) as [{ node: BaseModel; cursor: number }];
           this.logger.debug({
             function: 'PaginationInterceptor modifiedDataAsEdges',
@@ -104,9 +115,6 @@ export class PaginationInterceptor implements NestInterceptor {
             arrayTotalLength: modifiedDataAsEdges.length,
             total,
             pagingInfo: request.pagingInfo,
-            appointmentsIds:
-              modifiedDataAsEdges.length &&
-              modifiedDataAsEdges.map((e) => e.node.id),
           });
           return {
             edges: modifiedDataAsEdges,
