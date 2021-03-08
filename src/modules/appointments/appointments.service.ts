@@ -61,7 +61,7 @@ export class AppointmentsService {
       function: 'service/appt/findAll Line0',
       args,
     });
-    const { query, identity, pagingInfo } = args;
+    const { query, identity, pagingInfo = {} } = args;
     const { limit, offset } = pagingInfo as PagingInfoInterface;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
@@ -149,12 +149,12 @@ export class AppointmentsService {
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall catch error',
-        error,
+        error: error.message,
       });
       throw new BadRequestException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
         message: 'Failed to find the appointments',
-        error,
+        error: error.message,
       });
     }
   }
@@ -261,7 +261,7 @@ export class AppointmentsService {
   async checkPatientHasAProvisionalAppointment(
     patientId: number,
   ): Promise<boolean> {
-    const appt = await this.appointmentsRepository.findOne({
+    const appt = await this.appointmentsRepository.scope('id').findOne({
       attributes: ['id'],
       where: {
         patientId,
@@ -285,9 +285,9 @@ export class AppointmentsService {
       function: 'appointmentToCreate',
       appointmentToCreate,
     });
-    const result = await this.appointmentsRepository.create(
-      appointmentToCreate,
-    );
+    const result = await this.appointmentsRepository
+      .scope('id')
+      .create(appointmentToCreate);
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',
@@ -383,6 +383,24 @@ export class AppointmentsService {
       },
     });
     return this.findOne(id);
+  }
+
+  async findAppointmentByPatientId(
+    id: number,
+    identity,
+  ): Promise<AppointmentsModel> {
+    const query = {
+      filter: {
+        patientId: {
+          eq: id,
+        },
+      },
+    };
+    const { data } = await this.findAll({
+      identity,
+      query,
+    });
+    return data[0];
   }
 
   // async filterAppointments(data) {
