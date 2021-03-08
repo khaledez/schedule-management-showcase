@@ -97,7 +97,7 @@ export class PaginationInterceptor implements NestInterceptor {
             // start cursor from 1
             cursor: (!last ? offset + index : total + offset - index) + 1,
             // cursor: (!last ? offset + index : !!last && !!before ? before - last : total + offset - index) + 1,
-            node: node.id,
+            node,
           })) as [{ node: BaseModel; cursor: number }];
           this.logger.debug({
             function: 'PaginationInterceptor modifiedDataAsEdges',
