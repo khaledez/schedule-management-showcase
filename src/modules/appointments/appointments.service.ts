@@ -61,12 +61,14 @@ export class AppointmentsService {
       function: 'service/appt/findAll Line0',
       args,
     });
-    const { query, identity, pagingInfo } = args;
-    const { limit, offset } = pagingInfo as PagingInfoInterface;
+    const { query, identity, pagingInfo = {} } = args;
+    const { limit, offset, reverseSort } = pagingInfo as PagingInfoInterface;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
       pagingInfo,
       query,
+      limit,
+      offset,
     });
     // custom filter by appointmentCategory
     const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(
@@ -85,6 +87,7 @@ export class AppointmentsService {
       this.logger,
       query,
       this.associationFieldsSortNames,
+      reverseSort,
     );
     this.logger.debug({
       function: 'BEFORE => service/appt/findAll sequelizeFilter, sequelizeSort',
@@ -93,8 +96,8 @@ export class AppointmentsService {
     });
     try {
       const options: FindOptions = {
-        benchmark: true,
-        logging: console.log,
+        // benchmark: true,
+        // logging: true,
         include: [
           {
             all: true,
