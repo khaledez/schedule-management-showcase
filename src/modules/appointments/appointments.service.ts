@@ -152,12 +152,12 @@ export class AppointmentsService {
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall catch error',
-        error,
+        error: error.message,
       });
       throw new BadRequestException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
         message: 'Failed to find the appointments',
-        error,
+        error: error.message,
       });
     }
   }
@@ -386,6 +386,24 @@ export class AppointmentsService {
       },
     });
     return this.findOne(id);
+  }
+
+  async findAppointmentByPatientId(
+    id: number,
+    identity,
+  ): Promise<AppointmentsModel> {
+    const query = {
+      filter: {
+        patientId: {
+          eq: id,
+        },
+      },
+    };
+    const { data } = await this.findAll({
+      identity,
+      query,
+    });
+    return data[0];
   }
 
   // async filterAppointments(data) {

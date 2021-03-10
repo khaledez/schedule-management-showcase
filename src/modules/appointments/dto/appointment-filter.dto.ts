@@ -42,10 +42,6 @@ export class AppointmentFilterDto {
   @Type(() => FilterIdsInputDto)
   appointmentStatusId: FilterIdsInputDto;
 
-  // @IsOptional()
-  // @ValidateNested()
-  // @Type(() => FilterIdsInputDto)
-  // availabilityId: FilterIdsInputDto;
   @IsOptional()
   @ValidateNested()
   @Type(() => CustomFilterByAppointmentCategoryDto)
