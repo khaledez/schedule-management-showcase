@@ -62,11 +62,13 @@ export class AppointmentsService {
       args,
     });
     const { query, identity, pagingInfo = {} } = args;
-    const { limit, offset } = pagingInfo as PagingInfoInterface;
+    const { limit, offset, reverseSort } = pagingInfo as PagingInfoInterface;
     this.logger.debug({
       function: 'service/appt/findAll Line1',
       pagingInfo,
       query,
+      limit,
+      offset,
     });
     // custom filter by appointmentCategory
     const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(
@@ -85,6 +87,7 @@ export class AppointmentsService {
       this.logger,
       query,
       this.associationFieldsSortNames,
+      reverseSort,
     );
     this.logger.debug({
       function: 'BEFORE => service/appt/findAll sequelizeFilter, sequelizeSort',
@@ -93,6 +96,8 @@ export class AppointmentsService {
     });
     try {
       const options: FindOptions = {
+        // benchmark: true,
+        // logging: true,
         include: [
           {
             all: true,
@@ -115,13 +120,11 @@ export class AppointmentsService {
         options,
         appointments,
       });
-      const appointmentsAsPlain = appointments.map((e) =>
-        e.get({ plain: true }),
-      );
-
-      const appointmentsStatusIds = appointments.map(
-        (e): number => e.appointmentStatusId,
-      );
+      const appointmentsStatusIds = [];
+      const appointmentsAsPlain = appointments.map((e) => {
+        appointmentsStatusIds.push(e.status.id);
+        return e.get({ plain: true });
+      });
       this.logger.debug({
         function: 'service/appt/findall status',
         appointmentsStatusIds,

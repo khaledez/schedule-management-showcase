@@ -12,6 +12,7 @@
     "start": "nest start",
     "db:migrate:status": "ts-node node_modules/.bin/sequelize db:migrate:status",
     "db:migrate": "ts-node node_modules/.bin/sequelize db:migrate",
+    "db:migrate:undo": "ts-node node_modules/.bin/sequelize db:migrate:undo",
     "db:drop": "ts-node node_modules/.bin/sequelize db:drop",
     "db:create": "ts-node node_modules/.bin/sequelize db:create",
     "db:seed-dev": "ts-node node_modules/.bin/sequelize db:seed:all",
