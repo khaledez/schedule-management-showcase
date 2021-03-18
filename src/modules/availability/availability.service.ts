@@ -133,6 +133,14 @@ export class AvailabilityService {
     }
   }
 
+  findByIds(ids: number[]): Promise<AvailabilityModel[]> {
+    this.logger.log({ functionName: this.findByIds.name, ids });
+    return this.availabilityRepository.scope('full').findAll({
+      where: {
+        id: ids,
+      },
+    });
+  }
   /**
    * create or delete availability
    * if there is an id at the create array element thats mean there is update.

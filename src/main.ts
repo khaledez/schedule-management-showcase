@@ -3,7 +3,8 @@ import { AppModule } from './app.module';
 import {
   registerApp,
   CustomLoggerService,
-  AuthGuard,
+  JwtAuthGuard,
+  PermissionsGuard,
   HttpExceptionFilter,
 } from '@mon-medic/common';
 import { ValidationPipe, Logger } from '@nestjs/common';
@@ -24,7 +25,10 @@ async function bootstrap() {
    * use global pipes to be accessible by app's controllers
    */
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(new AuthGuard(reflector));
+  app.useGlobalGuards(
+    new JwtAuthGuard(reflector),
+    new PermissionsGuard(reflector),
+  );
   app.setGlobalPrefix(serviceName);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.useGlobalFilters(new HttpExceptionFilter());

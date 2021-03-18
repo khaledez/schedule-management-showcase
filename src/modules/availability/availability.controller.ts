@@ -7,6 +7,7 @@ import {
   BadRequestException,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
 import { Identity } from '@mon-medic/common';
@@ -15,6 +16,9 @@ import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create
 import { IdentityDto } from 'src/common/dtos/identity.dto';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
+import { split } from 'lodash';
+import { QueryFindAvailabilityDto } from './dto/query-find-availability.dto';
+import { AvailabilityModel } from './models/availability.model';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -25,7 +29,12 @@ export class AvailabilityController {
   @Get()
   findAll(
     @Identity() identity: IdentityDto,
-  ): Promise<AvailabilityEdgesInterface> {
+    @Query() query?: QueryFindAvailabilityDto,
+  ): Promise<AvailabilityEdgesInterface> | Promise<AvailabilityModel[]> {
+    if (query.ids) {
+      const ids = split(query.ids, ',').map((ele: string) => ~~ele);
+      return this.availabilityService.findByIds(ids);
+    }
     this.logger.debug({ identity });
     return this.availabilityService.findAll({
       identity,
