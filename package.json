@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@mon-medic/common": "^1.1.31",
+    "@narando/nest-xray": "^1.4.2",
     "@nestjs/common": "^7.0.1",
     "@nestjs/config": "^0.6.1",
     "@nestjs/core": "^7.0.1",
@@ -43,6 +44,7 @@
     "@nestjs/typeorm": "^7.1.5",
     "amazon-cognito-identity-js": "^4.5.5",
     "aws-sdk": "^2.817.0",
+    "aws-xray-sdk": "^3.2.0",
     "class-transformer": "^0.3.1",
     "class-validator": "^0.12.2",
     "dotenv": "^8.2.0",
