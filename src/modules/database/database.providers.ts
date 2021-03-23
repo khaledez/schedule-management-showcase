@@ -11,17 +11,7 @@ import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-sta
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { LookupsModel } from '../../common/models/lookup-model';
 import { PatientsModel } from '../appointments/models/patients.model';
-import { captureMySQL, getSegment } from 'aws-xray-sdk';
-//TODO:: delete this log after debug..
-let mysql;
-/* eslint @typescript-eslint/no-var-requires: "off" */
-try {
-  mysql = captureMySQL(require('mysql2'));
-  const subs = getSegment().subsegments;
-  console.log('databaseProviders==> getSegment', subs);
-} catch (error) {
-  console.error("databaseProviders==ERROR", JSON.stringify(error))
-}
+
 export const databaseProviders = [
   {
     provide: SEQUELIZE,
@@ -33,8 +23,6 @@ export const databaseProviders = [
         const password = await getSSMParameterValue(MYSQL_PASSWORD_PARAMETER);
         config.password = password;
       }
-      config.dialectModule = mysql;
-      console.log('databaseProviders==> config', config);
       const sequelize = new Sequelize(config);
       sequelize.addModels([
         AppointmentsModel,
