@@ -3,6 +3,7 @@ import { Dialect } from 'sequelize/types';
 export const config = () => ({
   serviceName: 'schedule-management',
   baseURL: undefined,
+  apiURL: "https://api.dev.monmedx.com",
   port: 3000,
   database: {
     dialect: 'mysql' as Dialect,
