@@ -1,7 +1,7 @@
 import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { requestLoggerMiddleware, AuthModule } from '@mon-medic/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { DatabaseModule } from './modules/database/database.module';
@@ -9,6 +9,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import config from '../config';
+import { HttpTracingModule } from '@narando/nest-xray';
 
 @Module({
   imports: [
@@ -16,6 +17,14 @@ import config from '../config';
     ConfigModule.forRoot({
       load: config,
       isGlobal: true,
+    }),
+    HttpTracingModule.registerAsync({
+      useFactory: (config: ConfigService) => {
+        return {
+          baseURL: config.get('apiURL'),
+        };
+      },
+      inject: [ConfigService],
     }),
     DatabaseModule,
     AuthModule,
