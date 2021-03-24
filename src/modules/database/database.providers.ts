@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-var-requires: "off" */
 import { Sequelize } from 'sequelize-typescript';
 import { ConfigService } from '@nestjs/config';
 import { SEQUELIZE } from '../../common/constants';
@@ -11,6 +12,8 @@ import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-sta
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { LookupsModel } from '../../common/models/lookup-model';
 import { PatientsModel } from '../appointments/models/patients.model';
+const AWSXRay = require('aws-xray-sdk');
+AWSXRay.captureHTTPsGlobal(require('https'));
 
 export const databaseProviders = [
   {
@@ -23,7 +26,10 @@ export const databaseProviders = [
         const password = await getSSMParameterValue(MYSQL_PASSWORD_PARAMETER);
         config.password = password;
       }
-      const sequelize = new Sequelize(config);
+      const sequelize = new Sequelize({
+        ...config,
+        dialectModule: AWSXRay.captureMySQL(require('mysql2')),
+      });
       sequelize.addModels([
         AppointmentsModel,
         AvailabilityModel,
