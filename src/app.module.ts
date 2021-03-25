@@ -9,6 +9,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import config from '../config';
+import { GeneralHealthIndicator } from './general-health.provider';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import config from '../config';
     LookupsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, GeneralHealthIndicator],
 })
 export class AppModule {
   // apply logger middleware in all-over the modules.
