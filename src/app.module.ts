@@ -10,6 +10,7 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import config from '../config';
 import { HttpTracingModule } from '@narando/nest-xray';
+import { GeneralHealthIndicator } from './general-health.provider';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { HttpTracingModule } from '@narando/nest-xray';
     LookupsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, GeneralHealthIndicator],
 })
 export class AppModule {
   // apply logger middleware in all-over the modules.

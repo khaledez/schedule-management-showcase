@@ -1,23 +1,21 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
-import {
-  HealthCheckService,
-  DNSHealthIndicator,
-  HealthCheck,
-} from '@nestjs/terminus';
 import { Public } from '@mon-medic/common';
+import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
+import { AppService } from './app.service';
+import { GeneralHealthIndicator } from './general-health.provider';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
     private health: HealthCheckService,
-    private dns: DNSHealthIndicator,
+    private generalHealthIndicator: GeneralHealthIndicator,
   ) {}
 
+  @Public()
   @Get()
   getHello(): string {
-    return this.appService.getHello();
+    return this.appService.getStatusOk();
   }
 
   @Public()
@@ -25,7 +23,8 @@ export class AppController {
   @HealthCheck()
   check() {
     return this.health.check([
-      () => this.dns.pingCheck('nestjs-docs', 'https://docs.nestjs.com'),
+      // eslint-disable-next-line require-await
+      async () => this.generalHealthIndicator.isHealthy(),
     ]);
   }
 }
