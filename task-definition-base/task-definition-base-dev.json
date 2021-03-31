@@ -39,6 +39,9 @@
         {
           "name": "DB_HOST",
           "value": "%DB_HOST%"
+        },{
+          "name": "S3_BUCKET_NAME",
+          "value": "%S3_BUCKET_NAME%"
         }
       ],
       "mountPoints": [],

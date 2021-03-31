@@ -1,6 +1,7 @@
 stages:
  - build
  - DEV
+ - dprime
  - QA
  - demo
  - staging
@@ -17,6 +18,7 @@ build:
     - "development"
     - "prod"
     - "qa"
+    - "dprime"
     - "gitlab"
     - "devops"
   services:
@@ -64,6 +66,8 @@ deploy:
     - export MYSQL_PASSWORD_PARAMETER=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='MYSQLPASSWORDPARAMETER'].OutputValue" )
     - export restApiId=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='restApiId${service_name}'].OutputValue" )
     - sed -e "s;%BUILD_VERSION%;${CI_COMMIT_SHA};g" task-definition-base/task-definition-base-dev.json > task-definition.json
+    - export S3_BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='S3BUCKETNAME'].OutputValue" )
+    - sed -i "s/%S3_BUCKET_NAME%/${S3_BUCKET_NAME}/g" task-definition.json
     - sed -i "s/%accountID%/${accountID}/g" task-definition.json
     - sed -i "s/%DB_HOST%/${DB_HOST}/g" task-definition.json
     - echo $MYSQL_PASSWORD_PARAMETER
@@ -76,6 +80,42 @@ deploy:
     - sed -i "s;%service_lower_name%;${service_lower_name};g" task-definition.json
     - aws ecs register-task-definition --family "DEV${service_name}" --cli-input-json "file://task-definition.json"
     - aws ecs update-service --cluster $clusterName --service "${service_name}" --desired-count 1 --task-definition "DEV${service_name}"  --force-new-deployment
+# DPRIME
+#=========
+dprime:
+  stage: dprime
+  when: manual
+  image: python:3.7.3
+  environment:
+    name: DPRIME
+    url: http://api.DPRIME.monmedx.com
+  only:
+    - "dprime"
+  before_script:
+    - "pip install awscli --upgrade --user"
+    - "export PATH=~/.local/bin:$PATH"
+    - "aws --version"
+  script:
+    - export clusterName=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DPRIME --output text --query "Stacks[0].Outputs[?OutputKey=='clusterName'].OutputValue" )
+    - export DB_HOST=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DPRIME --output text --query "Stacks[0].Outputs[?OutputKey=='dbClusterEndpoint'].OutputValue" )
+    - export MYSQL_PASSWORD_PARAMETER=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DPRIME --output text --query "Stacks[0].Outputs[?OutputKey=='MYSQLPASSWORDPARAMETER'].OutputValue" )
+    - export restApiId=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DPRIME --output text --query "Stacks[0].Outputs[?OutputKey=='restApiId${service_name}'].OutputValue" )
+    - sed -e "s;%BUILD_VERSION%;${CI_COMMIT_SHA};g" task-definition-base/task-definition-base-dprime.json > task-definition.json
+    - export S3_BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DPRIME --output text --query "Stacks[0].Outputs[?OutputKey=='S3BUCKETNAME'].OutputValue" )
+    - sed -i "s/%S3_BUCKET_NAME%/${S3_BUCKET_NAME}/g" task-definition.json
+    - sed -i "s/%accountID%/${accountID}/g" task-definition.json
+    - sed -i "s/%DB_HOST%/${DB_HOST}/g" task-definition.json
+    - echo $MYSQL_PASSWORD_PARAMETER
+    - sed -i "s;%MYSQL_PASSWORD_PARAMETER%;${MYSQL_PASSWORD_PARAMETER};g" task-definition.json
+    - export DB_PASSWORD=$(aws ssm get-parameters --with-decryption --names MyStringParameter "${MYSQL_PASSWORD_PARAMETER}" --output text --query "Parameters[0].Value")
+    - sed -i "s;%DB_PASSWORD%;${DB_PASSWORD};g" task-definition.json
+    - sed -i "s/%AWS_DEFAULT_REGION%/${AWS_DEFAULT_REGION}/g" task-definition.json
+    - sed -i "s/%service_name%/${service_name}/g" task-definition.json
+    - service_lower_name=$(echo "$service_name" | tr '[:upper:]' '[:lower:]')
+    - sed -i "s;%service_lower_name%;${service_lower_name};g" task-definition.json
+    - aws ecs register-task-definition --family "DPRIME${service_name}" --cli-input-json "file://task-definition.json"
+    - aws ecs update-service --cluster $clusterName --service "${service_name}" --desired-count 1 --task-definition "DPRIME${service_name}"  --force-new-deployment
+
 # QA
 #=========
 QA:
@@ -87,10 +127,6 @@ QA:
     url: http://api.qa.monmedx.com
   only:
     - "qa"
-    - "master"
-    - "development"
-    - "gitlab"
-    - "devops"
 
   before_script:
     - "pip install awscli --upgrade --user"
@@ -103,6 +139,8 @@ QA:
     - export restApiId=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_QA --output text --query "Stacks[0].Outputs[?OutputKey=='restApiId${service_name}'].OutputValue" )
     - sed -e "s;%BUILD_VERSION%;${CI_COMMIT_SHA};g" task-definition-base/task-definition-base-qa.json > task-definition.json
     - sed -i "s/%accountID%/${accountID}/g" task-definition.json
+    - export S3_BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_QA --output text --query "Stacks[0].Outputs[?OutputKey=='S3BUCKETNAME'].OutputValue" )
+    - sed -i "s/%S3_BUCKET_NAME%/${S3_BUCKET_NAME}/g" task-definition.json
     - sed -i "s/%DB_HOST%/${DB_HOST}/g" task-definition.json
     - echo $MYSQL_PASSWORD_PARAMETER
     - sed -i "s;%MYSQL_PASSWORD_PARAMETER%;${MYSQL_PASSWORD_PARAMETER};g" task-definition.json
