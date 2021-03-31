@@ -3,6 +3,7 @@ import { Dialect } from 'sequelize/types';
 export const config = () => ({
   serviceName: 'schedule-management',
   baseURL: undefined,
+  apiURL: "https://api.dev.monmedx.com",
   port: 3000,
   database: {
     dialect: 'mysql' as Dialect,
@@ -11,11 +12,16 @@ export const config = () => ({
     username: process.env.DB_USERNAME || 'root',
     password: process.env.DB_PASSWORD || 'password',
     database: process.env.DB_NAME || 'dash',
+    benchmark:true,
     logging: true,
     define: {
       timestamps: false,
       underscored: true,
     },
+    pool: {
+      max: 10,
+      min: 2,
+    }
   },
   cognito: {
     userPoolId: 'ca-central-1_QdrFL8ZgJ',

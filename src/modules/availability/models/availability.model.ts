@@ -7,6 +7,7 @@ import {
   DefaultScope,
   IsDate,
   DataType,
+  Scopes,
 } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
@@ -15,6 +16,17 @@ import * as moment from 'moment';
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
+  },
+}))
+@Scopes(() => ({
+  full: {
+    exclude: ['deletedAt', 'deletedBy'],
+    include: [
+      {
+        model: AppointmentTypesLookupsModel,
+        as: 'type',
+      },
+    ],
   },
 }))
 @Table({ tableName: 'Availability', underscored: true })

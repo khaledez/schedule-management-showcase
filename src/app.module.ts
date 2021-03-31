@@ -1,8 +1,8 @@
 import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { requestLoggerMiddleware } from '@mon-medic/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { requestLoggerMiddleware, AuthModule } from '@mon-medic/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { DatabaseModule } from './modules/database/database.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
@@ -18,7 +18,16 @@ import { GeneralHealthIndicator } from './general-health.provider';
       load: config,
       isGlobal: true,
     }),
+    HttpTracingModule.registerAsync({
+      useFactory: (config: ConfigService) => {
+        return {
+          baseURL: config.get('apiURL'),
+        };
+      },
+      inject: [ConfigService],
+    }),
     DatabaseModule,
+    AuthModule,
     AppointmentsModule,
     AvailabilityModule,
     LookupsModule,
