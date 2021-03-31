@@ -5,6 +5,6 @@ import { HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
 export class GeneralHealthIndicator extends HealthIndicator {
   // eslint-disable-next-line require-await
   async isHealthy(): Promise<HealthIndicatorResult> {
-    return this.getStatus('requisition-management', true);
+    return this.getStatus('schedule-management', true);
   }
 }

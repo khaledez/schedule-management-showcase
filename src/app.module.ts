@@ -9,7 +9,6 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import config from '../config';
-import { HttpTracingModule } from '@narando/nest-xray';
 import { GeneralHealthIndicator } from './general-health.provider';
 
 @Module({
