@@ -18,14 +18,6 @@ import { GeneralHealthIndicator } from './general-health.provider';
       load: config,
       isGlobal: true,
     }),
-    HttpTracingModule.registerAsync({
-      useFactory: (config: ConfigService) => {
-        return {
-          baseURL: config.get('apiURL'),
-        };
-      },
-      inject: [ConfigService],
-    }),
     DatabaseModule,
     AuthModule,
     AppointmentsModule,
