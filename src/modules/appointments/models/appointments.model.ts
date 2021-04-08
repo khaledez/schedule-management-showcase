@@ -27,6 +27,9 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
     [`$status.code$`]: {
       [Op.ne]: AppointmentStatusEnum.COMPLETE,
     },
+    [`$patient.status_code$`]: {
+      [Op.eq]: 'ACTIVE',
+    },
   },
 }))
 @Scopes(() => ({
