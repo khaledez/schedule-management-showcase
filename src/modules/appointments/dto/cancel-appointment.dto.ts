@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsNumber,
-  IsDate,
-  IsDateString,
-  IsBoolean,
-} from 'class-validator';
+import { IsString, IsNumber, IsDate, IsDateString, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 // this dto after modify the dto.

@@ -1,22 +1,12 @@
 import { Op } from 'sequelize';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
-import {
-  InternalServerErrorException,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { InternalServerErrorException, Logger, BadRequestException } from '@nestjs/common';
 import { QueryParamsDto } from '../common/dtos/query-params.dto';
 
-const arrayToObject = (arr) =>
-  Object.assign({}, ...arr.map((item) => ({ ...item })));
+const arrayToObject = (arr) => Object.assign({}, ...arr.map((item) => ({ ...item })));
 
 // eslint-disable-next-line complexity
-export function sequelizeFilterMapper(
-  logger: Logger,
-  query: QueryParamsDto,
-  associationFieldsNames,
-  customFilters,
-) {
+export function sequelizeFilterMapper(logger: Logger, query: QueryParamsDto, associationFieldsNames, customFilters) {
   try {
     let filters = query && query.filter;
     const where = {};

@@ -1,11 +1,11 @@
 stages:
- - build
- - DEV
- - dprime
- - QA
- - demo
- - staging
- - production
+  - build
+  - DEV
+  - dprime
+  - QA
+  - demo
+  - staging
+  - production
 #=========
 # Build
 #=========
@@ -14,20 +14,20 @@ build:
   stage: build
   image: docker:18-git
   only:
-    - "master"
-    - "development"
-    - "prod"
-    - "qa"
-    - "dprime"
-    - "gitlab"
-    - "devops"
+    - 'master'
+    - 'development'
+    - 'prod'
+    - 'qa'
+    - 'dprime'
+    - 'gitlab'
+    - 'devops'
   services:
     - docker:18-dind
   before_script:
-    - "apk add --no-cache curl"
-    - "apk add py-pip"
-    - "pip install awscli --upgrade --user"
-    - "export PATH=~/.local/bin:$PATH"
+    - 'apk add --no-cache curl'
+    - 'apk add py-pip'
+    - 'pip install awscli --upgrade --user'
+    - 'export PATH=~/.local/bin:$PATH'
   script:
     - pip install ecs-deploy
     - echo "Login to  ECR Repository"
@@ -51,15 +51,15 @@ deploy:
     name: development
     url: http://api.dev.monmedx.com
   except:
-    - "qa"
+    - 'qa'
   only:
-    - "master"
-    - "development"
-    - "gitlab"
-    - "devops"
+    - 'master'
+    - 'development'
+    - 'gitlab'
+    - 'devops'
   before_script:
-    - "pip install awscli --upgrade --user"
-    - "export PATH=~/.local/bin:$PATH"
+    - 'pip install awscli --upgrade --user'
+    - 'export PATH=~/.local/bin:$PATH'
   script:
     - export clusterName=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='clusterName'].OutputValue" )
     - export DB_HOST=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DEV --output text --query "Stacks[0].Outputs[?OutputKey=='dbClusterEndpoint'].OutputValue" )
@@ -90,11 +90,11 @@ dprime:
     name: DPRIME
     url: http://api.DPRIME.monmedx.com
   only:
-    - "dprime"
+    - 'dprime'
   before_script:
-    - "pip install awscli --upgrade --user"
-    - "export PATH=~/.local/bin:$PATH"
-    - "aws --version"
+    - 'pip install awscli --upgrade --user'
+    - 'export PATH=~/.local/bin:$PATH'
+    - 'aws --version'
   script:
     - export clusterName=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DPRIME --output text --query "Stacks[0].Outputs[?OutputKey=='clusterName'].OutputValue" )
     - export DB_HOST=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_DPRIME --output text --query "Stacks[0].Outputs[?OutputKey=='dbClusterEndpoint'].OutputValue" )
@@ -126,12 +126,12 @@ QA:
     name: qa
     url: http://api.qa.monmedx.com
   only:
-    - "qa"
+    - 'qa'
 
   before_script:
-    - "pip install awscli --upgrade --user"
-    - "export PATH=~/.local/bin:$PATH"
-    - "aws --version"
+    - 'pip install awscli --upgrade --user'
+    - 'export PATH=~/.local/bin:$PATH'
+    - 'aws --version'
   script:
     - export clusterName=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_QA --output text --query "Stacks[0].Outputs[?OutputKey=='clusterName'].OutputValue" )
     - export DB_HOST=$(aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME_QA --output text --query "Stacks[0].Outputs[?OutputKey=='dbClusterEndpoint'].OutputValue" )

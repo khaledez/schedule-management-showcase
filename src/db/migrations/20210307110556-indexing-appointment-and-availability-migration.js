@@ -63,13 +63,9 @@ module.exports = {
       /**
        * remove Availability indexing
        */
-      await queryInterface.removeIndex(
-        'Availability',
-        'availability_clinic_id_idx',
-        {
-          transaction: t,
-        },
-      );
+      await queryInterface.removeIndex('Availability', 'availability_clinic_id_idx', {
+        transaction: t,
+      });
 
       await queryInterface.removeIndex('Availability', 'doctor_idx', {
         transaction: t,

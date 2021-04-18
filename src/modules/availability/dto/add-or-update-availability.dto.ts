@@ -1,10 +1,5 @@
 import { CreateAvailabilityDto } from './create-availability.dto';
-import {
-  IsArray,
-  ArrayUnique,
-  IsOptional,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, ArrayUnique, IsOptional, ValidateNested } from 'class-validator';
 import { IdentityDto } from '../../../common/dtos/identity.dto';
 
 export class CreateOrUpdateAvailabilityDto {

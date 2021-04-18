@@ -1,29 +1,27 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+# Schedule Management Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+### Development environment requirements
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Docker Desktop
+- nodejs LTS (14)
+- nestjs-cli `npm i -g @nestjs/cli`
 
-## Setup .env file
-```bash
-DB_NAME=YOUR_DATABASE_NAME
-DB_USERNAME=OUR_DATABASE_USERNAME
-DB_PASSWORD=OUR_DATABASE_PASSWORD
-DB_HOST=OUR_DATABASE_HOST
-DB_PORT=OUR_DATABASE_PORT
+### Initialize DB
+
+```sh
+$ docker-compose up -d
 ```
 
-## Description
-Generate a new service using:
+### Setup .env file
 
-```bash
-$ nest g resource modules/{service_name}
+```sh
+NODE_ENV=development
+DB_NAME=schedule-management
+DB_USERNAME=root
+DB_PASSWORD=very_secr3t
+DB_HOST=localhost
+DB_PORT=3306
 ```
-
-
 
 ## Installation
 
@@ -43,13 +41,15 @@ $ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
+
 ## Migration commands
+
 ```bash
 # create database
 $ npm run db:create
 
 # create a new migration
-$ sequelize migration:create --name your_migration_name
+$ npm run db:migration:create -- your_migration_name
 
 # run migrations
 $ npm run db:migrate
@@ -64,6 +64,7 @@ $ npm run db:reset
 $ npm run db:drop
 
 ```
+
 ## Test
 
 ```bash
@@ -76,4 +77,3 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
-

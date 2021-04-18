@@ -1,5 +1,5 @@
 import { IsOptional, ValidateNested } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { FilterDateInputDto } from './filter-date-input.dto';
 import { FilterStringInputDto } from './filter-string-input.dto';
 import { FilterIdsInputDto } from './filter-ids-input.dto';
