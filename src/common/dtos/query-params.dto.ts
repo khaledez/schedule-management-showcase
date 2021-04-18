@@ -1,5 +1,5 @@
-import { IsOptional, IsNumber, ValidateNested } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsOptional, IsNumber } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { AppointmentFilterDto } from '../../modules/appointments/dto/appointment-filter.dto';
 import { AppointmentSortDto } from '../../modules/appointments/dto/appointment-sort.dto';
 

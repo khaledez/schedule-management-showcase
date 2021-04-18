@@ -11,8 +11,7 @@ import {
 
 //TODO: check how you could inject repository here.
 @ValidatorConstraint({ async: true })
-export class IsValidForeignKeyConstraint
-  implements ValidatorConstraintInterface {
+export class IsValidForeignKeyConstraint implements ValidatorConstraintInterface {
   validate() {
     // id: any, args: ValidationArguments
     return true;

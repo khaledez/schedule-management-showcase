@@ -11,7 +11,7 @@ module.exports = {
     */
     return queryInterface.sequelize
       .query(
-        'CREATE VIEW `patients_phone_number_view` AS SELECT PATIENT_PHONE_NUMBERS.patient_id, PATIENT_PHONE_NUMBERS.primary,  PHONE_NUMBERS.phone_type_code, PHONE_NUMBERS.number as phone_number FROM PatientManagement.PatientPhoneNumbers AS PATIENT_PHONE_NUMBERS INNER JOIN PatientManagement.PhoneNumbers AS PHONE_NUMBERS ON PATIENT_PHONE_NUMBERS.phone_number_id = PHONE_NUMBERS.id WHERE PATIENT_PHONE_NUMBERS.deleted_at IS NULL',
+        'CREATE VIEW `patients_phone_number_view` AS SELECT PHONE_NUMBERS.phone_type_code, PHONE_NUMBERS.number as phone_number FROM PatientManagement.PhoneNumbers AS PHONE_NUMBERS WHERE PHONE_NUMBERS.deleted_at IS NULL',
       )
       .then(() => {
         queryInterface.sequelize.query(

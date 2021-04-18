@@ -13,36 +13,26 @@ export class LookupsController {
   constructor(private readonly lookupsService: LookupsService) {}
 
   @Get('/duration-minutes')
-  public findDurationMinutes(
-    @Identity() identity: IdentityDto,
-  ): Promise<DurationMinutesLookupsModel[]> {
+  public findDurationMinutes(@Identity() identity: IdentityDto): Promise<DurationMinutesLookupsModel[]> {
     return this.lookupsService.findAllDurationMinutesLookups(identity);
   }
 
   @Get('/time-groups')
-  public findTimeGroups(
-    @Identity() identity: IdentityDto,
-  ): Promise<TimeGroupsLookupsModel[]> {
+  public findTimeGroups(@Identity() identity: IdentityDto): Promise<TimeGroupsLookupsModel[]> {
     return this.lookupsService.findAllTimeGroupsLookups(identity);
   }
 
   @Get('/appointment-actions')
-  public findAppointmentActions(
-    @Identity() identity: IdentityDto,
-  ): Promise<AppointmentActionsLookupsModel[]> {
+  public findAppointmentActions(@Identity() identity: IdentityDto): Promise<AppointmentActionsLookupsModel[]> {
     return this.lookupsService.findAllAppointmentActionsLookups(identity);
   }
 
   @Get('/appointment-status')
-  public findAppointmentStatus(
-    @Identity() identity: IdentityDto,
-  ): Promise<AppointmentStatusLookupsModel[]> {
+  public findAppointmentStatus(@Identity() identity: IdentityDto): Promise<AppointmentStatusLookupsModel[]> {
     return this.lookupsService.findAllAppointmentStatusLookups(identity);
   }
   @Get('/appointment-types')
-  public findAppointmentTypes(
-    @Identity() identity: IdentityDto,
-  ): Promise<AppointmentTypesLookupsModel[]> {
+  public findAppointmentTypes(@Identity() identity: IdentityDto): Promise<AppointmentTypesLookupsModel[]> {
     return this.lookupsService.findAllAppointmentTypesLookups(identity);
   }
 }

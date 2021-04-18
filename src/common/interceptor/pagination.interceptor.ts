@@ -20,19 +20,11 @@ import { BaseModel } from '../models/base-model';
 @Injectable()
 export class PaginationInterceptor implements NestInterceptor {
   private readonly logger = new Logger('PaginationInterceptor');
-  constructor(
-    @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
-    private configService: ConfigService,
-  ) {}
+  constructor(@Inject(SEQUELIZE) private readonly sequelize: Sequelize, private configService: ConfigService) {}
   // eslint-disable-next-line complexity
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const {
-      first: _first,
-      last: _last,
-      before: _before,
-      after: _after,
-    } = request.body;
+    const { first: _first, last: _last, before: _before, after: _after } = request.body;
     // convert it to number here because the request comes here before dto.
     let first = +_first;
     let last = +_last;
@@ -62,10 +54,7 @@ export class PaginationInterceptor implements NestInterceptor {
       });
     }
     try {
-      const {
-        max,
-        default: defaultLimit,
-      } = this.configService.get<PaginationConfig>('paginationInfo');
+      const { max, default: defaultLimit } = this.configService.get<PaginationConfig>('paginationInfo');
       const limit = (first || last || defaultLimit) as number;
 
       const finalLimit = max <= limit ? max : limit;
@@ -85,9 +74,7 @@ export class PaginationInterceptor implements NestInterceptor {
         offset: offset < 0 ? 0 : offset,
         reverseSort: !!last,
       };
-      this.logger.debug(
-        `request.pagingInfo ${JSON.stringify(request.pagingInfo)}`,
-      );
+      this.logger.debug(`request.pagingInfo ${JSON.stringify(request.pagingInfo)}`);
 
       return next.handle().pipe(
         // eslint-disable-next-line complexity
@@ -105,9 +92,7 @@ export class PaginationInterceptor implements NestInterceptor {
           });
           // get the page info
           const hasNextPage = total > finalLimit + offset;
-          const startCursor = modifiedDataAsEdges.length
-            ? modifiedDataAsEdges[0].cursor
-            : null;
+          const startCursor = modifiedDataAsEdges.length ? modifiedDataAsEdges[0].cursor : null;
           const endCursor = modifiedDataAsEdges.length
             ? modifiedDataAsEdges[modifiedDataAsEdges.length - 1].cursor
             : null;

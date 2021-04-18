@@ -25,13 +25,12 @@ async function bootstrap() {
    * use global pipes to be accessible by app's controllers
    */
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(
-    new JwtAuthGuard(reflector),
-    new PermissionsGuard(reflector),
-  );
+  app.useGlobalGuards(new JwtAuthGuard(reflector), new PermissionsGuard(reflector));
   app.setGlobalPrefix(serviceName);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.enableShutdownHooks();
+
   await app.listen(port);
 
   logger.log(`Application is running on: ${await app.getUrl()}`);

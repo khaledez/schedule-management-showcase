@@ -1,11 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsNumber,
-  IsDate,
-  IsString,
-  IsMilitaryTime,
-  IsOptional,
-} from 'class-validator';
+import { IsNumber, IsDate, IsString, IsMilitaryTime, IsOptional } from 'class-validator';
 
 export class CreateAvailabilityDto {
   @IsNumber()

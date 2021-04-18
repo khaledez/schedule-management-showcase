@@ -1,10 +1,4 @@
-import {
-  IsOptional,
-  IsArray,
-  IsMilitaryTime,
-  ArrayMinSize,
-  ArrayMaxSize,
-} from 'class-validator';
+import { IsOptional, IsArray, IsMilitaryTime, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 
 export class FilterTimeInputDto {
   @IsOptional()
