@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Logger,
-  BadRequestException,
-  Param,
-  ParseIntPipe,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Logger, BadRequestException, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
 import { Identity } from '@mon-medic/common';
 import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';
@@ -58,8 +48,7 @@ export class AvailabilityController {
     if (!create.length && !remove.length) {
       throw new BadRequestException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message:
-          'create and remove arrays could not be empty at the same time.',
+        message: 'create and remove arrays could not be empty at the same time.',
       });
     }
     return this.availabilityService.createOrUpdateAvailability({

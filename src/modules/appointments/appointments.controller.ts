@@ -8,21 +8,15 @@ import {
   Param,
   ParseIntPipe,
   UseInterceptors,
-  SetMetadata,
   Patch,
-  Req,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
-import { AppointmentResponseInterface } from './interfaces/appointment-response.interface';
 import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { Identity } from '@mon-medic/common';
-import { QueryParamsDto } from 'src/common/dtos/query-params.dto';
-import { BadRequestException } from '@nestjs/common';
-import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
 import { PaginationInterceptor } from '../../common/interceptor/pagination.interceptor';
@@ -61,17 +55,11 @@ export class AppointmentsController {
 
   // get total appointment for each day for a specific period
   @Get('appointments-days')
-  async getAppointmentsByPeriods(
-    @Identity() identity: IdentityDto,
-    @Query() query: QueryAppointmentsByPeriodsDto,
-  ) {
+  async getAppointmentsByPeriods(@Identity() identity: IdentityDto, @Query() query: QueryAppointmentsByPeriodsDto) {
     this.logger.log({ query });
     this.logger.log({ identity });
     return {
-      dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(
-        identity.clinicId,
-        query,
-      ),
+      dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(identity.clinicId, query),
     };
   }
 
@@ -87,14 +75,8 @@ export class AppointmentsController {
   }
 
   @Get('patient-upcoming/:patientId')
-  getAppointmentByPatientId(
-    @Param('patientId', ParseIntPipe) patientId: number,
-    @Identity() identity: IdentityDto,
-  ) {
-    return this.appointmentsService.findAppointmentByPatientId(
-      patientId,
-      identity,
-    );
+  getAppointmentByPatientId(@Param('patientId', ParseIntPipe) patientId: number, @Identity() identity: IdentityDto) {
+    return this.appointmentsService.findAppointmentByPatientId(patientId, identity);
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.
@@ -115,9 +97,7 @@ export class AppointmentsController {
       appointmentData,
     });
 
-    const waitlistStatusId = await this.lookupsService.getStatusIdByCode(
-      AppointmentStatusEnum.WAIT_LIST,
-    );
+    const waitlistStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
     // TODO: what if i entered the same body dto multiple-time!
     return this.appointmentsService.createProvisionalAppointment({
       ...appointmentData,

@@ -6,10 +6,7 @@ import { DatabaseModule } from '../database/database.module';
 import { TracingModule } from '@narando/nest-xray';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    TracingModule.forRoot({ serviceName: 'availability' }),
-  ],
+  imports: [DatabaseModule, TracingModule.forRoot({ serviceName: 'availability' })],
   controllers: [AvailabilityController],
   providers: [AvailabilityService, ...availabilityProviders],
   exports: [AvailabilityService],

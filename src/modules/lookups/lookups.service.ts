@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
@@ -42,9 +37,7 @@ export class LookupsService {
    * @param identity xmmx user identifiers
    * duration minutes like 5 Mins, 15 Mins or 30.
    */
-  public findAllDurationMinutesLookups(
-    identity,
-  ): Promise<DurationMinutesLookupsModel[]> {
+  public findAllDurationMinutesLookups(identity): Promise<DurationMinutesLookupsModel[]> {
     const { clinicId } = identity;
     return this.durationMinutesLookupsRepository.findAll({
       where: {
@@ -74,9 +67,7 @@ export class LookupsService {
    * @param identity
    * example: CANCEL, CHANGE_APPT_TYPE, CHANGE_DOCTOR
    */
-  public findAllAppointmentActionsLookups(
-    identity,
-  ): Promise<AppointmentActionsLookupsModel[]> {
+  public findAllAppointmentActionsLookups(identity): Promise<AppointmentActionsLookupsModel[]> {
     const { clinicId } = identity;
     return this.appointmentActionsLookupsRepository.findAll({
       where: {
@@ -91,9 +82,7 @@ export class LookupsService {
    * @param identity
    * example: NEW, FUP
    */
-  public findAllAppointmentTypesLookups(
-    identity,
-  ): Promise<AppointmentTypesLookupsModel[]> {
+  public findAllAppointmentTypesLookups(identity): Promise<AppointmentTypesLookupsModel[]> {
     const { clinicId } = identity;
     return this.appointmentTypesLookupsRepository.findAll({
       where: {
@@ -108,9 +97,7 @@ export class LookupsService {
    * @param identity
    * example: READY, CHECK-IN
    */
-  public findAllAppointmentStatusLookups(
-    identity,
-  ): Promise<AppointmentStatusLookupsModel[]> {
+  public findAllAppointmentStatusLookups(identity): Promise<AppointmentStatusLookupsModel[]> {
     const { clinicId } = identity;
     return this.appointmentStatusLookupsRepository.findAll({
       where: {
@@ -134,10 +121,7 @@ export class LookupsService {
       AppointmentActionEnum.CHANGE_APPT_TYPE,
       AppointmentActionEnum.RESCHEDULE_APPT,
     ],
-    CONFIRM: [
-      AppointmentActionEnum.CANCEL,
-      AppointmentActionEnum.CHANGE_APPT_TYPE,
-    ],
+    CONFIRM: [AppointmentActionEnum.CANCEL, AppointmentActionEnum.CHANGE_APPT_TYPE],
     CHECK_IN: [AppointmentActionEnum.CANCEL],
     READY: [AppointmentActionEnum.CANCEL],
     COMPLETE: [],
@@ -151,9 +135,7 @@ export class LookupsService {
     try {
       const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll();
       const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
-      const appointmentActionsPlain = internalAppointmentsActions.map((e) =>
-        e.get({ plain: true }),
-      );
+      const appointmentActionsPlain = internalAppointmentsActions.map((e) => e.get({ plain: true }));
       this.logger.debug({
         function: 'service/lookup/findAppointmentsActions',
         internalAppointmentsStatus,
@@ -164,21 +146,14 @@ export class LookupsService {
       const appointmentsPrimaryActions = ids.map((id: number) => {
         return {
           currentActionId: id,
-          nextAction: internalAppointmentsStatus.find(
-            (statusObj) => statusObj.id === id + 1,
-          ),
+          nextAction: internalAppointmentsStatus.find((statusObj) => statusObj.id === id + 1),
         };
       });
       //TODO: MMX-later change the static way to dynamic.
       //TODO: MMX-CurrentSprint => static value
       const nextAppointmentActions = {
         WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
-        SCHEDULE: [
-          'CANCEL',
-          'CHANGE_DATE',
-          'CHANGE_APPT_TYPE',
-          'RESCHEDULE_APPT',
-        ],
+        SCHEDULE: ['CANCEL', 'CHANGE_DATE', 'CHANGE_APPT_TYPE', 'RESCHEDULE_APPT'],
         CONFIRM: ['CANCEL', 'CHANGE_APPT_TYPE'],
         CHECK_IN: ['CANCEL'],
         READY: ['CANCEL'],

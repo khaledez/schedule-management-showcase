@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AVAILABILITY_REPOSITORY, SEQUELIZE } from 'src/common/constants';
 import { CreateOrUpdateAvailabilityDto } from './dto/add-or-update-availability.dto';
@@ -17,7 +11,6 @@ import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-type
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import * as moment from 'moment';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
-import { IdentityDto } from '../../common/dtos/identity.dto';
 
 @Injectable()
 export class AvailabilityService {
@@ -31,9 +24,7 @@ export class AvailabilityService {
 
   calculateEndTime(time: string, durationMin: number): string {
     const timeFormat = 'hh:mm:ss';
-    return moment(time, timeFormat)
-      .add(durationMin, 'minutes')
-      .format(timeFormat);
+    return moment(time, timeFormat).add(durationMin, 'minutes').format(timeFormat);
   }
 
   async findAll({ identity }): Promise<AvailabilityEdgesInterface> {
@@ -78,9 +69,7 @@ export class AvailabilityService {
     return availability;
   }
 
-  async findNotBookedAvailability(
-    availabilityId: number,
-  ): Promise<AvailabilityModel> {
+  async findNotBookedAvailability(availabilityId: number): Promise<AvailabilityModel> {
     const availability = await this.availabilityRepository.findOne({
       where: {
         id: availabilityId,
@@ -101,11 +90,7 @@ export class AvailabilityService {
    * @param ids array of availability ids to be deleted
    *
    */
-  async deleteBulkAvailability(
-    ids: Array<number>,
-    userId: number,
-    transaction: Transaction,
-  ): Promise<Array<number>> {
+  async deleteBulkAvailability(ids: Array<number>, userId: number, transaction: Transaction): Promise<Array<number>> {
     try {
       this.logger.debug({ ids });
       await this.availabilityRepository.update(
@@ -177,9 +162,7 @@ export class AvailabilityService {
             })
           : null;
 
-        const deletedAv = deleteAv.length
-          ? await this.deleteBulkAvailability(deleteAv, userId, transaction)
-          : null;
+        const deletedAv = deleteAv.length ? await this.deleteBulkAvailability(deleteAv, userId, transaction) : null;
         return {
           created: createdAv,
           deleted: deletedAv,

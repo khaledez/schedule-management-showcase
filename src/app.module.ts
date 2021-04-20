@@ -10,6 +10,7 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import config from '../config';
 import { GeneralHealthIndicator } from './general-health.provider';
+import { HttpTracingModule } from '@narando/nest-xray';
 
 @Module({
   imports: [

@@ -62,8 +62,6 @@ export class AvailabilityModel extends BaseModel {
 
   @Column(DataType.VIRTUAL(DataType.STRING))
   get endTime(): string {
-    return moment(this.startTime, 'hh:mm:ss')
-      .add(this.durationMinutes, 'minutes')
-      .format('hh:mm:ss');
+    return moment(this.startTime, 'hh:mm:ss').add(this.durationMinutes, 'minutes').format('hh:mm:ss');
   }
 }

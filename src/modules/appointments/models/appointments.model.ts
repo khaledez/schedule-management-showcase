@@ -1,13 +1,4 @@
-import {
-  Table,
-  Column,
-  IsDate,
-  ForeignKey,
-  BelongsTo,
-  DefaultScope,
-  DataType,
-  Scopes,
-} from 'sequelize-typescript';
+import { Table, Column, IsDate, ForeignKey, BelongsTo, DefaultScope, DataType, Scopes } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base-model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';

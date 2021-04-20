@@ -1,11 +1,4 @@
-import {
-  IsOptional,
-  IsString,
-  IsArray,
-  Length,
-  IsEnum,
-  isArray,
-} from 'class-validator';
+import { IsOptional, IsString, IsArray, IsEnum } from 'class-validator';
 
 enum AppointmentCategoryKeys {
   WAITLIST,

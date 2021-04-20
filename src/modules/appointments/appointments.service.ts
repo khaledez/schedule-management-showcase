@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, NotFoundException, Logger, ConflictException } from '@nestjs/common';
 import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
 import { AppointmentsModel } from './models/appointments.model';
 import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
@@ -23,7 +16,6 @@ import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-sta
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
-import { ConfigService } from '@nestjs/config';
 import { map } from 'lodash';
 import * as moment from 'moment';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
@@ -71,10 +63,7 @@ export class AppointmentsService {
       offset,
     });
     // custom filter by appointmentCategory
-    const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(
-      query,
-      this.logger,
-    );
+    const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(query, this.logger);
 
     // common filters
     const sequelizeFilter = sequelizeFilterMapper(
@@ -83,12 +72,7 @@ export class AppointmentsService {
       this.associationFieldsFilterNames,
       filterByAppointmentCategory,
     );
-    const sequelizeSort = sequelizeSortMapper(
-      this.logger,
-      query,
-      this.associationFieldsSortNames,
-      reverseSort,
-    );
+    const sequelizeSort = sequelizeSortMapper(this.logger, query, this.associationFieldsSortNames, reverseSort);
     this.logger.debug({
       function: 'BEFORE => service/appt/findAll sequelizeFilter, sequelizeSort',
       sequelizeFilter,
@@ -111,10 +95,7 @@ export class AppointmentsService {
         limit,
         offset,
       };
-      const {
-        rows: appointments,
-        count,
-      } = await this.appointmentsRepository.findAndCountAll(options);
+      const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
       this.logger.log({
         function: 'service/appt/findAll options',
         options,
@@ -129,9 +110,7 @@ export class AppointmentsService {
         function: 'service/appt/findall status',
         appointmentsStatusIds,
       });
-      const actions = await this.lookupsService.findAppointmentsActions(
-        appointmentsStatusIds,
-      );
+      const actions = await this.lookupsService.findAppointmentsActions(appointmentsStatusIds);
       this.logger.debug({
         function: 'service/appt/findall action',
         actions,
@@ -162,14 +141,10 @@ export class AppointmentsService {
     }
   }
 
-  async createProvisionalAppointment(
-    createProvisionalApptDto: CreateGlobalAppointmentDto,
-  ): Promise<any> {
+  async createProvisionalAppointment(createProvisionalApptDto: CreateGlobalAppointmentDto): Promise<any> {
     // check if this patient has a provisional appt.
     const { patientId } = createProvisionalApptDto;
-    const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(
-      patientId,
-    );
+    const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(patientId);
     if (hasAProvisional) {
       throw new NotFoundException({
         fields: [],
@@ -189,9 +164,7 @@ export class AppointmentsService {
       function: 'createNonProvisionalAppointment 1',
       availabilityId,
     });
-    const nonProvisionalAvailability = await this.availabilityService.findNotBookedAvailability(
-      availabilityId,
-    );
+    const nonProvisionalAvailability = await this.availabilityService.findNotBookedAvailability(availabilityId);
     if (!nonProvisionalAvailability) {
       throw new ConflictException({
         fields: [],
@@ -200,9 +173,7 @@ export class AppointmentsService {
       });
     } else {
       const { date, appointmentTypeId, doctorId } = nonProvisionalAvailability;
-      const scheduleStatusId = await this.lookupsService.getStatusIdByCode(
-        AppointmentStatusEnum.SCHEDULE,
-      );
+      const scheduleStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.SCHEDULE);
       body = {
         date,
         appointmentTypeId,
@@ -250,9 +221,7 @@ export class AppointmentsService {
       });
     }
     const appointmentAsPlain = appointment.get({ plain: true });
-    const actions = await this.lookupsService.findAppointmentsActions([
-      appointment.appointmentStatusId,
-    ]);
+    const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
     return {
       ...appointmentAsPlain,
       primaryAction: actions[0].nextAction,
@@ -261,9 +230,7 @@ export class AppointmentsService {
     };
   }
 
-  async checkPatientHasAProvisionalAppointment(
-    patientId: number,
-  ): Promise<boolean> {
+  async checkPatientHasAProvisionalAppointment(patientId: number): Promise<boolean> {
     const appt = await this.appointmentsRepository.scope('id').findOne({
       attributes: ['id'],
       where: {
@@ -288,9 +255,7 @@ export class AppointmentsService {
       function: 'appointmentToCreate',
       appointmentToCreate,
     });
-    const result = await this.appointmentsRepository
-      .scope('id')
-      .create(appointmentToCreate);
+    const result = await this.appointmentsRepository.scope('id').create(appointmentToCreate);
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',
@@ -306,15 +271,12 @@ export class AppointmentsService {
   readonly handleAppointmentCategoryFilter = (
     { filter = {} },
     logger: Logger,
-  ):
-    | { name: string; filter: Record<string, unknown> }
-    | Record<string, unknown> => {
+  ): { name: string; filter: Record<string, unknown> } | Record<string, unknown> => {
     try {
       const filterName = 'appointmentCategory';
       const waitlist = 'WAITLIST';
       const appt = 'APPOINTMENT';
-      const isApptCategoryFilterExist =
-        Object.keys(filter).findIndex((e) => e === filterName) !== -1;
+      const isApptCategoryFilterExist = Object.keys(filter).findIndex((e) => e === filterName) !== -1;
       logger.debug({
         function: 'handleAppointmentCategoryFilter START',
         filter,
@@ -333,9 +295,7 @@ export class AppointmentsService {
         condition: !supportedOperators.includes(comingOperator),
       });
       if (!supportedOperators.includes(comingOperator)) {
-        throw new BadRequestException(
-          `Not supported filter on appointmentCategory`,
-        );
+        throw new BadRequestException(`Not supported filter on appointmentCategory`);
       }
       // check wait list is needed!
       if (
@@ -388,10 +348,7 @@ export class AppointmentsService {
     return this.findOne(id);
   }
 
-  async findAppointmentByPatientId(
-    id: number,
-    identity,
-  ): Promise<AppointmentsModel> {
+  async findAppointmentByPatientId(id: number, identity): Promise<AppointmentsModel> {
     const query = {
       filter: {
         patientId: {
@@ -418,9 +375,7 @@ export class AppointmentsService {
     // you might think why i do like this instead of update it in one query like update where id.
     // the reason here that i need the result, update at mysql return value of effected rows.
     // TODO: check the status/date, if it's already passed you have to throw error
-    const appointment: AppointmentsModel = await this.appointmentsRepository.findByPk(
-      appointmentId,
-    );
+    const appointment: AppointmentsModel = await this.appointmentsRepository.findByPk(appointmentId);
     if (!appointment) {
       throw new NotFoundException({
         code: ErrorCodes.NOT_FOUND,
@@ -443,13 +398,10 @@ export class AppointmentsService {
     appointmentFieldsDataToCreate: any, //TODO create interface.
   ): Promise<AppointmentsModel> {
     try {
-      const {
-        prev_appointment_id: appointmentIdToDeprecate,
-      } = appointmentFieldsDataToCreate;
-      const oldAppointment: AppointmentsModel = await this.findAndUpdateAppointment(
-        appointmentIdToDeprecate,
-        { upcoming_appointment: false },
-      );
+      const { prev_appointment_id: appointmentIdToDeprecate } = appointmentFieldsDataToCreate;
+      const oldAppointment: AppointmentsModel = await this.findAndUpdateAppointment(appointmentIdToDeprecate, {
+        upcoming_appointment: false,
+      });
       // GOAL: exclude the own data for an appointment
       const {
         id,
@@ -476,9 +428,7 @@ export class AppointmentsService {
   }
 
   // OUT-OF-SCOPE: MMX-S3
-  async extendDate(
-    extendAppointmentDto: ExtendAppointmentDto,
-  ): Promise<AppointmentsModel> {
+  async extendDate(extendAppointmentDto: ExtendAppointmentDto): Promise<AppointmentsModel> {
     try {
       return await this.deprecateThenCreateAppointment(extendAppointmentDto);
     } catch (error) {
@@ -487,9 +437,7 @@ export class AppointmentsService {
   }
 
   // OUT-OF-SCOPE: MMX-S3
-  async cancelAppointment(
-    cancelAppointmentDto: CancelAppointmentDto,
-  ): Promise<AppointmentsModel> {
+  async cancelAppointment(cancelAppointmentDto: CancelAppointmentDto): Promise<AppointmentsModel> {
     try {
       return await this.deprecateThenCreateAppointment(cancelAppointmentDto);
     } catch (error) {
@@ -498,9 +446,7 @@ export class AppointmentsService {
   }
 
   // OUT-OF-SCOPE: MMX-S3
-  async reassignAppointment(
-    reassignAppointmentDto: ReassignAppointmentDto,
-  ): Promise<AppointmentsModel> {
+  async reassignAppointment(reassignAppointmentDto: ReassignAppointmentDto): Promise<AppointmentsModel> {
     try {
       return await this.deprecateThenCreateAppointment(reassignAppointmentDto);
     } catch (error) {
@@ -509,22 +455,15 @@ export class AppointmentsService {
   }
 
   // OUT-OF-SCOPE: MMX-S3
-  async changeDoctorAppointment(
-    changeDoctorAppointmentDto: ChangeDoctorAppointmentDto,
-  ): Promise<AppointmentsModel> {
+  async changeDoctorAppointment(changeDoctorAppointmentDto: ChangeDoctorAppointmentDto): Promise<AppointmentsModel> {
     try {
-      return await this.deprecateThenCreateAppointment(
-        changeDoctorAppointmentDto,
-      );
+      return await this.deprecateThenCreateAppointment(changeDoctorAppointmentDto);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  async getAppointmentsByPeriods(
-    clinicId: number,
-    query: QueryAppointmentsByPeriodsDto,
-  ): Promise<any> {
+  async getAppointmentsByPeriods(clinicId: number, query: QueryAppointmentsByPeriodsDto): Promise<any> {
     const where: any = {
       canceledAt: {
         [Op.eq]: null,

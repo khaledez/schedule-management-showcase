@@ -1,10 +1,4 @@
-import {
-  Model,
-  CreatedAt,
-  UpdatedAt,
-  DeletedAt,
-  Column,
-} from 'sequelize-typescript';
+import { Model, CreatedAt, UpdatedAt, DeletedAt, Column } from 'sequelize-typescript';
 
 // note that the id will auto added by sequelize.
 export class BaseModel extends Model<BaseModel> {
