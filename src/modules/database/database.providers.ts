@@ -14,7 +14,7 @@ import { LookupsModel } from '../../common/models/lookup-model';
 import { PatientsModel } from '../appointments/models/patients.model';
 const AWSXRay = require('aws-xray-sdk');
 AWSXRay.captureHTTPsGlobal(require('https'));
-
+ 
 export const databaseProviders = [
   {
     provide: SEQUELIZE,
