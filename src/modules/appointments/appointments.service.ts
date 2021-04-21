@@ -19,6 +19,7 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
 import { map } from 'lodash';
 import * as moment from 'moment';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
+import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -496,6 +497,10 @@ export class AppointmentsService {
               [Op.in]: ['SCHEDULE', 'CONFIRM', 'CHECK_IN', 'READY'],
             },
           },
+        },
+        {
+          model: PatientsModel,
+          as: "patient"
         },
       ],
       where,
