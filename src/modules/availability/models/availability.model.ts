@@ -21,7 +21,7 @@ import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './a
 }))
 @Table({ tableName: 'Availability', underscored: true })
 export class AvailabilityModel extends BaseModel<AvailabilityModelAttributes, AvailabilityCreationAttributes> {
-  @Column
+  @Column({ field: 'staff_id' })
   doctorId: number;
 
   @Column

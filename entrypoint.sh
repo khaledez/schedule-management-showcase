@@ -7,6 +7,6 @@ echo "Starting Docker container in $NODE_ENV ..."
 
 echo "Running Database Migrations ... "
 #npx sequelize db:migrate
-npm run db:migrate
+npx sequelize db:migrate
 
 "$@"

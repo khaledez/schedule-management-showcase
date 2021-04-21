@@ -54,7 +54,7 @@ export class AppointmentsModel
   @ForeignKey(() => PatientsModel)
   patientId: number;
 
-  @Column
+  @Column({ field: 'staff_id' })
   doctorId: number;
 
   @Column
