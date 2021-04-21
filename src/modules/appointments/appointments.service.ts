@@ -1,6 +1,6 @@
 import { Injectable, Inject, BadRequestException, NotFoundException, Logger, ConflictException } from '@nestjs/common';
 import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
-import { AppointmentsModel } from './models/appointments.model';
+import { AppointmentsModel, AppointmentsModelAttributes } from './models/appointments.model';
 import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
@@ -19,6 +19,7 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
 import { map } from 'lodash';
 import * as moment from 'moment';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class AppointmentsService {
@@ -249,18 +250,24 @@ export class AppointmentsService {
   }
 
   async createAnAppointmentWithFullResponse(
-    appointmentToCreate: CreateGlobalAppointmentDto,
+    dto: CreateGlobalAppointmentDto,
   ): Promise<{ appointment: AppointmentsModel }> {
     this.logger.debug({
       function: 'appointmentToCreate',
-      appointmentToCreate,
+      dto,
     });
-    const result = await this.appointmentsRepository.scope('id').create(appointmentToCreate);
+
+    const inputAttr: AppointmentsModelAttributes = {
+      ...dto,
+      date: DateTime.fromJSDate(dto.date).toISODate(),
+      provisionalDate: DateTime.fromJSDate(dto.provisionalDate).toISODate(),
+    };
+
+    const result = await this.appointmentsRepository.scope('id').create(inputAttr);
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',
       result,
-      appointmentToCreate,
     });
     return {
       appointment: await this.findOne(result.id),

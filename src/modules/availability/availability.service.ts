@@ -1,16 +1,18 @@
 import { Injectable, Inject, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
 import { AVAILABILITY_REPOSITORY, SEQUELIZE } from 'src/common/constants';
-import { CreateOrUpdateAvailabilityDto } from './dto/add-or-update-availability.dto';
-import { CreateAvailabilityDto } from './dto/create-availability.dto';
+import { CreateAvailabilityDto } from './dto/create.dto';
 import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { Transaction } from 'sequelize/types';
-import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
+import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
-import * as moment from 'moment';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
+import { UpdateAvailabilityDto } from './dto/update.dto';
+import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
+import { DateTime } from 'luxon';
+import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './models/availability.interfaces';
 
 @Injectable()
 export class AvailabilityService {
@@ -21,11 +23,6 @@ export class AvailabilityService {
     @Inject(SEQUELIZE)
     private readonly sequelize: Sequelize,
   ) {}
-
-  calculateEndTime(time: string, durationMin: number): string {
-    const timeFormat = 'hh:mm:ss';
-    return moment(time, timeFormat).add(durationMin, 'minutes').format(timeFormat);
-  }
 
   async findAll({ identity }): Promise<AvailabilityEdgesInterface> {
     const { clinicId } = identity;
@@ -81,18 +78,13 @@ export class AvailabilityService {
     return availability;
   }
 
-  createAvailability(data: CreateAvailabilityDto): Promise<AvailabilityModel> {
-    // TODO 1- availability must not be overlapped
-    return this.availabilityRepository.create(data);
-  }
   /**
    *
    * @param ids array of availability ids to be deleted
    *
    */
-  async deleteBulkAvailability(ids: Array<number>, userId: number, transaction: Transaction): Promise<Array<number>> {
+  private async bulkRemove(ids: Array<number>, userId: number, transaction: Transaction): Promise<Array<number>> {
     try {
-      this.logger.debug({ ids });
       await this.availabilityRepository.update(
         {
           deletedBy: userId,
@@ -118,6 +110,40 @@ export class AvailabilityService {
     }
   }
 
+  private bulkCreateUpdate(
+    create: Array<CreateAvailabilityDto>,
+    update: Array<UpdateAvailabilityDto>,
+    clinicId: number,
+    userId: number,
+    transaction: Transaction,
+  ): Promise<AvailabilityModel[]> {
+    const createInput = create.map((dto) => {
+      const avModel = {
+        clinicId: clinicId,
+        createdBy: userId,
+        appointmentTypeId: dto.appointmentTypeId,
+        doctorId: dto.staffId,
+      };
+
+      timeInfoFromDtoToModel(avModel as AvailabilityCreationAttributes, dto.startDate, dto.durationMinutes);
+      return avModel as AvailabilityCreationAttributes;
+    });
+
+    // TODO fix update failures
+    const updateInput = update.map((dto) => {
+      const avModel = { id: dto.id, appointmentTypeId: dto.appointmentTypeId, updatedBy: userId, clinicId: clinicId };
+
+      timeInfoFromDtoToModel(avModel as AvailabilityModelAttributes, dto.startDate, dto.durationMinutes);
+
+      return avModel as AvailabilityModelAttributes;
+    });
+
+    return AvailabilityModel.bulkCreate([...createInput, ...updateInput], {
+      transaction,
+      updateOnDuplicate: ['id'],
+    });
+  }
+
   findByIds(ids: number[]): Promise<AvailabilityModel[]> {
     this.logger.log({ functionName: this.findByIds.name, ids });
     return this.availabilityRepository.scope('full').findAll({
@@ -133,39 +159,28 @@ export class AvailabilityService {
    * @returns created/updated/deleted effected rows.
    */
   // TODO: MMX-S3 check overlaps and duplicates.
-  createOrUpdateAvailability(
-    createOrUpdateAvailabilityDto: CreateOrUpdateAvailabilityDto,
-  ): Promise<CreateOrUpdateAvailabilityResponseInterface> {
+  async bulkAction(userId: number, clinicId: number, payload: BulkUpdateAvailabilityDto): Promise<BulkUpdateResult> {
     try {
-      return this.sequelize.transaction(async (transaction: Transaction) => {
-        this.logger.log({ createOrUpdateAvailabilityDto });
-
-        const { remove: deleteAv, identity } = createOrUpdateAvailabilityDto;
-        const { clinicId, userId } = identity;
-        let { create } = createOrUpdateAvailabilityDto;
-
-        // add clinicId, createdBy at the availability object.
-        if (create.length) {
-          create = create.map(
-            (e): CreateAvailabilityDto => {
-              e.clinicId = clinicId;
-              e.createdBy = userId;
-              return e;
-            },
-          );
+      return await this.sequelize.transaction(async (transaction: Transaction) => {
+        this.logger.log({ payload });
+        if (!payload.create.length) {
+          payload.create = [];
+        }
+        if (!payload.update.length) {
+          payload.update = [];
         }
 
-        const createdAv = create.length
-          ? await this.availabilityRepository.bulkCreate(create, {
-              updateOnDuplicate: ['id'],
-              transaction,
-            })
-          : null;
+        const updatedCreated = this.bulkCreateUpdate(payload.create, payload.update, clinicId, userId, transaction);
 
-        const deletedAv = deleteAv.length ? await this.deleteBulkAvailability(deleteAv, userId, transaction) : null;
+        if (payload.remove.length) {
+          // TODO don't use await
+          await this.bulkRemove(payload.remove, userId, transaction);
+        }
+
+        // TODO don't use await
         return {
-          created: createdAv,
-          deleted: deletedAv,
+          created: (await updatedCreated).filter((model) => !model.updatedBy),
+          updated: (await updatedCreated).filter((model) => model.updatedBy),
         };
       });
     } catch (error) {
@@ -175,4 +190,17 @@ export class AvailabilityService {
       });
     }
   }
+}
+
+function timeInfoFromDtoToModel(
+  avModel: { date: Date; startTime: string; endDate: Date; durationMinutes: number },
+  startDate: string,
+  durationMinutes: number,
+) {
+  const isoDate = DateTime.fromISO(startDate);
+  // TODO check if we don't have the timezone in the date
+  avModel.date = isoDate.toJSDate();
+  avModel.startTime = isoDate.toSQLTime({ includeZone: false, includeOffset: false });
+  avModel.endDate = isoDate.plus({ minutes: durationMinutes }).toJSDate();
+  avModel.durationMinutes = durationMinutes;
 }

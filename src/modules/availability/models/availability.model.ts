@@ -1,18 +1,8 @@
-import {
-  Table,
-  Column,
-  HasOne,
-  ForeignKey,
-  BelongsTo,
-  DefaultScope,
-  IsDate,
-  DataType,
-  Scopes,
-} from 'sequelize-typescript';
-import { BaseModel } from '../../../common/models/base-model';
+import { Table, Column, HasOne, ForeignKey, BelongsTo, DefaultScope, Scopes, IsDate } from 'sequelize-typescript';
+import { BaseModel } from '../../../common/models/base.model';
 import { AppointmentsModel } from '../../appointments/models/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
-import * as moment from 'moment';
+import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './availability.interfaces';
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
@@ -30,7 +20,7 @@ import * as moment from 'moment';
   },
 }))
 @Table({ tableName: 'Availability', underscored: true })
-export class AvailabilityModel extends BaseModel {
+export class AvailabilityModel extends BaseModel<AvailabilityModelAttributes, AvailabilityCreationAttributes> {
   @Column
   doctorId: number;
 
@@ -39,17 +29,19 @@ export class AvailabilityModel extends BaseModel {
   appointmentId: number;
 
   @Column
-  startTime: string;
-
-  @Column
   @ForeignKey(() => AppointmentTypesLookupsModel)
   appointmentTypeId: number;
 
   @IsDate
   @Column
-  get date(): string {
-    return moment(this.getDataValue('date')).format('YYYY-MM-DD');
-  }
+  date: Date;
+
+  @Column
+  startTime: string;
+
+  @IsDate
+  @Column
+  endDate: Date;
 
   @Column
   durationMinutes: number;
@@ -59,9 +51,4 @@ export class AvailabilityModel extends BaseModel {
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
   type: AppointmentTypesLookupsModel;
-
-  @Column(DataType.VIRTUAL(DataType.STRING))
-  get endTime(): string {
-    return moment(this.startTime, 'hh:mm:ss').add(this.durationMinutes, 'minutes').format('hh:mm:ss');
-  }
 }
