@@ -1,13 +1,17 @@
-import { CreateAvailabilityDto } from './create-availability.dto';
+import { CreateAvailabilityDto } from './create.dto';
 import { IsArray, ArrayUnique, IsOptional } from 'class-validator';
+import { UpdateAvailabilityDto } from './update.dto';
 
-export class CreateOrUpdateAvailabilityBodyDto {
+export class BulkUpdateAvailabilityDto {
   @IsArray()
   @IsOptional()
-  create: Array<CreateAvailabilityDto>;
+  create: Array<CreateAvailabilityDto> = [];
+
+  @IsArray()
+  update: Array<UpdateAvailabilityDto> = [];
 
   @IsArray()
   @ArrayUnique()
   @IsOptional()
-  remove: Array<number>;
+  remove: Array<number> = [];
 }

@@ -1,7 +1,7 @@
 import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { requestLoggerMiddleware, AuthModule } from '@mon-medic/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { DatabaseModule } from './modules/database/database.module';
@@ -10,7 +10,8 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import config from '../config';
 import { GeneralHealthIndicator } from './general-health.provider';
-import { HttpTracingModule } from '@narando/nest-xray';
+import { EventsModule } from './modules/events/events.module';
+import { CalendarModule } from './modules/calendar/calendar.module';
 
 @Module({
   imports: [
@@ -24,6 +25,8 @@ import { HttpTracingModule } from '@narando/nest-xray';
     AppointmentsModule,
     AvailabilityModule,
     LookupsModule,
+    EventsModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [AppService, GeneralHealthIndicator],

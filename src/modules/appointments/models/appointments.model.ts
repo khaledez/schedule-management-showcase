@@ -1,5 +1,5 @@
 import { Table, Column, IsDate, ForeignKey, BelongsTo, DefaultScope, DataType, Scopes } from 'sequelize-typescript';
-import { BaseModel } from '../../../common/models/base-model';
+import { BaseModel, BaseModelAttributes } from '../../../common/models/base.model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment-actions.model';
@@ -8,6 +8,22 @@ import { PatientsModel } from './patients.model';
 import * as moment from 'moment';
 import { Op } from 'sequelize';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
+
+export interface AppointmentsModelAttributes extends BaseModelAttributes {
+  patientId: number;
+  doctorId?: number;
+  availabilityId?: number;
+  previousAppointmentId?: number;
+  appointmentTypeId?: number;
+  date: string;
+  provisionalDate: string;
+  appointmentStatusId?: number;
+  cancelRescheduleText?: string;
+  cancelRescheduleReasonId?: number;
+  upcomingAppointment?: boolean;
+  canceledBy?: number;
+  canceledAt?: Date;
+}
 
 // note that the id will auto added by sequelize.
 @DefaultScope(() => ({
@@ -31,7 +47,9 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
   },
 }))
 @Table({ tableName: 'Appointments', underscored: true })
-export class AppointmentsModel extends BaseModel {
+export class AppointmentsModel
+  extends BaseModel<AppointmentsModelAttributes, AppointmentsModelAttributes>
+  implements AppointmentsModelAttributes {
   @Column
   @ForeignKey(() => PatientsModel)
   patientId: number;
@@ -63,6 +81,9 @@ export class AppointmentsModel extends BaseModel {
   @Column(DataType.DATE)
   get provisionalDate(): string {
     return moment(this.getDataValue('date')).format('YYYY-MM-DD');
+  }
+  set provisionalDate(value: string) {
+    this.setDataValue('date', moment(value).format('YYYY-MM-DD'));
   }
 
   @Column

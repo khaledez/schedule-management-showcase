@@ -16,8 +16,6 @@ module.exports = {
   },
 
   down: (queryInterface) => {
-    return Promise.all([
-      queryInterface.changeColumn('Availability', 'appointment_type_id'),
-    ]);
+    return Promise.all([queryInterface.changeColumn('Availability', 'appointment_type_id')]);
   },
 };

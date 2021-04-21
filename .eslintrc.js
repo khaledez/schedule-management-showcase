@@ -49,7 +49,6 @@ module.exports = {
     'no-div-regex': 'warn', //disallow division operators explicitly at the beginning of regular expressions
     'no-constructor-return': 'error', // disallow return in the constructor
     'no-caller': 'error', // Disallow Use of caller/callee becuase deprecated in future
-    'max-classes-per-file': 'error', //no more than one class per file
     'guard-for-in': 'error', // require `for-in` loops to include an `if` statement
     eqeqeq: 'error', // use === and !==
     'dot-notation': 'error', // use dot insted of sequare
