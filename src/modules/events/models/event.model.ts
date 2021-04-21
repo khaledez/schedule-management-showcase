@@ -1,5 +1,8 @@
-import { Column, DataType, Scopes, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, Scopes, Table } from 'sequelize-typescript';
 import { BaseModel, BaseModelAttributes } from 'src/common/models';
+import { AppointmentsModel, AppointmentsModelAttributes } from 'src/modules/appointments/models/appointments.model';
+import { AvailabilityModelAttributes } from 'src/modules/availability/models/availability.interfaces';
+import { AvailabilityModel } from 'src/modules/availability/models/availability.model';
 import { Invitee } from '../events.interfaces';
 
 export interface EventModelAttributes extends BaseModelAttributes {
@@ -15,6 +18,9 @@ export interface EventModelAttributes extends BaseModelAttributes {
   endDate: Date;
   startTime: string;
   durationMinutes: number;
+
+  appointment?: AppointmentsModelAttributes;
+  availability?: AvailabilityModelAttributes;
 }
 
 @Scopes(() => ({
@@ -50,4 +56,10 @@ export class EventModel extends BaseModel<EventModelAttributes> implements Event
   startTime: string;
   @Column
   durationMinutes: number;
+
+  @BelongsTo(() => AppointmentsModel, 'appointmentId')
+  appointment: AppointmentsModel;
+
+  @BelongsTo(() => AvailabilityModel, 'availabilityId')
+  availability: AvailabilityModel;
 }

@@ -38,7 +38,7 @@ export class EventsController {
   @Delete(':id')
   async delete(@Identity() identity: IIdentity, @Param('id') id: number): Promise<EventDeleteResponse> {
     try {
-      await this.eventsSvc.delete(identity, id);
+      await this.eventsSvc.remove(identity, id);
       return {};
     } catch (error) {
       return { errors: [{ message: error.message, code: error.name, fields: [] }] };

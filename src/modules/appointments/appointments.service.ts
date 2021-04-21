@@ -1,5 +1,5 @@
 import { Injectable, Inject, BadRequestException, NotFoundException, Logger, ConflictException } from '@nestjs/common';
-import { APPOINTMENTS_REPOSITORY } from '../../common/constants/index';
+import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from '../../common/constants/index';
 import { AppointmentsModel, AppointmentsModelAttributes } from './models/appointments.model';
 import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
 import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
@@ -20,6 +20,7 @@ import { map } from 'lodash';
 import * as moment from 'moment';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
 import { DateTime } from 'luxon';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -30,6 +31,7 @@ export class AppointmentsService {
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService,
     private readonly availabilityService: AvailabilityService,
+    private readonly eventsService: EventsService,
   ) {}
 
   private readonly associationFieldsFilterNames = {
@@ -257,13 +259,21 @@ export class AppointmentsService {
       dto,
     });
 
+    const startDate = DateTime.fromJSDate(dto.date);
+
     const inputAttr: AppointmentsModelAttributes = {
       ...dto,
-      date: DateTime.fromJSDate(dto.date).toISODate(),
+      date: startDate.toISODate(),
+      startTime: startDate.toSQLTime(),
+      durationMinutes: DEFAULT_EVENT_DURATION_MINS, // TODO support receiving duration minutes from user
+      endDate: startDate.plus({ minutes: DEFAULT_EVENT_DURATION_MINS }).toJSDate(),
       provisionalDate: DateTime.fromJSDate(dto.provisionalDate).toISODate(),
     };
 
     const result = await this.appointmentsRepository.scope('id').create(inputAttr);
+
+    // attach this appointment the event
+    await this.eventsService.addAppointmentToEventByAvailability(0, dto.availabilityId, result.id);
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',

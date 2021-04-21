@@ -5,9 +5,9 @@ import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-
 import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment-actions.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { PatientsModel } from './patients.model';
-import * as moment from 'moment';
 import { Op } from 'sequelize';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
+import moment from 'moment';
 
 export interface AppointmentsModelAttributes extends BaseModelAttributes {
   patientId: number;
@@ -16,13 +16,24 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
   previousAppointmentId?: number;
   appointmentTypeId?: number;
   date: string;
+  endDate: Date;
+  durationMinutes: number;
+  startTime: string;
   provisionalDate: string;
   appointmentStatusId?: number;
+  appointmentStatusNameEn?: string;
+  appointmentStatusNameFr?: string;
   cancelRescheduleText?: string;
   cancelRescheduleReasonId?: number;
+  cancelRescheduleReasonEn?: string;
+  cancelRescheduleReasonFr?: string;
   upcomingAppointment?: boolean;
   canceledBy?: number;
   canceledAt?: Date;
+
+  appointmentTypeNameEn?: string;
+  appointmentTypeNameFr?: string;
+  modeCode?: string;
 }
 
 // note that the id will auto added by sequelize.
@@ -45,6 +56,7 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
       include: ['id'],
     },
   },
+  all: {},
 }))
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel
@@ -108,6 +120,27 @@ export class AppointmentsModel
 
   @Column
   canceledAt: Date;
+
+  @Column
+  endDate: Date;
+  @Column
+  durationMinutes: number;
+  @Column
+  startTime: string;
+  @Column
+  appointmentStatusNameEn: string;
+  @Column
+  appointmentStatusNameFr: string;
+  @Column
+  cancelRescheduleReasonEn: string;
+  @Column
+  cancelRescheduleReasonFr: string;
+  @Column
+  appointmentTypeNameEn: string;
+  @Column
+  appointmentTypeNameFr: string;
+  @Column
+  modeCode: string;
 
   @BelongsTo(() => PatientsModel, 'patientId')
   patient: PatientsModel;

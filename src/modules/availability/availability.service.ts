@@ -13,6 +13,9 @@ import { UpdateAvailabilityDto } from './dto/update.dto';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { DateTime } from 'luxon';
 import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './models/availability.interfaces';
+import { IIdentity } from '@mon-medic/common';
+import { EventsService } from '../events/events.service';
+import { EventCreateRequest } from '../events/events.interfaces';
 
 @Injectable()
 export class AvailabilityService {
@@ -22,6 +25,7 @@ export class AvailabilityService {
     private readonly availabilityRepository: typeof AvailabilityModel,
     @Inject(SEQUELIZE)
     private readonly sequelize: Sequelize,
+    private readonly eventsService: EventsService,
   ) {}
 
   async findAll({ identity }): Promise<AvailabilityEdgesInterface> {
@@ -83,11 +87,11 @@ export class AvailabilityService {
    * @param ids array of availability ids to be deleted
    *
    */
-  private async bulkRemove(ids: Array<number>, userId: number, transaction: Transaction): Promise<Array<number>> {
+  private async bulkRemove(ids: Array<number>, identity: IIdentity, transaction: Transaction): Promise<Array<number>> {
     try {
-      await this.availabilityRepository.update(
+      const availPromise = this.availabilityRepository.update(
         {
-          deletedBy: userId,
+          deletedBy: identity.userId,
           deletedAt: new Date(),
         },
         {
@@ -99,6 +103,10 @@ export class AvailabilityService {
           transaction,
         },
       );
+
+      const eventPromise = this.eventsService.bulkRemoveByAvailability(identity, ids, transaction);
+
+      await Promise.all([availPromise, eventPromise]);
 
       return ids;
     } catch (error) {
@@ -113,14 +121,13 @@ export class AvailabilityService {
   private bulkCreateUpdate(
     create: Array<CreateAvailabilityDto>,
     update: Array<UpdateAvailabilityDto>,
-    clinicId: number,
-    userId: number,
+    identity: IIdentity,
     transaction: Transaction,
   ): Promise<AvailabilityModel[]> {
     const createInput = create.map((dto) => {
       const avModel = {
-        clinicId: clinicId,
-        createdBy: userId,
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
         appointmentTypeId: dto.appointmentTypeId,
         doctorId: dto.staffId,
       };
@@ -131,7 +138,12 @@ export class AvailabilityService {
 
     // TODO fix update failures
     const updateInput = update.map((dto) => {
-      const avModel = { id: dto.id, appointmentTypeId: dto.appointmentTypeId, updatedBy: userId, clinicId: clinicId };
+      const avModel = {
+        id: dto.id,
+        appointmentTypeId: dto.appointmentTypeId,
+        updatedBy: identity.userId,
+        clinicId: identity.clinicId,
+      };
 
       timeInfoFromDtoToModel(avModel as AvailabilityModelAttributes, dto.startDate, dto.durationMinutes);
 
@@ -159,7 +171,7 @@ export class AvailabilityService {
    * @returns created/updated/deleted effected rows.
    */
   // TODO: MMX-S3 check overlaps and duplicates.
-  async bulkAction(userId: number, clinicId: number, payload: BulkUpdateAvailabilityDto): Promise<BulkUpdateResult> {
+  async bulkAction(identity: IIdentity, payload: BulkUpdateAvailabilityDto): Promise<BulkUpdateResult> {
     try {
       return await this.sequelize.transaction(async (transaction: Transaction) => {
         this.logger.log({ payload });
@@ -170,17 +182,28 @@ export class AvailabilityService {
           payload.update = [];
         }
 
-        const updatedCreated = this.bulkCreateUpdate(payload.create, payload.update, clinicId, userId, transaction);
+        const updatedCreated = this.bulkCreateUpdate(payload.create, payload.update, identity, transaction);
 
         if (payload.remove.length) {
           // TODO don't use await
-          await this.bulkRemove(payload.remove, userId, transaction);
+          await this.bulkRemove(payload.remove, identity, transaction);
         }
 
-        // TODO don't use await
+        const result = await updatedCreated;
+        const createdResult = result.filter((model) => !model.updatedBy);
+
+        // create events
+        const events: EventCreateRequest[] = createdResult.map((avail) => ({
+          ...avail,
+          availabilityId: avail.id,
+          startDate: avail.date,
+          staffId: avail.doctorId,
+        }));
+        await this.eventsService.bulkCreate(identity, events, transaction);
+
         return {
-          created: (await updatedCreated).filter((model) => !model.updatedBy),
-          updated: (await updatedCreated).filter((model) => model.updatedBy),
+          created: createdResult,
+          updated: result.filter((model) => model.updatedBy),
         };
       });
     } catch (error) {

@@ -1,9 +1,8 @@
 import { Controller, Get, Post, Body, Logger, BadRequestException, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
-import { Identity } from '@mon-medic/common';
+import { Identity, IIdentity } from '@mon-medic/common';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
-import { IdentityDto } from '../../common/dtos/identity.dto';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { split } from 'lodash';
@@ -18,7 +17,7 @@ export class AvailabilityController {
   //TODO: MMX-currentSprint add auth guard
   @Get()
   findAll(
-    @Identity() identity: IdentityDto,
+    @Identity() identity: IIdentity,
     @Query() query?: QueryFindAvailabilityDto,
   ): Promise<AvailabilityEdgesInterface> | Promise<AvailabilityModel[]> {
     if (query.ids) {
@@ -40,7 +39,7 @@ export class AvailabilityController {
   bulkUpdate(
     @Body()
     payload: BulkUpdateAvailabilityDto,
-    @Identity() identity: IdentityDto,
+    @Identity() identity: IIdentity,
   ): Promise<BulkUpdateResult> {
     const { clinicId, userId } = identity;
     const { create, remove, update } = payload;
@@ -53,6 +52,6 @@ export class AvailabilityController {
       });
     }
 
-    return this.availabilityService.bulkAction(clinicId, userId, payload);
+    return this.availabilityService.bulkAction(identity, payload);
   }
 }

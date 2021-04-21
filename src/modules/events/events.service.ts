@@ -1,6 +1,7 @@
 import { IIdentity } from '@mon-medic/common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DateTime } from 'luxon';
+import { Op, Transaction } from 'sequelize';
 import { DEFAULT_EVENT_DURATION_MINS, EVENTS_REPOSITORY } from '../../common/constants';
 import { EventCreateRequest, EventUpdateRequest, Invitee } from './events.interfaces';
 import { EventModel, EventModelAttributes } from './models';
@@ -15,14 +16,39 @@ export class EventsService {
     return this.eventModel.create(mapDtoToModelAttr(identity, input));
   }
 
+  async addAppointmentToEventByAvailability(
+    userId: number,
+    availbilityId: number,
+    appointmentId: number,
+  ): Promise<void> {
+    await this.eventModel.update(
+      { appointmentId: appointmentId, updatedBy: userId, updatedAt: new Date() },
+      { where: { availabilityId: availbilityId } },
+    );
+  }
+
   async update(identity: IIdentity, input: EventUpdateRequest): Promise<EventModel> {
     await this.eventModel.update(mapDtoToModelAttr(identity, input), { where: { id: input.id } });
 
     return this.findOne(input.id);
   }
 
-  async delete(identity: IIdentity, eventId: number): Promise<void> {
+  async remove(identity: IIdentity, eventId: number): Promise<void> {
     await this.eventModel.update({ deletedAt: new Date(), deletedBy: identity.userId }, { where: { id: eventId } });
+  }
+
+  async bulkRemoveByAvailability(identity: IIdentity, ids: number[], transaction?: Transaction): Promise<void> {
+    await this.eventModel.update(
+      { deletedAt: new Date(), deletedBy: identity.userId },
+      { where: { availabilityId: { [Op.in]: ids } }, transaction },
+    );
+  }
+
+  bulkCreate(identity: IIdentity, events: EventCreateRequest[], transaction?: Transaction): Promise<EventModel[]> {
+    return this.eventModel.bulkCreate(
+      events.map((ev) => mapDtoToModelAttr(identity, ev)),
+      { transaction },
+    );
   }
 
   findOne(eventId: number): Promise<EventModel> {
