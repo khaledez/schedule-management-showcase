@@ -17,6 +17,7 @@ export class EventCreateDto implements EventCreateRequest {
   colorCode: string;
 
   @IsNumber()
+  @Transform((val) => parseInt(val))
   staffId: number;
 
   // here we read the key "startDate" into "_startDate", then we transform it
@@ -31,6 +32,7 @@ export class EventCreateDto implements EventCreateRequest {
 
   @IsOptional()
   @IsNumber()
+  @Transform((val) => parseInt(val))
   durationMinutes: number;
 
   @IsOptional()
