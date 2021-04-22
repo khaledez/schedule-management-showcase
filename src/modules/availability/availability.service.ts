@@ -126,32 +126,11 @@ export class AvailabilityService {
     }
   }
 
-  private async bulkCreateUpdate(
-    create: Array<CreateAvailabilityDto>,
+  private async bulkUpdate(
     update: Array<UpdateAvailabilityDto>,
     identity: IIdentity,
     transaction: Transaction,
   ): Promise<AvailabilityModelAttributes[]> {
-    const createInput = create.map((dto) => {
-      const avAttr = {
-        clinicId: identity.clinicId,
-        createdBy: identity.userId,
-        ...dto,
-      };
-
-      const avModel = timeInfoFromDtoToModel(avAttr, dto.startDate, dto.durationMinutes);
-
-      return availabilityToEventModel(avModel);
-    });
-
-    const createExec: Promise<EventModel[]> =
-      createInput.length > 0
-        ? EventModel.bulkCreate(createInput, {
-            transaction,
-            include: { model: AvailabilityModel, as: 'availability' },
-          })
-        : Promise.resolve([]);
-
     const { availabilityUpdates, eventUpdates, ids } = update
       .map((dto): [AvailabilityModelAttributes, EventModelAttributes, number] => {
         const baseAttr = {
@@ -184,14 +163,35 @@ export class AvailabilityService {
     await eventUpdates;
     await Promise.all(availabilityUpdates);
 
-    // only find them when we have updates
-    const avResult =
-      ids.length > 0
-        ? await AvailabilityModel.findAll({ transaction, plain: true, where: { id: { [Op.in]: ids } } })
-        : [];
+    return AvailabilityModel.findAll({ transaction, plain: true, where: { id: { [Op.in]: ids } } });
+  }
 
-    const evResult = await createExec;
-    return [...avResult, ...evResult.map((ev) => ev.availability)];
+  private async bulkCreate(
+    create: Array<CreateAvailabilityDto>,
+    identity: IIdentity,
+    transaction: Transaction,
+  ): Promise<AvailabilityModelAttributes[]> {
+    const createInput = create.map((dto) => {
+      const avAttr = {
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
+        ...dto,
+      };
+
+      const avModel = timeInfoFromDtoToModel(avAttr, dto.startDate, dto.durationMinutes);
+
+      return availabilityToEventModel(avModel);
+    });
+
+    const createExec: Promise<EventModel[]> =
+      createInput.length > 0
+        ? EventModel.bulkCreate(createInput, {
+            transaction,
+            include: { model: AvailabilityModel, as: 'availability' },
+          })
+        : Promise.resolve([]);
+
+    return (await createExec).map((ev) => ev.availability);
   }
 
   findByIds(ids: number[]): Promise<AvailabilityModel[]> {
@@ -225,19 +225,24 @@ export class AvailabilityService {
       return await this.sequelize.transaction(async (transaction: Transaction) => {
         this.logger.debug(payload);
 
-        const updatedCreated = this.bulkCreateUpdate(payload.create || [], payload.update || [], identity, transaction);
+        // update
+        const updatedP: Promise<AvailabilityModelAttributes[]> = payload.update
+          ? this.bulkUpdate(payload.update, identity, transaction)
+          : Promise.resolve([]);
 
+        // create
+        const createdP: Promise<AvailabilityModelAttributes[]> = payload.create
+          ? this.bulkCreate(payload.create, identity, transaction)
+          : Promise.resolve([]);
+
+        // remove
         if (payload.remove?.length) {
           await this.bulkRemove(payload.remove, identity, transaction);
         }
 
-        const result = await updatedCreated;
-        const createdResult = result.filter((model) => !model.updatedBy);
+        const [updated, created] = await Promise.all([updatedP, createdP]);
 
-        return {
-          created: createdResult,
-          updated: result.filter((model) => model.updatedBy),
-        };
+        return { created, updated };
       });
     } catch (error) {
       this.logger.error(error);
