@@ -5,13 +5,12 @@ export interface PatientsModelAttributes {
   fullName: string;
   dob: Date;
   primaryHealthPlanNumber: string;
+  statusCode: string;
 }
 
 // note that the id will auto added by sequelize.
 @Table({ tableName: 'new_patients_view', underscored: true })
-export class PatientsModel
-  extends BaseModel<PatientsModelAttributes, PatientsModelAttributes>
-  implements PatientsModelAttributes {
+export class PatientsModel extends BaseModel<PatientsModelAttributes> implements PatientsModelAttributes {
   @Column
   fullName: string;
 

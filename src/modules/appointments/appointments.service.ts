@@ -175,14 +175,15 @@ export class AppointmentsService {
         message: 'This availability has already booked!',
       });
     } else {
-      const { date, appointmentTypeId, doctorId } = nonProvisionalAvailability;
+      const { date, appointmentTypeId, staffId } = nonProvisionalAvailability;
       const scheduleStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.SCHEDULE);
       body = {
         date,
         appointmentTypeId,
-        doctorId,
+        staffId,
         provisionalDate: date,
         appointmentStatusId: scheduleStatusId,
+        ...nonProvisionalAvailability,
         ...createNonProvisionalAppointmentDto,
       };
       this.logger.debug({
@@ -195,16 +196,26 @@ export class AppointmentsService {
         function: 'createNonProvisionalAppointment',
         result,
       });
-      if (result && result.appointment && result.appointment.id) {
-        const updateAvailability = await nonProvisionalAvailability.update({
-          appointmentId: result.appointment.id,
-        });
+      if (result && result.id) {
+        const updateAvailability = await nonProvisionalAvailability.update(
+          {
+            appointmentId: result.id,
+          },
+          { where: { id: availabilityId } },
+        );
         this.logger.debug({
           function: 'updateAvailability',
           updateAvailability,
         });
       }
-      return result;
+
+      const actions = await this.lookupsService.findAppointmentsActions([result.appointmentStatusId]);
+      return {
+        ...result,
+        primaryAction: actions[0].nextAction,
+        secondaryActions: actions[0].secondaryActions,
+        provisionalAppointment: !result.availabilityId,
+      };
     }
   }
 
@@ -251,9 +262,7 @@ export class AppointmentsService {
     return !!appt && !!appt.id;
   }
 
-  async createAnAppointmentWithFullResponse(
-    dto: CreateGlobalAppointmentDto,
-  ): Promise<{ appointment: AppointmentsModel }> {
+  async createAnAppointmentWithFullResponse(dto: CreateGlobalAppointmentDto): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointmentToCreate',
       dto,
@@ -264,24 +273,23 @@ export class AppointmentsService {
     const inputAttr: AppointmentsModelAttributes = {
       ...dto,
       date: startDate.toISODate(),
-      startTime: startDate.toSQLTime(),
+      startTime: startDate.toSQLTime({ includeOffset: false, includeZone: false }),
       durationMinutes: DEFAULT_EVENT_DURATION_MINS, // TODO support receiving duration minutes from user
       endDate: startDate.plus({ minutes: DEFAULT_EVENT_DURATION_MINS }).toJSDate(),
-      provisionalDate: DateTime.fromJSDate(dto.provisionalDate).toISODate(),
+      provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
+      staffId: dto.doctorId,
     };
 
-    const result = await this.appointmentsRepository.scope('id').create(inputAttr);
+    const result = await this.appointmentsRepository.create(inputAttr);
 
     // attach this appointment the event
-    await this.eventsService.addAppointmentToEventByAvailability(0, dto.availabilityId, result.id);
+    await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',
       result,
     });
-    return {
-      appointment: await this.findOne(result.id),
-    };
+    return result;
   }
 
   // eslint-disable-next-line complexity

@@ -44,13 +44,6 @@ export class EventsService {
     );
   }
 
-  bulkCreate(identity: IIdentity, events: EventCreateRequest[], transaction?: Transaction): Promise<EventModel[]> {
-    return this.eventModel.bulkCreate(
-      events.map((ev) => mapDtoToModelAttr(identity, ev)),
-      { transaction },
-    );
-  }
-
   findOne(eventId: number): Promise<EventModel> {
     return this.eventModel.scope('full').findByPk(eventId);
   }

@@ -1,14 +1,15 @@
-version: "3.7"
+version: '3.7'
 
 services:
   mysql:
-    image: mysql:8
+    image: mysql/mysql-server:8.0
     environment:
       MYSQL_ROOT_PASSWORD: very_secr3t
+      MYSQL_ROOT_HOST: '%'
     volumes:
       - db:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - '3306:3306'
 
 volumes:
   db:

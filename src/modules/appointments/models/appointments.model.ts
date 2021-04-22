@@ -11,7 +11,7 @@ import * as moment from 'moment';
 
 export interface AppointmentsModelAttributes extends BaseModelAttributes {
   patientId: number;
-  doctorId?: number;
+  staffId: number;
   availabilityId?: number;
   previousAppointmentId?: number;
   appointmentTypeId?: number;
@@ -19,7 +19,7 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
   endDate: Date;
   durationMinutes: number;
   startTime: string;
-  provisionalDate: string;
+  provisionalDate: Date;
   appointmentStatusId?: number;
   appointmentStatusNameEn?: string;
   appointmentStatusNameFr?: string;
@@ -37,10 +37,20 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
 }
 
 // note that the id will auto added by sequelize.
+// TODO update scope to correctly connect patient and lookups
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
   },
+  // include: [
+  //   {
+  //     model: AppointmentStatusLookupsModel,
+  //     where: {
+  //       code: { [Op.ne]: AppointmentStatusEnum.COMPLETE },
+  //     },
+  //   },
+  //   { model: PatientsModel, where: { status: { [Op.eq]: 'ACTIVE' } } },
+  // ],
   where: {
     [`$status.code$`]: {
       [Op.ne]: AppointmentStatusEnum.COMPLETE,
@@ -56,7 +66,6 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
       include: ['id'],
     },
   },
-  all: {},
 }))
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel
@@ -66,8 +75,12 @@ export class AppointmentsModel
   @ForeignKey(() => PatientsModel)
   patientId: number;
 
-  @Column({ field: 'staff_id' })
-  doctorId: number;
+  get doctorId(): number {
+    return this.staffId;
+  }
+
+  @Column
+  staffId: number;
 
   @Column
   @ForeignKey(() => AvailabilityModel)
@@ -91,12 +104,7 @@ export class AppointmentsModel
 
   @IsDate
   @Column(DataType.DATE)
-  get provisionalDate(): string {
-    return moment(this.getDataValue('date')).format('YYYY-MM-DD');
-  }
-  set provisionalDate(value: string) {
-    this.setDataValue('date', moment(value).format('YYYY-MM-DD'));
-  }
+  provisionalDate: Date;
 
   @Column
   @ForeignKey(() => AppointmentStatusLookupsModel)

@@ -1,11 +1,11 @@
-import { FilterDateInputDto, FilterIdsInputDto } from '@mon-medic/common';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { FilterDateInputDto, FilterIdsInputDto, IIdentity } from '@mon-medic/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import { Includeable, Op, Sequelize, WhereAttributeHash, WhereOptions } from 'sequelize';
-import { BAD_REQUEST, EVENTS_REPOSITORY, SEQUELIZE } from 'src/common/constants';
+import { Includeable, Op, WhereAttributeHash, WhereOptions } from 'sequelize';
+import { BAD_REQUEST } from 'src/common/constants';
 import { AppointmentsModel } from '../appointments/models/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
-import { EventModel } from '../events/models';
+import { EventModel, EventModelAttributes } from '../events/models';
 import {
   CalendarAppointment,
   CalendarAvailability,
@@ -14,20 +14,18 @@ import {
   CalendarSearchResult,
 } from './calendar.interface';
 
+const ALL = 'ALL';
+
 @Injectable()
 export class CalendarService {
-  constructor(
-    @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
-    @Inject(EVENTS_REPOSITORY) private readonly eventsModel: EventModel,
-  ) {}
+  // eslint-disable-next-line complexity
+  async search(identity: IIdentity, query: CalendarSearchInput): Promise<CalendarSearchResult> {
+    const queryType = query.entryType?.eq ? query.entryType?.eq : ALL;
 
-  async search(query: CalendarSearchInput): Promise<CalendarSearchResult> {
-    const queryType = query.entryType?.eq ? query.entryType?.eq : 'AVAILABILITY';
     // TODO think of a way to use timezoneId
     let eventConditions: WhereOptions<EventModel> = {
-      deletedBy: {
-        [Op.is]: null,
-      },
+      clinicId: { [Op.eq]: identity.clinicId },
+      deletedBy: { [Op.is]: null },
     };
 
     if (query.staffId) {
@@ -39,49 +37,41 @@ export class CalendarService {
     }
 
     const toInclude: Includeable[] = [];
-    if (queryType === 'AVAILABILITY') {
+    if (queryType === 'AVAILABILITY' || queryType === ALL) {
       toInclude.push({
         model: AvailabilityModel,
-        required: true,
-        foreignKey: 'availabiltyId',
+        required: queryType === 'AVAILABILITY',
         where: availabilityFilters(query),
       });
     }
 
-    if (queryType === 'APPOINTMENT') {
-      toInclude.push({ model: AppointmentsModel, required: true });
+    if (queryType === 'APPOINTMENT' || queryType === ALL) {
+      toInclude.push({ model: AppointmentsModel, required: queryType === 'APPOINTMENT' });
     }
+
+    // execute now
     const result = await EventModel.findAll({ where: eventConditions, include: toInclude });
 
     const entries = result
       .map((el) => el.get({ plain: true }))
       .map((model) => {
-        if (queryType === 'EVENT') {
-          return {
-            ...model,
-            entryType: 'EVENT',
-            startDate: model.date,
-          } as CalendarEvent;
-        } else if (queryType === 'APPOINTMENT') {
-          const { date, ...appt } = model.appointment;
-          return {
-            ...appt,
-            entryType: 'APPOINTMENT',
-            startDate: DateTime.fromSQL(date).toJSDate(),
-            provisionalDate: model.appointment.provisionalDate
-              ? DateTime.fromSQL(model.appointment.provisionalDate).toJSDate()
-              : undefined,
-            staffId: model.appointment.doctorId,
-          } as CalendarAppointment;
+        switch (queryType) {
+          case 'AVAILABILITY':
+            return eventToAvailability(model);
+          case 'EVENT':
+            return eventToCalendarEvent(model);
+          case 'APPOINTMENT':
+            return eventToAppointment(model);
+          default:
+            if (model.appointment) {
+              return eventToAppointment(model);
+            } else if (model.availability) {
+              return eventToAvailability(model);
+            }
+            return eventToCalendarEvent(model);
         }
-
-        return {
-          ...model.availability,
-          entryType: 'AVAILABILITY',
-          startDate: model.date,
-          staffId: model.availability.doctorId,
-        } as CalendarAvailability;
       });
+
     return { entries };
   }
 }
@@ -199,4 +189,30 @@ function availabilityFilters(query: CalendarSearchInput): WhereOptions<Availabil
   }
 
   return availConditions;
+}
+
+function eventToAvailability(model: EventModelAttributes): CalendarAvailability {
+  return {
+    ...model.availability,
+    entryType: 'AVAILABILITY',
+    startDate: model.date,
+  } as CalendarAvailability;
+}
+
+function eventToAppointment(model: EventModelAttributes): CalendarAppointment {
+  const { date, ...appt } = model.appointment;
+  return {
+    ...appt,
+    entryType: 'APPOINTMENT',
+    startDate: DateTime.fromSQL(date).toJSDate(),
+    provisionalDate: model.appointment.provisionalDate,
+  } as CalendarAppointment;
+}
+
+function eventToCalendarEvent(model: EventModelAttributes): CalendarEvent {
+  return {
+    ...model,
+    entryType: 'EVENT',
+    startDate: model.date,
+  } as CalendarEvent;
 }

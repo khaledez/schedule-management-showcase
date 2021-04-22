@@ -1,7 +1,7 @@
-import { AvailabilityModel } from '../models/availability.model';
+import { AvailabilityModelAttributes } from '../models/availability.interfaces';
 
 export interface BulkUpdateResult {
-  created?: Array<AvailabilityModel>;
-  update?: Array<AvailabilityModel>;
+  created?: Array<AvailabilityModelAttributes>;
+  update?: Array<AvailabilityModelAttributes>;
   errors?: Array<unknown>;
 }

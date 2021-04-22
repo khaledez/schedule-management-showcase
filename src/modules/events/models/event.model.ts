@@ -6,7 +6,7 @@ import { AvailabilityModel } from 'src/modules/availability/models/availability.
 import { Invitee } from '../events.interfaces';
 
 export interface EventModelAttributes extends BaseModelAttributes {
-  staffId?: number;
+  staffId: number;
   availabilityId?: number;
   appointmentId?: number;
   title?: string;
@@ -15,6 +15,7 @@ export interface EventModelAttributes extends BaseModelAttributes {
   descriptionRich?: string;
   colorCode?: string;
   date: Date;
+  startDate: Date;
   endDate: Date;
   startTime: string;
   durationMinutes: number;
@@ -50,6 +51,11 @@ export class EventModel extends BaseModel<EventModelAttributes> implements Event
   colorCode: string;
   @Column
   date: Date;
+
+  get startDate(): Date {
+    return this.date;
+  }
+
   @Column
   endDate: Date;
   @Column

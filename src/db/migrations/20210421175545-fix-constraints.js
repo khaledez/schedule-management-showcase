@@ -6,6 +6,6 @@ module.exports = {
   },
 
   down: (queryInterface, Sequelize) => {
-    return;
+    return Promise.resolve({});
   },
 };

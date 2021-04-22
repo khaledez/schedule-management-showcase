@@ -14,7 +14,7 @@ export class AvailabilityController {
   private readonly logger = new Logger(AvailabilityController.name);
 
   constructor(private readonly availabilityService: AvailabilityService) {}
-  //TODO: MMX-currentSprint add auth guard
+
   @Get()
   findAll(
     @Identity() identity: IIdentity,

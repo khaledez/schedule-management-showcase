@@ -1,6 +1,13 @@
-import { Injectable, Inject, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  Logger,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { AvailabilityModel } from './models/availability.model';
-import { AVAILABILITY_REPOSITORY, SEQUELIZE } from 'src/common/constants';
+import { AVAILABILITY_REPOSITORY, BAD_REQUEST, SEQUELIZE } from 'src/common/constants';
 import { CreateAvailabilityDto } from './dto/create.dto';
 import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
@@ -12,10 +19,10 @@ import { AvailabilityEdgesInterface } from './interfaces/availability-edges.inte
 import { UpdateAvailabilityDto } from './dto/update.dto';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { DateTime } from 'luxon';
-import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './models/availability.interfaces';
+import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { IIdentity } from '@mon-medic/common';
 import { EventsService } from '../events/events.service';
-import { EventCreateRequest } from '../events/events.interfaces';
+import { EventModel, EventModelAttributes } from '../events/models';
 
 @Injectable()
 export class AvailabilityService {
@@ -104,13 +111,14 @@ export class AvailabilityService {
         },
       );
 
+      // TODO use Model.destroy to remove events
       const eventPromise = this.eventsService.bulkRemoveByAvailability(identity, ids, transaction);
 
       await Promise.all([availPromise, eventPromise]);
 
       return ids;
     } catch (error) {
-      throw new BadRequestException({
+      throw new InternalServerErrorException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
         message: 'Error occur while delete bulk availability',
         error,
@@ -118,42 +126,72 @@ export class AvailabilityService {
     }
   }
 
-  private bulkCreateUpdate(
+  private async bulkCreateUpdate(
     create: Array<CreateAvailabilityDto>,
     update: Array<UpdateAvailabilityDto>,
     identity: IIdentity,
     transaction: Transaction,
-  ): Promise<AvailabilityModel[]> {
+  ): Promise<AvailabilityModelAttributes[]> {
     const createInput = create.map((dto) => {
-      const avModel = {
+      const avAttr = {
         clinicId: identity.clinicId,
         createdBy: identity.userId,
-        appointmentTypeId: dto.appointmentTypeId,
-        doctorId: dto.staffId,
+        ...dto,
       };
 
-      timeInfoFromDtoToModel(avModel as AvailabilityCreationAttributes, dto.startDate, dto.durationMinutes);
-      return avModel as AvailabilityCreationAttributes;
+      const avModel = timeInfoFromDtoToModel(avAttr, dto.startDate, dto.durationMinutes);
+
+      return availabilityToEventModel(avModel);
     });
 
-    // TODO fix update failures
-    const updateInput = update.map((dto) => {
-      const avModel = {
-        id: dto.id,
-        appointmentTypeId: dto.appointmentTypeId,
-        updatedBy: identity.userId,
-        clinicId: identity.clinicId,
-      };
+    const createExec: Promise<EventModel[]> =
+      createInput.length > 0
+        ? EventModel.bulkCreate(createInput, {
+            transaction,
+            include: { model: AvailabilityModel, as: 'availability' },
+          })
+        : Promise.resolve([]);
 
-      timeInfoFromDtoToModel(avModel as AvailabilityModelAttributes, dto.startDate, dto.durationMinutes);
+    const { availabilityUpdates, eventUpdates, ids } = update
+      .map((dto): [AvailabilityModelAttributes, EventModelAttributes, number] => {
+        const baseAttr = {
+          updatedBy: identity.userId,
+          clinicId: identity.clinicId,
+          ...dto,
+        };
 
-      return avModel as AvailabilityModelAttributes;
-    });
+        const avModel = timeInfoFromDtoToModel(baseAttr, dto.startDate, dto.durationMinutes);
 
-    return AvailabilityModel.bulkCreate([...createInput, ...updateInput], {
-      transaction,
-      updateOnDuplicate: ['id'],
-    });
+        return [avModel, availabilityToEventModel(avModel), avModel.id];
+      })
+      .map(([availability, event, avId]): [Promise<AvailabilityModel[]>, Promise<EventModel[]>, number] => {
+        // here we're not using bulkCreate as it will fail in MySQL if some required info are missing (staffId, createdBy)
+        return [
+          AvailabilityModel.update(availability, { transaction, where: { id: availability.id } }).then((r) => r[1]),
+          EventModel.update(event, { where: { availabilityId: availability.id }, transaction }).then((r) => r[1]),
+          avId,
+        ];
+      })
+      .reduce(
+        (acc, [availability, event, avId]) => {
+          acc.availabilityUpdates.push(availability);
+          acc.eventUpdates.push(event);
+          acc.ids.push(avId);
+          return acc;
+        },
+        { availabilityUpdates: [], eventUpdates: [], ids: [] } as UpdatePair,
+      );
+    await eventUpdates;
+    await Promise.all(availabilityUpdates);
+
+    // only find them when we have updates
+    const avResult =
+      ids.length > 0
+        ? await AvailabilityModel.findAll({ transaction, plain: true, where: { id: { [Op.in]: ids } } })
+        : [];
+
+    const evResult = await createExec;
+    return [...avResult, ...evResult.map((ev) => ev.availability)];
   }
 
   findByIds(ids: number[]): Promise<AvailabilityModel[]> {
@@ -164,42 +202,37 @@ export class AvailabilityService {
       },
     });
   }
-  /**
-   * create or delete availability
-   * if there is an id at the create array element thats mean there is update.
-   * @param createOrUpdateAvailability
-   * @returns created/updated/deleted effected rows.
-   */
-  // TODO: MMX-S3 check overlaps and duplicates.
+
   async bulkAction(identity: IIdentity, payload: BulkUpdateAvailabilityDto): Promise<BulkUpdateResult> {
+    // prevent any conflicts between remove & update
+    // a. make sure user is not updating && deleting the same availability
+    if (payload?.update?.filter((updReq) => payload?.remove?.includes(updReq.id))?.length > 0) {
+      throw new BadRequestException({
+        code: BAD_REQUEST,
+        message: 'You cannot update & delete the same record in the same time',
+      });
+    }
+    // b. make sure update list has no duplicate ids
+    const uniqueIds = new Set(payload?.update?.map((updReq) => updReq.id));
+    if (uniqueIds.size > 0 && payload?.update?.length !== uniqueIds.size) {
+      throw new BadRequestException({
+        code: BAD_REQUEST,
+        message: 'duplicate entries in the update list',
+      });
+    }
+
     try {
       return await this.sequelize.transaction(async (transaction: Transaction) => {
-        this.logger.log({ payload });
-        if (!payload.create.length) {
-          payload.create = [];
-        }
-        if (!payload.update.length) {
-          payload.update = [];
-        }
+        this.logger.debug(payload);
 
-        const updatedCreated = this.bulkCreateUpdate(payload.create, payload.update, identity, transaction);
+        const updatedCreated = this.bulkCreateUpdate(payload.create || [], payload.update || [], identity, transaction);
 
-        if (payload.remove.length) {
-          // TODO don't use await
+        if (payload.remove?.length) {
           await this.bulkRemove(payload.remove, identity, transaction);
         }
 
         const result = await updatedCreated;
         const createdResult = result.filter((model) => !model.updatedBy);
-
-        // create events
-        const events: EventCreateRequest[] = createdResult.map((avail) => ({
-          ...avail,
-          availabilityId: avail.id,
-          startDate: avail.date,
-          staffId: avail.doctorId,
-        }));
-        await this.eventsService.bulkCreate(identity, events, transaction);
 
         return {
           created: createdResult,
@@ -207,7 +240,8 @@ export class AvailabilityService {
         };
       });
     } catch (error) {
-      throw new BadRequestException({
+      this.logger.error(error);
+      throw new InternalServerErrorException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
         message: error.message,
       });
@@ -215,15 +249,43 @@ export class AvailabilityService {
   }
 }
 
+interface UpdatePair {
+  availabilityUpdates: Array<Promise<AvailabilityModel[]>>;
+  eventUpdates: Array<Promise<EventModel[]>>;
+  ids: Array<number>;
+}
+
 function timeInfoFromDtoToModel(
-  avModel: { date: Date; startTime: string; endDate: Date; durationMinutes: number },
+  avModel: {
+    staffId: number;
+    durationMinutes: number;
+    appointmentTypeId: number;
+  },
   startDate: string,
   durationMinutes: number,
-) {
+): AvailabilityModelAttributes {
   const isoDate = DateTime.fromISO(startDate);
   // TODO check if we don't have the timezone in the date
-  avModel.date = isoDate.toJSDate();
-  avModel.startTime = isoDate.toSQLTime({ includeZone: false, includeOffset: false });
-  avModel.endDate = isoDate.plus({ minutes: durationMinutes }).toJSDate();
-  avModel.durationMinutes = durationMinutes;
+  return {
+    ...avModel,
+    date: isoDate.toJSDate(),
+    startTime: isoDate.toSQLTime({ includeZone: false, includeOffset: false }),
+    endDate: isoDate.plus({ minutes: durationMinutes }).toJSDate(),
+  };
+}
+
+function availabilityToEventModel(avModel: AvailabilityModelAttributes): EventModelAttributes {
+  return {
+    availability: avModel,
+    durationMinutes: avModel.durationMinutes,
+    date: avModel.date,
+    startDate: avModel.date,
+    startTime: avModel.startTime,
+    endDate: avModel.endDate,
+    availabilityId: avModel.id,
+    staffId: avModel.staffId,
+    clinicId: avModel.clinicId,
+    createdBy: avModel.createdBy,
+    updatedBy: avModel.updatedBy,
+  };
 }

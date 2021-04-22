@@ -10,6 +10,6 @@ export class CalendarController {
 
   @Post('search')
   search(@Identity() identity: IIdentity, @Body() searchQuery: CalendarSearchDto): Promise<CalendarSearchResult> {
-    return this.calendarSvc.search(searchQuery);
+    return this.calendarSvc.search(identity, searchQuery);
   }
 }

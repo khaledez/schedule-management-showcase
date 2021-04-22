@@ -29,6 +29,10 @@ export class CreateGlobalAppointmentDto {
   @IsPastDate()
   date?: Date;
 
+  @IsOptional()
+  @Type(() => Number)
+  durationMinutes?: number;
+
   @IsDate()
   @Type(() => Date)
   @IsOptional()
