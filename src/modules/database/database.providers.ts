@@ -29,7 +29,7 @@ export const databaseProviders = [
       }
       const sequelize = new Sequelize({
         ...config,
-        dialectModule: AWSXRay.captureMySQL(require('mysql2')),
+        // dialectModule: AWSXRay.captureMySQL(require('mysql2')),
       });
       sequelize.addModels([
         AppointmentsModel,
