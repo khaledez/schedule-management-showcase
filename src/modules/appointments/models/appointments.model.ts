@@ -7,7 +7,7 @@ import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-t
 import { PatientsModel } from './patients.model';
 import { Op } from 'sequelize';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
-import moment from 'moment';
+import * as moment from 'moment';
 
 export interface AppointmentsModelAttributes extends BaseModelAttributes {
   patientId: number;
