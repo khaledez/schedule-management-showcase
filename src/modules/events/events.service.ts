@@ -28,7 +28,9 @@ export class EventsService {
   }
 
   async update(identity: IIdentity, input: EventUpdateRequest): Promise<EventModel> {
-    await this.eventModel.update(mapDtoToModelAttr(identity, input), { where: { id: input.id } });
+    await this.eventModel.update(mapDtoToModelAttr(identity, input), {
+      where: { id: input.id, clinicId: identity.clinicId },
+    });
 
     return this.findOne(input.id);
   }
