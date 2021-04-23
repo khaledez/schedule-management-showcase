@@ -21,6 +21,8 @@ export interface CalendarEntry extends BaseModelAttributes {
   durationMinutes?: number;
   title?: string;
   staffId: number;
+
+  __typename: string;
 }
 
 export interface Invitee {

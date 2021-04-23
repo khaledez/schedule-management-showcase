@@ -196,6 +196,7 @@ function eventToAvailability(model: EventModelAttributes): CalendarAvailability 
     ...model.availability,
     entryType: 'AVAILABILITY',
     startDate: model.startDate,
+    __typename: 'CalendarAvailability',
   } as CalendarAvailability;
 }
 
@@ -204,6 +205,7 @@ function eventToAppointment(model: EventModelAttributes): CalendarAppointment {
   return {
     ...appt,
     entryType: 'APPOINTMENT',
+    __typename: 'CalendarAppointment',
     startDate: DateTime.fromSQL(date).toJSDate(),
     provisionalDate: model.appointment.provisionalDate,
   } as CalendarAppointment;
@@ -213,6 +215,7 @@ function eventToCalendarEvent(model: EventModelAttributes): CalendarEvent {
   return {
     ...model,
     entryType: 'EVENT',
+    __typename: 'CalendarEvent',
     startDate: model.startDate,
   } as CalendarEvent;
 }
