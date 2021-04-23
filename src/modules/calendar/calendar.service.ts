@@ -195,7 +195,7 @@ function eventToAvailability(model: EventModelAttributes): CalendarAvailability 
   return {
     ...model.availability,
     entryType: 'AVAILABILITY',
-    startDate: model.date,
+    startDate: model.startDate,
   } as CalendarAvailability;
 }
 
@@ -213,6 +213,6 @@ function eventToCalendarEvent(model: EventModelAttributes): CalendarEvent {
   return {
     ...model,
     entryType: 'EVENT',
-    startDate: model.date,
+    startDate: model.startDate,
   } as CalendarEvent;
 }

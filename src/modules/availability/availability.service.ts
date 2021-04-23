@@ -242,7 +242,7 @@ export class AvailabilityService {
 
         const [updated, created] = await Promise.all([updatedP, createdP]);
 
-        return { created, updated };
+        return { created, updated: Array.isArray(updated) ? updated : [updated] };
       });
     } catch (error) {
       this.logger.error(error);
@@ -283,7 +283,6 @@ function availabilityToEventModel(avModel: AvailabilityModelAttributes): EventMo
   return {
     availability: avModel,
     durationMinutes: avModel.durationMinutes,
-    date: avModel.date,
     startDate: avModel.date,
     startTime: avModel.startTime,
     endDate: avModel.endDate,

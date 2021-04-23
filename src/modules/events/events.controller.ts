@@ -1,5 +1,17 @@
 import { Identity, IIdentity } from '@mon-medic/common';
-import { Body, Controller, Delete, Get, Logger, NotFoundException, Param, Patch, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import { BAD_REQUEST } from 'src/common/constants';
 import { EventCreateDto, EventUpdateDto } from './events.dto';
 import { EventDeleteResponse, EventMutateResponse, EventReadResponse } from './events.interfaces';
 import { EventsService } from './events.service';
@@ -12,12 +24,8 @@ export class EventsController {
 
   @Post()
   async create(@Identity() identity: IIdentity, @Body() payload: EventCreateDto): Promise<EventMutateResponse> {
-    try {
-      return { event: await this.eventsSvc.create(identity, payload) };
-    } catch (error) {
-      // TODO better support for errors
-      return { errors: [{ message: error.message, code: error.name, fields: [] }] };
-    }
+    validateDateInput(payload);
+    return { event: await this.eventsSvc.create(identity, payload) };
   }
 
   @Patch(':id')
@@ -26,6 +34,7 @@ export class EventsController {
     @Param('id') id: number,
     @Body() payload: EventUpdateDto,
   ): Promise<EventMutateResponse> {
+    validateDateInput(payload);
     try {
       payload.id = id;
       return { event: await this.eventsSvc.update(identity, payload) };
@@ -56,5 +65,15 @@ export class EventsController {
       });
     }
     return { event };
+  }
+}
+
+function validateDateInput(payload: EventCreateDto) {
+  if (!payload?.startDate || !payload.durationMinutes) {
+    throw new BadRequestException({
+      fields: ['startDate', 'durationMinutes'],
+      code: BAD_REQUEST,
+      message: 'you need to specify startDate & durationMinutes',
+    });
   }
 }

@@ -1,6 +1,5 @@
-import { IsISO8601, IsNumber, IsOptional, IsPositive } from 'class-validator';
-import { DateTime } from 'luxon';
-import { Expose, Transform } from 'class-transformer';
+import { IsNumber, IsOptional, IsPositive } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { EventCreateRequest, EventUpdateRequest, Invitee } from './events.interfaces';
 
 export class EventCreateDto implements EventCreateRequest {
@@ -20,15 +19,13 @@ export class EventCreateDto implements EventCreateRequest {
   @Transform((val) => parseInt(val))
   staffId: number;
 
-  // here we read the key "startDate" into "_startDate", then we transform it
-  // I didn't use @Transform because it gets transformed first, then validated
-  @Expose({ name: 'startDate' })
-  @IsISO8601({ strict: true })
-  _startDate: string;
+  @IsOptional()
+  @Type(() => Date)
+  date: Date;
 
-  get startDate(): Date {
-    return DateTime.fromISO(this._startDate).toJSDate();
-  }
+  @IsOptional()
+  @Type(() => Date)
+  startDate: Date;
 
   @IsOptional()
   @IsNumber()

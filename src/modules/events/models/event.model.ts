@@ -14,7 +14,6 @@ export interface EventModelAttributes extends BaseModelAttributes {
   invitees?: Invitee[];
   descriptionRich?: string;
   colorCode?: string;
-  date: Date;
   startDate: Date;
   endDate: Date;
   startTime: string;
@@ -49,12 +48,8 @@ export class EventModel extends BaseModel<EventModelAttributes> implements Event
   descriptionRich: string;
   @Column
   colorCode: string;
-  @Column
-  date: Date;
-
-  get startDate(): Date {
-    return this.date;
-  }
+  @Column({ field: 'date' })
+  startDate: Date;
 
   @Column
   endDate: Date;

@@ -55,7 +55,6 @@ function mapDtoToModelAttr(identity: IIdentity, input: EventCreateRequest | Even
     ...input,
     clinicId: identity.clinicId,
     createdBy: identity.userId,
-    date: input.startDate,
     startTime: startDate.toSQLTime({ includeOffset: false, includeZone: false }),
     durationMinutes: input.durationMinutes || DEFAULT_EVENT_DURATION_MINS,
     endDate: startDate.plus({ minutes: input.durationMinutes || DEFAULT_EVENT_DURATION_MINS }).toJSDate(),
