@@ -175,13 +175,13 @@ export class AppointmentsService {
         message: 'This availability has already booked!',
       });
     } else {
-      const { date, appointmentTypeId, staffId } = nonProvisionalAvailability;
+      const { startDate, appointmentTypeId, staffId } = nonProvisionalAvailability;
       const scheduleStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.SCHEDULE);
       body = {
-        date,
+        startDate,
         appointmentTypeId,
         staffId,
-        provisionalDate: date,
+        provisionalDate: startDate,
         appointmentStatusId: scheduleStatusId,
         ...nonProvisionalAvailability,
         ...createNonProvisionalAppointmentDto,

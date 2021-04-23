@@ -273,7 +273,7 @@ function timeInfoFromDtoToModel(
   // TODO check if we don't have the timezone in the date
   return {
     ...avModel,
-    date: isoDate.toJSDate(),
+    startDate: isoDate.toJSDate(),
     startTime: isoDate.toSQLTime({ includeZone: false, includeOffset: false }),
     endDate: isoDate.plus({ minutes: durationMinutes }).toJSDate(),
   };
@@ -283,7 +283,7 @@ function availabilityToEventModel(avModel: AvailabilityModelAttributes): EventMo
   return {
     availability: avModel,
     durationMinutes: avModel.durationMinutes,
-    startDate: avModel.date,
+    startDate: avModel.startDate,
     startTime: avModel.startTime,
     endDate: avModel.endDate,
     availabilityId: avModel.id,

@@ -20,7 +20,9 @@ import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './a
   },
 }))
 @Table({ tableName: 'Availability', underscored: true })
-export class AvailabilityModel extends BaseModel<AvailabilityModelAttributes, AvailabilityCreationAttributes> {
+export class AvailabilityModel
+  extends BaseModel<AvailabilityModelAttributes, AvailabilityCreationAttributes>
+  implements AvailabilityModelAttributes {
   @Column
   staffId: number;
 
@@ -33,8 +35,8 @@ export class AvailabilityModel extends BaseModel<AvailabilityModelAttributes, Av
   appointmentTypeId: number;
 
   @IsDate
-  @Column
-  date: Date;
+  @Column({ field: 'date' })
+  startDate: Date;
 
   @Column
   startTime: string;

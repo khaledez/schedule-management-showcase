@@ -5,7 +5,7 @@ export interface AvailabilityModelAttributes extends BaseModelAttributes {
   staffId: number;
   appointmentId?: number;
   appointmentTypeId: number;
-  date: Date;
+  startDate: Date;
   startTime: string;
   endDate: Date;
   durationMinutes: number;
