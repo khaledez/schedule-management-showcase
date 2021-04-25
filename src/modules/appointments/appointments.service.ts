@@ -283,7 +283,9 @@ export class AppointmentsService {
     const result = await this.appointmentsRepository.create(inputAttr);
 
     // attach this appointment the event
-    await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
+    if (dto.availabilityId) {
+      await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
+    }
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',
