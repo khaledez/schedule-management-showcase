@@ -6,7 +6,7 @@ import {
   JwtAuthGuard,
   PermissionsGuard,
   HttpExceptionFilter,
-} from '@mon-medic/common';
+} from '@dashps/monmedx-common';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { CONFIG_SERVICE, PORT, SERVICE_NAME } from './common/constants';
 

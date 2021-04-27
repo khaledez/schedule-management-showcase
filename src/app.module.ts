@@ -2,7 +2,7 @@ import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { requestLoggerMiddleware, AuthModule } from '@mon-medic/common';
+import { requestLoggerMiddleware, AuthModule } from '@dashps/monmedx-common';
 import { TerminusModule } from '@nestjs/terminus';
 import { DatabaseModule } from './modules/database/database.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
