@@ -14,7 +14,8 @@ import { LookupsModel } from '../../common/models/lookup-model';
 import { PatientsModel } from '../appointments/models/patients.model';
 const AWSXRay = require('aws-xray-sdk');
 AWSXRay.captureHTTPsGlobal(require('https'));
- 
+const common_1 = require('@nestjs/common');
+const logger = new common_1.Logger('bootstrap');
 export const databaseProviders = [
   {
     provide: SEQUELIZE,
@@ -28,7 +29,9 @@ export const databaseProviders = [
       }
       const sequelize = new Sequelize({
         ...config,
-        dialectModule: AWSXRay.captureMySQL(require('mysql2')),
+          benchmark: true,
+          logging: (msg, sqlTime) => logger.log({ msg, sqlTime }),
+        // dialectModule: AWSXRay.captureMySQL(require('mysql2')),
       });
       sequelize.addModels([
         AppointmentsModel,
