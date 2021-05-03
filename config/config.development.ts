@@ -17,8 +17,8 @@ export const config = () => ({
       underscored: true,
     },
     pool: {
-      min: 5,
-      max: 30,
+      min: 3,
+      max: 15,
       idle: 20000,
     },
   },
