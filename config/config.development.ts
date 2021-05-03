@@ -17,9 +17,10 @@ export const config = () => ({
       underscored: true,
     },
     pool: {
-      max: 10,
-      min: 2,
-    }
+      min: 5,
+      max: 30,
+      idle: 20000,
+    },
   },
   cognito: {
     userPoolId: 'ca-central-1_QdrFL8ZgJ',
