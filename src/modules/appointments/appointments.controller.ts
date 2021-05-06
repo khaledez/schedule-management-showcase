@@ -132,7 +132,7 @@ export class AppointmentsController {
 
     return this.appointmentsService.createProvisionalAppointment({
       ...appointmentData,
-      appointmentStatusId: readyStatus, // TODO: get this id from appointmentStatusModel at the service.
+      appointmentStatusId: readyStatus,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
       // @ts-ignore
