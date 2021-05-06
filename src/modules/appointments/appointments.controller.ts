@@ -16,7 +16,7 @@ import { AppointmentsModel } from './models/appointments.model';
 import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Identity } from '@mon-medic/common';
+import { Identity } from '@dashps/monmedx-common';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
 import { PaginationInterceptor } from '../../common/interceptor/pagination.interceptor';

@@ -42,28 +42,33 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
   },
-  // include: [
-  //   {
-  //     model: AppointmentStatusLookupsModel,
-  //     where: {
-  //       code: { [Op.ne]: AppointmentStatusEnum.COMPLETE },
-  //     },
-  //   },
-  //   { model: PatientsModel, where: { status: { [Op.eq]: 'ACTIVE' } } },
-  // ],
-  where: {
-    [`$status.code$`]: {
-      [Op.ne]: AppointmentStatusEnum.COMPLETE,
-    },
-    [`$patient.status_code$`]: {
-      [Op.eq]: 'ACTIVE',
-    },
-  },
 }))
 @Scopes(() => ({
   id: {
     attributes: {
       include: ['id'],
+    },
+  },
+  active: {
+    attributes: {
+      exclude: ['deletedAt', 'deletedBy'],
+    },
+    // include: [
+    //   {
+    //     model: AppointmentStatusLookupsModel,
+    //     where: {
+    //       code: { [Op.ne]: AppointmentStatusEnum.COMPLETE },
+    //     },
+    //   },
+    //   { model: PatientsModel, where: { status: { [Op.eq]: 'ACTIVE' } } },
+    // ],
+    where: {
+      [`$status.code$`]: {
+        [Op.ne]: AppointmentStatusEnum.COMPLETE,
+      },
+      [`$patient.status_code$`]: {
+        [Op.eq]: 'ACTIVE',
+      },
     },
   },
 }))

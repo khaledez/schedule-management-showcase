@@ -12,7 +12,7 @@ import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Op, FindOptions } from 'sequelize';
+import { Op, FindOptions, Transaction, CreateOptions } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
@@ -23,7 +23,6 @@ import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface'
 import { DateTime } from 'luxon';
 import { EventsService } from '../events/events.service';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
-import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -101,7 +100,7 @@ export class AppointmentsService {
         limit,
         offset,
       };
-      const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
+      const { rows: appointments, count } = await this.appointmentsRepository.scope('active').findAndCountAll(options);
       this.logger.log({
         function: 'service/appt/findAll options',
         options,
@@ -147,7 +146,10 @@ export class AppointmentsService {
     }
   }
 
-  async createProvisionalAppointment(createProvisionalApptDto: CreateGlobalAppointmentDto): Promise<any> {
+  async createProvisionalAppointment(
+    createProvisionalApptDto: CreateGlobalAppointmentDto,
+    transaction?: Transaction,
+  ): Promise<any> {
     // check if this patient has a provisional appt.
     const { patientId } = createProvisionalApptDto;
     const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(patientId);
@@ -158,7 +160,7 @@ export class AppointmentsService {
         message: 'This Patient has a provisional appointment',
       });
     }
-    return this.createAnAppointmentWithFullResponse(createProvisionalApptDto);
+    return this.createAnAppointmentWithFullResponse(createProvisionalApptDto, transaction);
   }
 
   async createNonProvisionalAppointment(
@@ -223,7 +225,7 @@ export class AppointmentsService {
   }
 
   async findOne(id: number): Promise<any> {
-    const appointment = await this.appointmentsRepository.findByPk(id, {
+    const appointment = await this.appointmentsRepository.scope('active').findByPk(id, {
       include: [
         {
           all: true,
@@ -265,16 +267,25 @@ export class AppointmentsService {
     return !!appt && !!appt.id;
   }
 
-  async createAnAppointmentWithFullResponse(dto: CreateGlobalAppointmentDto): Promise<AppointmentsModel> {
+  async createAnAppointmentWithFullResponse(
+    dto: CreateGlobalAppointmentDto,
+    transaction?: Transaction,
+  ): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointmentToCreate',
       dto,
     });
 
+    let appointmentStatusId = dto.appointmentStatusId;
+    if (!appointmentStatusId) {
+      appointmentStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    }
+
     const startDate = DateTime.fromJSDate(dto.date);
 
     const inputAttr: AppointmentsModelAttributes = {
       ...dto,
+      appointmentStatusId,
       date: startDate.toISODate(),
       startTime: startDate.toSQLTime({ includeOffset: false, includeZone: false }),
       durationMinutes: DEFAULT_EVENT_DURATION_MINS, // TODO support receiving duration minutes from user
@@ -288,7 +299,12 @@ export class AppointmentsService {
       payload: inputAttr,
     });
 
-    const result = await this.appointmentsRepository.create(inputAttr);
+    const options: CreateOptions = {};
+    if (transaction) {
+      options.transaction = transaction;
+    }
+
+    const result = await this.appointmentsRepository.create(inputAttr, options);
 
     // attach this appointment the event
     if (dto.availabilityId) {
@@ -299,6 +315,7 @@ export class AppointmentsService {
         // @ts-ignore
         { userId: dto.createdBy, clinicId: dto.clinicId },
         { staffId: dto.createdBy, ...dto, startDate: dto.date, appointmentId: result.id },
+        transaction,
       );
     }
 
@@ -307,6 +324,64 @@ export class AppointmentsService {
       result,
     });
     return result;
+  }
+
+  async completeAppointment(appointmentId: number, identity, transaction: Transaction) {
+    const completeStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE);
+    this.logger.debug({
+      function: 'completeAppointment',
+      completeStatusId,
+    });
+    return this.appointmentsRepository.unscoped().update(
+      {
+        appointmentStatusId: completeStatusId,
+        updatedBy: identity.userId,
+      },
+      {
+        where: {
+          id: appointmentId,
+        },
+        transaction,
+      },
+    );
+  }
+
+  /**
+   * cancel all patient future appointments including provisional after given appointment id
+   * @param appointmentId
+   * @param transaction
+   */
+  async cancelPatientAppointments(appointmentId: number, cancelReason, transaction: Transaction) {
+    const [currentPatientAppoint, canceledStatusId] = await Promise.all([
+      this.appointmentsRepository.unscoped().findOne({
+        where: {
+          id: appointmentId,
+        },
+      }),
+      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED),
+    ]);
+    this.logger.debug({
+      function: 'cancelPatientAppointments',
+      currentPatientAppoint,
+      canceledStatusId,
+    });
+
+    const { date, startTime } = currentPatientAppoint;
+    return this.appointmentsRepository.unscoped().update(
+      {
+        appointmentStatusId: canceledStatusId,
+        ...cancelReason,
+      },
+      {
+        where: {
+          date: {
+            [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').utc().toDate(),
+          },
+          patientId: currentPatientAppoint.patientId,
+        },
+        transaction,
+      },
+    );
   }
 
   // eslint-disable-next-line complexity
@@ -430,7 +505,7 @@ export class AppointmentsService {
     // you might think why i do like this instead of update it in one query like update where id.
     // the reason here that i need the result, update at mysql return value of effected rows.
     // TODO: check the status/date, if it's already passed you have to throw error
-    const appointment: AppointmentsModel = await this.appointmentsRepository.findByPk(appointmentId);
+    const appointment: AppointmentsModel = await this.appointmentsRepository.scope('active').findByPk(appointmentId);
     if (!appointment) {
       throw new NotFoundException({
         code: ErrorCodes.NOT_FOUND,
@@ -539,7 +614,7 @@ export class AppointmentsService {
     if (query.doctorIds && query.doctorIds.length) {
       where.doctorId = { [Op.in]: query.doctorIds };
     }
-    const result = await this.appointmentsRepository.count({
+    const result = await this.appointmentsRepository.scope('active').count({
       attributes: ['date'],
       group: ['date'],
       include: [

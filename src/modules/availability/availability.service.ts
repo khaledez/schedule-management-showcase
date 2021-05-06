@@ -20,7 +20,7 @@ import { UpdateAvailabilityDto } from './dto/update.dto';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
-import { IIdentity } from '@mon-medic/common';
+import { IIdentity } from '@dashps/monmedx-common';
 import { EventsService } from '../events/events.service';
 import { EventModel, EventModelAttributes } from '../events/models';
 

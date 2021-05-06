@@ -182,7 +182,7 @@ export class LookupsService {
     }
   }
 
-  public async getStatusIdByCode(code: string): Promise<number> {
+  public async getStatusIdByCode(code: AppointmentStatusEnum): Promise<number> {
     if (!Object.keys(AppointmentStatusEnum).includes(code)) {
       throw new BadRequestException({
         fields: [],

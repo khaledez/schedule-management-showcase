@@ -1,7 +1,7 @@
 import { IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CustomFilterByAppointmentCategoryDto } from './custom-filter-by-appointment-category.dto';
-import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@mon-medic/common';
+import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
 import { FilterTimeInputDto } from '../../../common/dtos';
 // TODO: currentSprint
 export class AppointmentFilterDto {
