@@ -32,41 +32,53 @@ export class AppointmentsListener {
         data: {
           patient: { id: patientId },
           upcomingAppointment: { typeId: provisionalTypeId, date: provisionalDate, release },
+          visit: {
+            appointment: { id: visitAppointmentId },
+          },
         },
       } = payload;
 
       const identity = { clinicId, userId };
 
-      const currentPatientAppoint = await this.appointmentsService.completePatientCurrentAppointment(
-        patientId,
-        identity,
-        transaction,
-      );
-
+      const promiseActions = [this.appointmentsService.completeAppointment(visitAppointmentId, identity, transaction)];
       if (release) {
         // cancel all patient future appointments including provisional
-        this.appointmentsService.releasePatientCallback(currentPatientAppoint, transaction);
+        promiseActions.push(
+          this.appointmentsService.cancelPatientAppointments(
+            visitAppointmentId,
+            {
+              cancelRescheduleReasonRn: 'Release patient after complete visit',
+              cancelRescheduleReasonFr: 'Release patient after complete visit',
+            },
+            transaction,
+          ),
+        );
       } else if (provisionalTypeId && provisionalDate) {
         // create new provisional appointment
-        this.appointmentsService.createProvisionalAppointment(
-          {
-            patientId,
-            clinicId,
-            doctorId: staffId,
-            createdBy: userId,
-            date: new Date(provisionalDate),
-            provisionalDate: new Date(provisionalDate),
-            provisionalTypeId,
-          },
-          transaction,
+        promiseActions.push(
+          this.appointmentsService.createProvisionalAppointment(
+            {
+              patientId,
+              clinicId,
+              doctorId: staffId,
+              createdBy: userId,
+              date: new Date(provisionalDate),
+              provisionalDate: new Date(provisionalDate),
+              provisionalTypeId,
+              appointmentTypeId: provisionalTypeId,
+            },
+            transaction,
+          ),
         );
       }
+
+      await Promise.all(promiseActions);
 
       transaction.commit();
     } catch (error) {
       this.logger.error({
         function: 'handleCompleteVisitEvent',
-        error,
+        error: error,
       });
       transaction.rollback();
     }

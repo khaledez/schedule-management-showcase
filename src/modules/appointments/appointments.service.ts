@@ -98,7 +98,7 @@ export class AppointmentsService {
         limit,
         offset,
       };
-      const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
+      const { rows: appointments, count } = await this.appointmentsRepository.scope('active').findAndCountAll(options);
       this.logger.log({
         function: 'service/appt/findAll options',
         options,
@@ -223,7 +223,7 @@ export class AppointmentsService {
   }
 
   async findOne(id: number): Promise<any> {
-    const appointment = await this.appointmentsRepository.findByPk(id, {
+    const appointment = await this.appointmentsRepository.scope('active').findByPk(id, {
       include: [
         {
           all: true,
@@ -309,27 +309,58 @@ export class AppointmentsService {
     return result;
   }
 
-  async completePatientCurrentAppointment(patientId: number, identity, transaction: Transaction) {
-    const [currentAppoint, completeStatusId] = await Promise.all([
-      this.findAppointmentByPatientId(patientId, identity),
-      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE),
-    ]);
-    return currentAppoint.update({ appointmentStatusId: completeStatusId }, { transaction });
+  async completeAppointment(appointmentId: number, identity, transaction: Transaction) {
+    const completeStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE);
+    this.logger.debug({
+      function: 'completeAppointment',
+      completeStatusId,
+    });
+    return this.appointmentsRepository.unscoped().update(
+      {
+        appointmentStatusId: completeStatusId,
+        updatedBy: identity.userId,
+      },
+      {
+        where: {
+          id: appointmentId,
+        },
+        transaction,
+      },
+    );
   }
 
-  async releasePatientCallback(currentPatientAppoint: AppointmentsModel, transaction: Transaction) {
-    // cancel all patient future appointments including provisional
+  /**
+   * cancel all patient future appointments including provisional after given appointment id
+   * @param appointmentId
+   * @param transaction
+   */
+  async cancelPatientAppointments(appointmentId: number, cancelReason, transaction: Transaction) {
+    const [currentPatientAppoint, canceledStatusId] = await Promise.all([
+      this.appointmentsRepository.unscoped().findOne({
+        where: {
+          id: appointmentId,
+        },
+      }),
+      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED),
+    ]);
+    this.logger.debug({
+      function: 'cancelPatientAppointments',
+      currentPatientAppoint,
+      canceledStatusId,
+    });
+
     const { date, startTime } = currentPatientAppoint;
-    const canceledStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED);
-    return this.appointmentsRepository.update(
+    return this.appointmentsRepository.unscoped().update(
       {
         appointmentStatusId: canceledStatusId,
+        ...cancelReason,
       },
       {
         where: {
           date: {
-            [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').toDate(),
+            [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').utc().toDate(),
           },
+          patientId: currentPatientAppoint.patientId,
         },
         transaction,
       },
@@ -444,7 +475,7 @@ export class AppointmentsService {
     // you might think why i do like this instead of update it in one query like update where id.
     // the reason here that i need the result, update at mysql return value of effected rows.
     // TODO: check the status/date, if it's already passed you have to throw error
-    const appointment: AppointmentsModel = await this.appointmentsRepository.findByPk(appointmentId);
+    const appointment: AppointmentsModel = await this.appointmentsRepository.scope('active').findByPk(appointmentId);
     if (!appointment) {
       throw new NotFoundException({
         code: ErrorCodes.NOT_FOUND,
@@ -553,7 +584,7 @@ export class AppointmentsService {
     if (query.doctorIds && query.doctorIds.length) {
       where.doctorId = { [Op.in]: query.doctorIds };
     }
-    const result = await this.appointmentsRepository.count({
+    const result = await this.appointmentsRepository.scope('active').count({
       attributes: ['date'],
       group: ['date'],
       include: [
