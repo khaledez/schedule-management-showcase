@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Injectable, Inject, BadRequestException, NotFoundException, Logger, ConflictException } from '@nestjs/common';
 import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from '../../common/constants/index';
 import { AppointmentsModel, AppointmentsModelAttributes } from './models/appointments.model';
@@ -21,6 +22,8 @@ import * as moment from 'moment';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
 import { DateTime } from 'luxon';
 import { EventsService } from '../events/events.service';
+import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -292,6 +295,11 @@ export class AppointmentsService {
       staffId: dto.doctorId,
     };
 
+    this.logger.debug({
+      title: 'appointment create payload',
+      payload: inputAttr,
+    });
+
     const options: CreateOptions = {};
     if (transaction) {
       options.transaction = transaction;
@@ -300,7 +308,16 @@ export class AppointmentsService {
     const result = await this.appointmentsRepository.create(inputAttr, options);
 
     // attach this appointment the event
-    await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
+    if (dto.availabilityId) {
+      await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
+    } else {
+      // here create new calender event without availability
+      await this.eventsService.create(
+        // @ts-ignore
+        { userId: dto.createdBy, clinicId: dto.clinicId },
+        { staffId: dto.createdBy, ...dto, startDate: dto.date, appointmentId: result.id },
+      );
+    }
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',
@@ -448,14 +465,27 @@ export class AppointmentsService {
     return this.findOne(id);
   }
 
-  async findAppointmentByPatientId(id: number, identity): Promise<AppointmentsModel> {
-    const query = {
+  async findAppointmentByPatientId(
+    id: number,
+    queryData: UpComingAppointmentQueryDto,
+    identity,
+  ): Promise<AppointmentsModel> {
+    const query: any = {
       filter: {
         patientId: {
           eq: id,
         },
       },
     };
+    this.logger.debug({
+      title: 'upcoming appointment query',
+      queryData,
+    });
+    if (queryData.after) {
+      query.filter.date = {
+        gt: new Date(),
+      };
+    }
     const { data } = await this.findAll({
       identity,
       query,

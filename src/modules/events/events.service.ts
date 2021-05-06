@@ -13,7 +13,17 @@ export class EventsService {
   constructor(@Inject(EVENTS_REPOSITORY) private readonly eventModel: typeof EventModel) {}
 
   create(identity: IIdentity, input: EventCreateRequest): Promise<EventModel> {
-    return this.eventModel.create(mapDtoToModelAttr(identity, input));
+    this.logger.debug({
+      title: 'create new event',
+      input,
+    });
+    const payload = mapDtoToModelAttr(identity, input);
+
+    this.logger.debug({
+      title: 'after map dto to attribute',
+      payload,
+    });
+    return this.eventModel.create(payload);
   }
 
   async addAppointmentToEventByAvailability(
