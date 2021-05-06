@@ -24,6 +24,7 @@ import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
 import { PagingInfo } from '../../common/decorators/pagingInfo.decorator';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
+import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -75,8 +76,12 @@ export class AppointmentsController {
   }
 
   @Get('patient-upcoming/:patientId')
-  getAppointmentByPatientId(@Param('patientId', ParseIntPipe) patientId: number, @Identity() identity: IdentityDto) {
-    return this.appointmentsService.findAppointmentByPatientId(patientId, identity);
+  getAppointmentByPatientId(
+    @Param('patientId', ParseIntPipe) patientId: number,
+    @Query() query: UpComingAppointmentQueryDto,
+    @Identity() identity: IdentityDto,
+  ) {
+    return this.appointmentsService.findAppointmentByPatientId(patientId, query, identity);
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.

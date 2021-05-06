@@ -22,6 +22,8 @@ import * as moment from 'moment';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
 import { DateTime } from 'luxon';
 import { EventsService } from '../events/events.service';
+import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -388,14 +390,27 @@ export class AppointmentsService {
     return this.findOne(id);
   }
 
-  async findAppointmentByPatientId(id: number, identity): Promise<AppointmentsModel> {
-    const query = {
+  async findAppointmentByPatientId(
+    id: number,
+    queryData: UpComingAppointmentQueryDto,
+    identity,
+  ): Promise<AppointmentsModel> {
+    const query: any = {
       filter: {
         patientId: {
           eq: id,
         },
       },
     };
+    this.logger.debug({
+      title: 'upcoming appointment query',
+      queryData,
+    });
+    if (queryData.after) {
+      query.filter.date = {
+        gt: new Date(),
+      };
+    }
     const { data } = await this.findAll({
       identity,
       query,
