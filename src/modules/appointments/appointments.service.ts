@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Injectable, Inject, BadRequestException, NotFoundException, Logger, ConflictException } from '@nestjs/common';
 import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from '../../common/constants/index';
 import { AppointmentsModel, AppointmentsModelAttributes } from './models/appointments.model';
@@ -280,11 +281,23 @@ export class AppointmentsService {
       staffId: dto.doctorId,
     };
 
+    this.logger.debug({
+      title: 'appointment create payload',
+      payload: inputAttr,
+    });
+
     const result = await this.appointmentsRepository.create(inputAttr);
 
     // attach this appointment the event
     if (dto.availabilityId) {
       await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
+    } else {
+      // here create new calender event without availability
+      await this.eventsService.create(
+        // @ts-ignore
+        { userId: dto.createdBy, clinicId: dto.clinicId },
+        { staffId: dto.createdBy, ...dto, startDate: dto.date, appointmentId: result.id },
+      );
     }
 
     this.logger.debug({
