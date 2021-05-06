@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   Controller,
   Get,
@@ -24,6 +25,7 @@ import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
 import { PagingInfo } from '../../common/decorators/pagingInfo.decorator';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
+import { CreateAppointmentAdhocDto } from './dto/create-appointment-adhoc.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 
 @Controller('appointments')
@@ -109,6 +111,37 @@ export class AppointmentsController {
       appointmentStatusId: waitlistStatusId, // TODO: get this id from appointmentStatusModel at the service.
       clinicId: identity.clinicId,
       createdBy: identity.userId,
+      provisionalDate: appointmentData.date,
+    });
+  }
+
+  @Post('adhoc')
+  async createAdHoc(
+    @Identity() identity: IdentityDto,
+    @Body() appointmentData: CreateAppointmentAdhocDto,
+  ): Promise<AppointmentsModel> {
+    this.logger.debug({
+      function: 'appointment/createProvisionalAppointment',
+      identity,
+      appointmentData,
+    });
+
+    const readyStatus = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.READY);
+    const typeFUBId = await this.lookupsService.getTypeByCode('FUP');
+
+    this.logger.debug({
+      appointmentData,
+      readyStatus,
+      typeFUBId: `${typeFUBId}`,
+    });
+
+    return this.appointmentsService.createProvisionalAppointment({
+      ...appointmentData,
+      appointmentStatusId: readyStatus,
+      clinicId: identity.clinicId,
+      createdBy: identity.userId,
+      // @ts-ignore
+      appointmentTypeId: typeFUBId,
       provisionalDate: appointmentData.date,
     });
   }

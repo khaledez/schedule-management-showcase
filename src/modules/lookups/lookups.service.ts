@@ -198,4 +198,14 @@ export class LookupsService {
     });
     return result.id;
   }
+
+  async getTypeByCode(code: string) {
+    const result = await this.appointmentTypesLookupsRepository.findOne({
+      where: {
+        code,
+      },
+      attributes: ['id'],
+    });
+    return result?.id;
+  }
 }
