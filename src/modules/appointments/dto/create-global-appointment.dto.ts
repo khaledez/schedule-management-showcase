@@ -23,6 +23,11 @@ export class CreateGlobalAppointmentDto {
   @IsNumber()
   appointmentStatusId?: number;
 
+  @Transform((value) => Number(value))
+  @IsOptional()
+  @IsNumber()
+  provisionalTypeId?: number;
+
   @IsDate()
   @Type(() => Date)
   @IsOptional()

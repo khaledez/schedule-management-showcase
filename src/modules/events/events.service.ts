@@ -1,4 +1,4 @@
-import { IIdentity } from '@mon-medic/common';
+import { IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { Op, Transaction } from 'sequelize';

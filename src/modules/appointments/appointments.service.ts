@@ -11,7 +11,7 @@ import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Op, FindOptions } from 'sequelize';
+import { Op, FindOptions, Transaction, CreateOptions } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
@@ -144,7 +144,10 @@ export class AppointmentsService {
     }
   }
 
-  async createProvisionalAppointment(createProvisionalApptDto: CreateGlobalAppointmentDto): Promise<any> {
+  async createProvisionalAppointment(
+    createProvisionalApptDto: CreateGlobalAppointmentDto,
+    transaction?: Transaction,
+  ): Promise<any> {
     // check if this patient has a provisional appt.
     const { patientId } = createProvisionalApptDto;
     const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(patientId);
@@ -155,7 +158,7 @@ export class AppointmentsService {
         message: 'This Patient has a provisional appointment',
       });
     }
-    return this.createAnAppointmentWithFullResponse(createProvisionalApptDto);
+    return this.createAnAppointmentWithFullResponse(createProvisionalApptDto, transaction);
   }
 
   async createNonProvisionalAppointment(
@@ -262,16 +265,25 @@ export class AppointmentsService {
     return !!appt && !!appt.id;
   }
 
-  async createAnAppointmentWithFullResponse(dto: CreateGlobalAppointmentDto): Promise<AppointmentsModel> {
+  async createAnAppointmentWithFullResponse(
+    dto: CreateGlobalAppointmentDto,
+    transaction?: Transaction,
+  ): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointmentToCreate',
       dto,
     });
 
+    let appointmentStatusId = dto.appointmentStatusId;
+    if (!appointmentStatusId) {
+      appointmentStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    }
+
     const startDate = DateTime.fromJSDate(dto.date);
 
     const inputAttr: AppointmentsModelAttributes = {
       ...dto,
+      appointmentStatusId,
       date: startDate.toISODate(),
       startTime: startDate.toSQLTime({ includeOffset: false, includeZone: false }),
       durationMinutes: DEFAULT_EVENT_DURATION_MINS, // TODO support receiving duration minutes from user
@@ -280,7 +292,12 @@ export class AppointmentsService {
       staffId: dto.doctorId,
     };
 
-    const result = await this.appointmentsRepository.create(inputAttr);
+    const options: CreateOptions = {};
+    if (transaction) {
+      options.transaction = transaction;
+    }
+
+    const result = await this.appointmentsRepository.create(inputAttr, options);
 
     // attach this appointment the event
     await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
@@ -290,6 +307,33 @@ export class AppointmentsService {
       result,
     });
     return result;
+  }
+
+  async completePatientCurrentAppointment(patientId: number, identity, transaction: Transaction) {
+    const [currentAppoint, completeStatusId] = await Promise.all([
+      this.findAppointmentByPatientId(patientId, identity),
+      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE),
+    ]);
+    return currentAppoint.update({ appointmentStatusId: completeStatusId }, { transaction });
+  }
+
+  async releasePatientCallback(currentPatientAppoint: AppointmentsModel, transaction: Transaction) {
+    // cancel all patient future appointments including provisional
+    const { date, startTime } = currentPatientAppoint;
+    const canceledStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED);
+    return this.appointmentsRepository.update(
+      {
+        appointmentStatusId: canceledStatusId,
+      },
+      {
+        where: {
+          date: {
+            [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').toDate(),
+          },
+        },
+        transaction,
+      },
+    );
   }
 
   // eslint-disable-next-line complexity

@@ -1,4 +1,4 @@
-import { FilterDateInputDto, FilterIdsInputDto, IIdentity } from '@mon-medic/common';
+import { FilterDateInputDto, FilterIdsInputDto, IIdentity } from '@dashps/monmedx-common';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { Includeable, Op, WhereAttributeHash, WhereOptions } from 'sequelize';
