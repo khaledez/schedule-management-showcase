@@ -407,18 +407,9 @@ export class AppointmentsService {
       queryData,
     });
     if (queryData.after) {
-      // get appointment data
-      const appointment = await this.appointmentsRepository.scope('id').findByPk(queryData.after);
-      if (appointment) {
-        const _appointment = appointment.get({ plain: true }) as AppointmentsModel;
-        this.logger.debug({
-          title: 'get appointment data',
-          _appointment,
-        });
-        query.filter.date = {
-          gt: _appointment.date,
-        };
-      }
+      query.filter.date = {
+        gt: new Date(),
+      };
     }
     const { data } = await this.findAll({
       identity,
