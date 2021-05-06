@@ -296,7 +296,7 @@ export class AppointmentsService {
       await this.eventsService.create(
         // @ts-ignore
         { userId: dto.createdBy, clinicId: dto.clinicId },
-        { staffId: dto.createdBy, ...dto, startDate: dto.date },
+        { staffId: dto.createdBy, ...dto, startDate: dto.date, appointmentId: result.id },
       );
     }
 
