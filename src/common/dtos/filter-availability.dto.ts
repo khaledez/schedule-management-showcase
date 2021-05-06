@@ -1,4 +1,4 @@
-import { FilterIdsInputDto } from '@mon-medic/common';
+import { FilterIdsInputDto } from '@dashps/monmedx-common';
 
 export class FilterAvailabilityInputDto {
   appointmentTypeId?: FilterIdsInputDto;

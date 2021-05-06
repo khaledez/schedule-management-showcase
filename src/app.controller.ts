@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { Public } from '@mon-medic/common';
+import { Public } from '@dashps/monmedx-common';
 import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
 import { AppService } from './app.service';
 import { GeneralHealthIndicator } from './general-health.provider';

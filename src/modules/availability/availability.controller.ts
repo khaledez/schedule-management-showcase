@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Logger, BadRequestException, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
-import { Identity, IIdentity } from '@mon-medic/common';
+import { Identity, IIdentity } from '@dashps/monmedx-common';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';

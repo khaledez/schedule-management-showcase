@@ -16,3 +16,7 @@ export const PATIENTS_REPOSITORY = 'PATIENTS_REPOSITORY';
 export const DEFAULT_EVENT_DURATION_MINS = 15;
 
 export const BAD_REQUEST = 'BAD_REQUEST';
+export const VISIT_COMPLETE_EVENT_NAME = 'visit_complete';
+
+export const SCHEDULE_MGMT_TOPIC = 'schedule-management';
+export const VISIT_MGMT_TOPIC = 'visit-management';

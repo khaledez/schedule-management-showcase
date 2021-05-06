@@ -1,7 +1,7 @@
-import { IIdentity } from '@mon-medic/common';
+import { IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import { Op, Transaction } from 'sequelize';
+import { CreateOptions, Op, Transaction } from 'sequelize';
 import { DEFAULT_EVENT_DURATION_MINS, EVENTS_REPOSITORY } from '../../common/constants';
 import { EventCreateRequest, EventUpdateRequest, Invitee } from './events.interfaces';
 import { EventModel, EventModelAttributes } from './models';
@@ -12,8 +12,24 @@ export class EventsService {
 
   constructor(@Inject(EVENTS_REPOSITORY) private readonly eventModel: typeof EventModel) {}
 
-  create(identity: IIdentity, input: EventCreateRequest): Promise<EventModel> {
-    return this.eventModel.create(mapDtoToModelAttr(identity, input));
+  create(identity: IIdentity, input: EventCreateRequest, transaction?: Transaction): Promise<EventModel> {
+    this.logger.debug({
+      title: 'create new event',
+      input,
+    });
+    const payload = mapDtoToModelAttr(identity, input);
+
+    this.logger.debug({
+      title: 'after map dto to attribute',
+      payload,
+    });
+
+    const options: CreateOptions = {};
+    if (transaction) {
+      options.transaction = transaction;
+    }
+
+    return this.eventModel.create(payload, options);
   }
 
   async addAppointmentToEventByAvailability(

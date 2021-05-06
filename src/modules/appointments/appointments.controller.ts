@@ -17,7 +17,7 @@ import { AppointmentsModel } from './models/appointments.model';
 import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Identity } from '@mon-medic/common';
+import { Identity } from '@dashps/monmedx-common';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
 import { PaginationInterceptor } from '../../common/interceptor/pagination.interceptor';
@@ -26,6 +26,7 @@ import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum'
 import { PagingInfo } from '../../common/decorators/pagingInfo.decorator';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
 import { CreateAppointmentAdhocDto } from './dto/create-appointment-adhoc.dto';
+import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -77,8 +78,12 @@ export class AppointmentsController {
   }
 
   @Get('patient-upcoming/:patientId')
-  getAppointmentByPatientId(@Param('patientId', ParseIntPipe) patientId: number, @Identity() identity: IdentityDto) {
-    return this.appointmentsService.findAppointmentByPatientId(patientId, identity);
+  getAppointmentByPatientId(
+    @Param('patientId', ParseIntPipe) patientId: number,
+    @Query() query: UpComingAppointmentQueryDto,
+    @Identity() identity: IdentityDto,
+  ) {
+    return this.appointmentsService.findAppointmentByPatientId(patientId, query, identity);
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.
