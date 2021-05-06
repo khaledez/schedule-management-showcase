@@ -98,7 +98,7 @@ export class AppointmentsService {
         ],
         where: {
           ...sequelizeFilter,
-          // clinicId: identity.clinicId,
+          clinicId: identity.clinicId,
         },
         order: sequelizeSort,
         limit,
