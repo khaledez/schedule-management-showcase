@@ -7,8 +7,9 @@ module.exports = {
         'Appointments',
         'end_date',
         {
-          allowNull: true,
+          allowNull: false,
           type: Sequelize.DATE,
+          defaultValue: Sequelize.fn('now'),
         },
         { transaction: t },
       );
@@ -17,8 +18,9 @@ module.exports = {
         'Appointments',
         'start_time',
         {
-          allowNull: true,
+          allowNull: false,
           type: Sequelize.TIME,
+          defaultValue: '03:00:00',
         },
         { transaction: t },
       );
@@ -27,8 +29,9 @@ module.exports = {
         'Appointments',
         'duration_minutes',
         {
-          allowNull: true,
+          allowNull: false,
           type: Sequelize.INTEGER,
+          defaultValue: 15,
         },
         { transaction: t },
       );

@@ -7,8 +7,9 @@ module.exports = {
         'Availability',
         'end_date',
         {
-          allowNull: true,
+          allowNull: false,
           type: Sequelize.DATE,
+          defaultValue: Sequelize.fn('now'),
         },
         { transaction: t },
       );

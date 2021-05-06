@@ -92,10 +92,6 @@ export class AppointmentsService {
           {
             all: true,
           },
-          {
-            model: PatientsModel,
-            as: 'patient',
-          },
         ],
         where: {
           ...sequelizeFilter,

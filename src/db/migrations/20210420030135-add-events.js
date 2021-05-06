@@ -65,7 +65,7 @@ module.exports = {
             type: Sequelize.DATE,
           },
           end_date: {
-            allowNull: true,
+            allowNull: false,
             type: Sequelize.DATE,
           },
           duration_minutes: {
