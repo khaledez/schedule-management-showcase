@@ -2,7 +2,14 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.changeColumn('Events', 'invitees', { allowNull: true, type: Sequelize.JSON });
+    return queryInterface.sequelize.transaction(async (t) => {
+      await queryInterface.changeColumn(
+        'Events',
+        'invitees',
+        { allowNull: true, type: Sequelize.JSON },
+        { transaction: t },
+      );
+    });
   },
 
   down: (queryInterface, Sequelize) => {
