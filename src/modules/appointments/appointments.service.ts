@@ -23,7 +23,6 @@ import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface'
 import { DateTime } from 'luxon';
 import { EventsService } from '../events/events.service';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
-import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -316,6 +315,7 @@ export class AppointmentsService {
         // @ts-ignore
         { userId: dto.createdBy, clinicId: dto.clinicId },
         { staffId: dto.createdBy, ...dto, startDate: dto.date, appointmentId: result.id },
+        transaction,
       );
     }
 

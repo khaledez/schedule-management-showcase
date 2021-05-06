@@ -78,7 +78,7 @@ export class AppointmentsListener {
     } catch (error) {
       this.logger.error({
         function: 'handleCompleteVisitEvent',
-        error: error,
+        error,
       });
       transaction.rollback();
     }
