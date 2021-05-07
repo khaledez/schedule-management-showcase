@@ -12,7 +12,7 @@ import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Op, FindOptions, Transaction, CreateOptions } from 'sequelize';
+import { Op, FindOptions, Transaction, CreateOptions, UpdateOptions } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
@@ -456,12 +456,16 @@ export class AppointmentsService {
   };
 
   // TODO: delete this after ability to change status
-  async patchAppointment(id: number, data: any): Promise<AppointmentsModel> {
-    await this.appointmentsRepository.scope('id').update(data, {
+  async patchAppointment(id: number, data: any, transaction?: Transaction): Promise<AppointmentsModel> {
+    const options: UpdateOptions = {
       where: {
         id,
       },
-    });
+    };
+    if (transaction) {
+      options.transaction = transaction;
+    }
+    await this.appointmentsRepository.scope('id').update(data, options);
     return this.findOne(id);
   }
 

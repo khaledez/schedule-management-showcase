@@ -31,7 +31,7 @@ export class AppointmentsListener {
         userId,
         data: {
           patient: { id: patientId },
-          upcomingAppointment: { typeId: provisionalTypeId, date: provisionalDate },
+          upcomingAppointment: { id: upcomingAppointmentId, typeId: provisionalTypeId, date: provisionalDate },
           visit: {
             appointment: { id: visitAppointmentId },
           },
@@ -40,37 +40,47 @@ export class AppointmentsListener {
 
       const identity = { clinicId, userId };
 
-      const promiseActions = [this.appointmentsService.completeAppointment(visitAppointmentId, identity, transaction)];
+      const promiseActions: any[] = [
+        this.appointmentsService.completeAppointment(visitAppointmentId, identity, transaction),
+      ];
 
-      // cancel all patient future appointments including provisional
-      promiseActions.push(
-        this.appointmentsService.cancelPatientAppointments(
-          visitAppointmentId,
-          {
-            cancelRescheduleReasonRn: 'Release patient after complete visit',
-            cancelRescheduleReasonFr: 'Release patient after complete visit',
-          },
-          transaction,
-        ),
-      );
-
-      await Promise.all(promiseActions);
-
-      if (provisionalTypeId && provisionalDate) {
-        // create new provisional appointment
-        await this.appointmentsService.createProvisionalAppointment(
-          {
-            patientId,
-            clinicId,
-            doctorId: staffId,
-            createdBy: userId,
-            date: new Date(provisionalDate),
-            provisionalDate: new Date(provisionalDate),
-            provisionalTypeId,
-            appointmentTypeId: provisionalTypeId,
-          },
-          transaction,
+      if (upcomingAppointmentId) {
+        promiseActions.push(
+          this.appointmentsService.patchAppointment(upcomingAppointmentId, { upcomingAppointment: true }, transaction),
         );
+
+        await Promise.all(promiseActions);
+      } else {
+        // cancel all patient future appointments including provisional
+        promiseActions.push(
+          this.appointmentsService.cancelPatientAppointments(
+            visitAppointmentId,
+            {
+              cancelRescheduleReasonRn: 'Release patient after complete visit',
+              cancelRescheduleReasonFr: 'Release patient after complete visit',
+            },
+            transaction,
+          ),
+        );
+
+        await Promise.all(promiseActions);
+
+        if (provisionalTypeId && provisionalDate) {
+          // create new provisional appointment
+          await this.appointmentsService.createProvisionalAppointment(
+            {
+              patientId,
+              clinicId,
+              doctorId: staffId,
+              createdBy: userId,
+              date: new Date(provisionalDate),
+              provisionalDate: new Date(provisionalDate),
+              provisionalTypeId,
+              appointmentTypeId: provisionalTypeId,
+            },
+            transaction,
+          );
+        }
       }
 
       transaction.commit();
