@@ -31,7 +31,7 @@ export class AppointmentsListener {
         userId,
         data: {
           patient: { id: patientId },
-          upcomingAppointment: { typeId: provisionalTypeId, date: provisionalDate, release },
+          upcomingAppointment: { id: upcomingAppointmentId, typeId: provisionalTypeId, date: provisionalDate, release },
           visit: {
             appointment: { id: visitAppointmentId },
           },
@@ -40,39 +40,50 @@ export class AppointmentsListener {
 
       const identity = { clinicId, userId };
 
-      const promiseActions = [this.appointmentsService.completeAppointment(visitAppointmentId, identity, transaction)];
-      if (release) {
+      await this.appointmentsService.completeAppointment(visitAppointmentId, identity, transaction);
+
+      const cancelPatientAppointments = () => {
         // cancel all patient future appointments including provisional
-        promiseActions.push(
-          this.appointmentsService.cancelPatientAppointments(
-            visitAppointmentId,
-            {
-              cancelRescheduleReasonRn: 'Release patient after complete visit',
-              cancelRescheduleReasonFr: 'Release patient after complete visit',
-            },
-            transaction,
-          ),
+        return this.appointmentsService.cancelPatientAppointments(
+          patientId,
+          {
+            cancelRescheduleReasonRn: 'Release patient after complete visit',
+            cancelRescheduleReasonFr: 'Release patient after complete visit',
+          },
+          transaction,
         );
+      };
+
+      if (release) {
+        await cancelPatientAppointments();
       } else if (provisionalTypeId && provisionalDate) {
+        await cancelPatientAppointments();
+
         // create new provisional appointment
-        promiseActions.push(
-          this.appointmentsService.createProvisionalAppointment(
-            {
-              patientId,
-              clinicId,
-              doctorId: staffId,
-              createdBy: userId,
-              date: new Date(provisionalDate),
-              provisionalDate: new Date(provisionalDate),
-              provisionalTypeId,
-              appointmentTypeId: provisionalTypeId,
-            },
-            transaction,
-          ),
+        await this.appointmentsService.createProvisionalAppointment(
+          {
+            patientId,
+            clinicId,
+            doctorId: staffId,
+            createdBy: userId,
+            date: new Date(provisionalDate),
+            provisionalDate: new Date(provisionalDate),
+            provisionalTypeId,
+            appointmentTypeId: provisionalTypeId,
+          },
+          transaction,
         );
       }
 
-      await Promise.all(promiseActions);
+      if (upcomingAppointmentId) {
+        // TODO this logic need to be reviewed when we finally refactor this shitty service
+        // update to upcoming appointment
+        await this.appointmentsService.patchAppointment(
+          upcomingAppointmentId,
+          { upcomingAppointment: true },
+          transaction,
+        );
+      }
 
       transaction.commit();
     } catch (error) {

@@ -12,7 +12,7 @@ import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { sequelizeFilterMapper } from 'src/utils/sequelize-filter.mapper';
 import { AvailabilityService } from '../availability/availability.service';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Op, FindOptions, Transaction, CreateOptions } from 'sequelize';
+import { Op, FindOptions, Transaction, CreateOptions, UpdateOptions } from 'sequelize';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from 'src/utils/sequelize-sort.mapper';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
@@ -152,7 +152,7 @@ export class AppointmentsService {
   ): Promise<any> {
     // check if this patient has a provisional appt.
     const { patientId } = createProvisionalApptDto;
-    const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(patientId);
+    const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(patientId, transaction);
     if (hasAProvisional) {
       throw new NotFoundException({
         fields: [],
@@ -249,16 +249,18 @@ export class AppointmentsService {
     };
   }
 
-  async checkPatientHasAProvisionalAppointment(patientId: number): Promise<boolean> {
-    const appt = await this.appointmentsRepository.scope('id').findOne({
-      attributes: ['id'],
+  async checkPatientHasAProvisionalAppointment(patientId: number, transaction?: Transaction): Promise<boolean> {
+    const waitListStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    const options: FindOptions = {
       where: {
         patientId,
-        availabilityId: {
-          [Op.eq]: null,
-        },
+        appointmentStatusId: waitListStatusId,
       },
-    });
+    };
+    if (transaction) {
+      options.transaction = transaction;
+    }
+    const appt = await this.appointmentsRepository.findOne(options);
     this.logger.debug({
       function: 'checkPatientHasAProvisionalAppointment',
       appt,
@@ -348,25 +350,20 @@ export class AppointmentsService {
 
   /**
    * cancel all patient future appointments including provisional after given appointment id
-   * @param appointmentId
+   * @param patientId
    * @param transaction
    */
-  async cancelPatientAppointments(appointmentId: number, cancelReason, transaction: Transaction) {
-    const [currentPatientAppoint, canceledStatusId] = await Promise.all([
-      this.appointmentsRepository.unscoped().findOne({
-        where: {
-          id: appointmentId,
-        },
-      }),
+  async cancelPatientAppointments(patientId: number, cancelReason, transaction: Transaction) {
+    const [canceledStatusId, completeStatusId] = await Promise.all([
       this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED),
+      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE),
     ]);
     this.logger.debug({
       function: 'cancelPatientAppointments',
-      currentPatientAppoint,
       canceledStatusId,
+      completeStatusId,
     });
 
-    const { date, startTime } = currentPatientAppoint;
     return this.appointmentsRepository.unscoped().update(
       {
         appointmentStatusId: canceledStatusId,
@@ -374,10 +371,10 @@ export class AppointmentsService {
       },
       {
         where: {
-          date: {
-            [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').utc().toDate(),
+          patientId,
+          appointmentStatusId: {
+            [Op.ne]: completeStatusId,
           },
-          patientId: currentPatientAppoint.patientId,
         },
         transaction,
       },
@@ -456,12 +453,16 @@ export class AppointmentsService {
   };
 
   // TODO: delete this after ability to change status
-  async patchAppointment(id: number, data: any): Promise<AppointmentsModel> {
-    await this.appointmentsRepository.scope('id').update(data, {
+  async patchAppointment(id: number, data: any, transaction?: Transaction): Promise<AppointmentsModel> {
+    const options: UpdateOptions = {
       where: {
         id,
       },
-    });
+    };
+    if (transaction) {
+      options.transaction = transaction;
+    }
+    await this.appointmentsRepository.scope('id').update(data, options);
     return this.findOne(id);
   }
 
