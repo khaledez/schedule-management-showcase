@@ -350,26 +350,20 @@ export class AppointmentsService {
 
   /**
    * cancel all patient future appointments including provisional after given appointment id
-   * @param appointmentId
+   * @param patientId
    * @param transaction
    */
-  async cancelPatientAppointments(appointmentId: number, cancelReason, transaction: Transaction) {
-    const [currentPatientAppoint, canceledStatusId, waitListStatusId] = await Promise.all([
-      this.appointmentsRepository.unscoped().findOne({
-        where: {
-          id: appointmentId,
-        },
-      }),
+  async cancelPatientAppointments(patientId: number, cancelReason, transaction: Transaction) {
+    const [canceledStatusId, completeStatusId] = await Promise.all([
       this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED),
-      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST),
+      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE),
     ]);
     this.logger.debug({
       function: 'cancelPatientAppointments',
-      currentPatientAppoint,
       canceledStatusId,
+      completeStatusId,
     });
 
-    const { date, startTime } = currentPatientAppoint;
     return this.appointmentsRepository.unscoped().update(
       {
         appointmentStatusId: canceledStatusId,
@@ -377,17 +371,10 @@ export class AppointmentsService {
       },
       {
         where: {
-          patientId: currentPatientAppoint.patientId,
-          [Op.or]: [
-            {
-              date: {
-                [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').utc().toDate(),
-              },
-            },
-            {
-              appointmentStatusId: waitListStatusId,
-            },
-          ],
+          patientId,
+          appointmentStatusId: {
+            [Op.ne]: completeStatusId,
+          },
         },
         transaction,
       },
