@@ -53,7 +53,7 @@
     "luxon": "^1.25.0",
     "moment": "^2.29.1",
     "mysql2": "^2.2.5",
-    "pubsub-service": "git+https://pubsub:_yAs4zUjLbpzxPriMj8W@gitlab.com/JSR-EMR/backend/pubsub-service.git#c405a690501976742d0a55da6f36bdbe14586fe2",
+    "pubsub-service": "git+https://pubsub:_yAs4zUjLbpzxPriMj8W@gitlab.com/JSR-EMR/backend/pubsub-service.git",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^6.6.3",
