@@ -152,7 +152,7 @@ export class AppointmentsService {
   ): Promise<any> {
     // check if this patient has a provisional appt.
     const { patientId } = createProvisionalApptDto;
-    const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(patientId);
+    const hasAProvisional: boolean = await this.checkPatientHasAProvisionalAppointment(patientId, transaction);
     if (hasAProvisional) {
       throw new NotFoundException({
         fields: [],
@@ -249,16 +249,18 @@ export class AppointmentsService {
     };
   }
 
-  async checkPatientHasAProvisionalAppointment(patientId: number): Promise<boolean> {
-    const appt = await this.appointmentsRepository.scope('id').findOne({
-      attributes: ['id'],
+  async checkPatientHasAProvisionalAppointment(patientId: number, transaction?: Transaction): Promise<boolean> {
+    const waitListStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    const options: FindOptions = {
       where: {
         patientId,
-        availabilityId: {
-          [Op.eq]: null,
-        },
+        appointmentStatusId: waitListStatusId,
       },
-    });
+    };
+    if (transaction) {
+      options.transaction = transaction;
+    }
+    const appt = await this.appointmentsRepository.findOne(options);
     this.logger.debug({
       function: 'checkPatientHasAProvisionalAppointment',
       appt,
@@ -352,13 +354,14 @@ export class AppointmentsService {
    * @param transaction
    */
   async cancelPatientAppointments(appointmentId: number, cancelReason, transaction: Transaction) {
-    const [currentPatientAppoint, canceledStatusId] = await Promise.all([
+    const [currentPatientAppoint, canceledStatusId, waitListStatusId] = await Promise.all([
       this.appointmentsRepository.unscoped().findOne({
         where: {
           id: appointmentId,
         },
       }),
       this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED),
+      this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST),
     ]);
     this.logger.debug({
       function: 'cancelPatientAppointments',
@@ -374,10 +377,17 @@ export class AppointmentsService {
       },
       {
         where: {
-          date: {
-            [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').utc().toDate(),
-          },
           patientId: currentPatientAppoint.patientId,
+          [Op.or]: [
+            {
+              date: {
+                [Op.gt]: moment(`${date} ${startTime}`).add(DEFAULT_EVENT_DURATION_MINS, 'minute').utc().toDate(),
+              },
+            },
+            {
+              appointmentStatusId: waitListStatusId,
+            },
+          ],
         },
         transaction,
       },
