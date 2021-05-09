@@ -15,7 +15,8 @@ import { PatientsModel } from '../appointments/models/patients.model';
 import { EventModel } from '../events/models';
 const AWSXRay = require('aws-xray-sdk');
 AWSXRay.captureHTTPsGlobal(require('https'));
-
+const common_1 = require('@nestjs/common');
+const logger = new common_1.Logger('bootstrap');
 export const databaseProviders = [
   {
     provide: SEQUELIZE,

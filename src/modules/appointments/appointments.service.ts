@@ -23,6 +23,7 @@ import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface'
 import { DateTime } from 'luxon';
 import { EventsService } from '../events/events.service';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -626,6 +627,10 @@ export class AppointmentsService {
               [Op.in]: ['SCHEDULE', 'CONFIRM', 'CHECK_IN', 'READY'],
             },
           },
+        },
+        {
+          model: PatientsModel,
+          as: 'patient',
         },
       ],
       where,
