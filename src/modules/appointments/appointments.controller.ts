@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   Controller,
   Get,
@@ -16,7 +17,7 @@ import { AppointmentsModel } from './models/appointments.model';
 import { IdentityDto } from '../../common/dtos/identity.dto';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Identity } from '@dashps/monmedx-common';
+import { Identity, TransactionInterceptor, TransactionParam } from '@dashps/monmedx-common';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
 import { FilterBodyDto } from 'src/common/dtos/filter-body.dto';
 import { PaginationInterceptor } from '../../common/interceptor/pagination.interceptor';
@@ -24,6 +25,9 @@ import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
 import { PagingInfo } from '../../common/decorators/pagingInfo.decorator';
 import { PagingInfoInterface } from 'src/common/interfaces/pagingInfo.interface';
+import { CreateAppointmentAdhocDto } from './dto/create-appointment-adhoc.dto';
+import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { Transaction } from 'sequelize';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -75,8 +79,12 @@ export class AppointmentsController {
   }
 
   @Get('patient-upcoming/:patientId')
-  getAppointmentByPatientId(@Param('patientId', ParseIntPipe) patientId: number, @Identity() identity: IdentityDto) {
-    return this.appointmentsService.findAppointmentByPatientId(patientId, identity);
+  getAppointmentByPatientId(
+    @Param('patientId', ParseIntPipe) patientId: number,
+    @Query() query: UpComingAppointmentQueryDto,
+    @Identity() identity: IdentityDto,
+  ) {
+    return this.appointmentsService.findAppointmentByPatientId(patientId, query, identity);
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.
@@ -86,10 +94,12 @@ export class AppointmentsController {
    * @param appointmentData
    * @returns Created Appointment
    */
+  @UseInterceptors(TransactionInterceptor)
   @Post('provisional')
   async createProvisionalAppointment(
     @Identity() identity: IdentityDto,
     @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
+    @TransactionParam() transaction: Transaction,
   ): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointment/createProvisionalAppointment',
@@ -99,13 +109,52 @@ export class AppointmentsController {
 
     const waitlistStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
     // TODO: what if i entered the same body dto multiple-time!
-    return this.appointmentsService.createProvisionalAppointment({
-      ...appointmentData,
-      appointmentStatusId: waitlistStatusId, // TODO: get this id from appointmentStatusModel at the service.
-      clinicId: identity.clinicId,
-      createdBy: identity.userId,
-      provisionalDate: appointmentData.date,
+    return this.appointmentsService.createProvisionalAppointment(
+      {
+        ...appointmentData,
+        appointmentStatusId: waitlistStatusId, // TODO: get this id from appointmentStatusModel at the service.
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
+        provisionalDate: appointmentData.date,
+      },
+      transaction,
+    );
+  }
+
+  @UseInterceptors(TransactionInterceptor)
+  @Post('adhoc')
+  async createAdHoc(
+    @Identity() identity: IdentityDto,
+    @Body() appointmentData: CreateAppointmentAdhocDto,
+    @TransactionParam() transaction: Transaction,
+  ): Promise<AppointmentsModel> {
+    this.logger.debug({
+      function: 'appointment/createProvisionalAppointment',
+      identity,
+      appointmentData,
     });
+
+    const readyStatus = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.READY);
+    const typeFUBId = await this.lookupsService.getTypeByCode('FUP');
+
+    this.logger.debug({
+      appointmentData,
+      readyStatus,
+      typeFUBId: `${typeFUBId}`,
+    });
+
+    return this.appointmentsService.createAnAppointmentWithFullResponse(
+      {
+        ...appointmentData,
+        appointmentStatusId: readyStatus,
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
+        // @ts-ignore
+        appointmentTypeId: typeFUBId,
+        provisionalDate: appointmentData.date,
+      },
+      transaction,
+    );
   }
 
   /**

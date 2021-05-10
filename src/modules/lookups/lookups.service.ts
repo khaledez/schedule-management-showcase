@@ -182,7 +182,7 @@ export class LookupsService {
     }
   }
 
-  public async getStatusIdByCode(code: string): Promise<number> {
+  public async getStatusIdByCode(code: AppointmentStatusEnum): Promise<number> {
     if (!Object.keys(AppointmentStatusEnum).includes(code)) {
       throw new BadRequestException({
         fields: [],
@@ -197,5 +197,15 @@ export class LookupsService {
       attributes: ['id'],
     });
     return result.id;
+  }
+
+  async getTypeByCode(code: string) {
+    const result = await this.appointmentTypesLookupsRepository.findOne({
+      where: {
+        code,
+      },
+      attributes: ['id'],
+    });
+    return result?.id;
   }
 }

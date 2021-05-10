@@ -10,8 +10,9 @@ import { TimeGroupsLookupsModel } from '../lookups/models/time-groups.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
-import { LookupsModel } from '../../common/models/lookup-model';
+import { LookupsModel } from '../../common/models/lookup.model';
 import { PatientsModel } from '../appointments/models/patients.model';
+import { EventModel } from '../events/models';
 const AWSXRay = require('aws-xray-sdk');
 AWSXRay.captureHTTPsGlobal(require('https'));
 const common_1 = require('@nestjs/common');
@@ -29,8 +30,6 @@ export const databaseProviders = [
       }
       const sequelize = new Sequelize({
         ...config,
-          benchmark: true,
-          logging: (msg, sqlTime) => logger.log({ msg, sqlTime }),
         // dialectModule: AWSXRay.captureMySQL(require('mysql2')),
       });
       sequelize.addModels([
@@ -43,6 +42,7 @@ export const databaseProviders = [
         AppointmentTypesLookupsModel,
         LookupsModel,
         PatientsModel,
+        EventModel,
       ]);
       // sequelize.addModels([__dirname + '../**/models/*.model{.ts,.js}']);
       // await sequelize.sync();

@@ -15,7 +15,7 @@ import { map } from 'rxjs/operators';
 import { ErrorCodes } from '../enums/error-code.enum';
 import { ConfigService } from '@nestjs/config';
 import { PaginationConfig } from '../interfaces/pagination-config.interface';
-import { BaseModel } from '../models/base-model';
+import { BaseModel } from '../models/base.model';
 
 @Injectable()
 export class PaginationInterceptor implements NestInterceptor {
@@ -85,7 +85,7 @@ export class PaginationInterceptor implements NestInterceptor {
             cursor: (!last ? offset + index : total + offset - index) + 1,
             // cursor: (!last ? offset + index : !!last && !!before ? before - last : total + offset - index) + 1,
             node,
-          })) as [{ node: BaseModel; cursor: number }];
+          })) as [{ node: BaseModel<any, any>; cursor: number }];
           this.logger.debug({
             function: 'PaginationInterceptor modifiedDataAsEdges',
             modifiedDataAsEdges,

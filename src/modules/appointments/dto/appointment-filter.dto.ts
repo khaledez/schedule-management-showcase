@@ -1,10 +1,8 @@
 import { IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { FilterDateInputDto } from './filter-date-input.dto';
-import { FilterStringInputDto } from './filter-string-input.dto';
-import { FilterIdsInputDto } from './filter-ids-input.dto';
 import { CustomFilterByAppointmentCategoryDto } from './custom-filter-by-appointment-category.dto';
-import { FilterTimeInputDto } from './filter-time-input.dto';
+import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
+import { FilterTimeInputDto } from '../../../common/dtos';
 // TODO: currentSprint
 export class AppointmentFilterDto {
   @IsOptional()

@@ -1,9 +1,8 @@
 import { Controller, Get, Post, Body, Logger, BadRequestException, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
-import { Identity } from '@dashps/monmedx-common';
-import { CreateOrUpdateAvailabilityBodyDto } from './dto/add-or-update-availability-body.dto';
-import { CreateOrUpdateAvailabilityResponseInterface } from './interfaces/create-or-update-availability-response.interface';
-import { IdentityDto } from 'src/common/dtos/identity.dto';
+import { Identity, IIdentity } from '@dashps/monmedx-common';
+import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
+import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
 import { ErrorCodes } from 'src/common/enums/error-code.enum';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { split } from 'lodash';
@@ -15,10 +14,10 @@ export class AvailabilityController {
   private readonly logger = new Logger(AvailabilityController.name);
 
   constructor(private readonly availabilityService: AvailabilityService) {}
-  //TODO: MMX-currentSprint add auth guard
+
   @Get()
   findAll(
-    @Identity() identity: IdentityDto,
+    @Identity() identity: IIdentity,
     @Query() query?: QueryFindAvailabilityDto,
   ): Promise<AvailabilityEdgesInterface> | Promise<AvailabilityModel[]> {
     if (query.ids) {
@@ -36,25 +35,23 @@ export class AvailabilityController {
     return this.availabilityService.findOne(id);
   }
 
-  @Post()
-  createOrUpdate(
+  @Post('/bulk')
+  bulkUpdate(
     @Body()
-    createOrUpdateAvailabilityBodyDto: CreateOrUpdateAvailabilityBodyDto,
-    @Identity() identity: IdentityDto,
-  ): Promise<CreateOrUpdateAvailabilityResponseInterface> {
+    payload: BulkUpdateAvailabilityDto,
+    @Identity() identity: IIdentity,
+  ): Promise<BulkUpdateResult> {
     const { clinicId, userId } = identity;
-    const { create, remove } = createOrUpdateAvailabilityBodyDto;
-    this.logger.debug({ clinicId, userId, createOrUpdateAvailabilityBodyDto });
-    if (!create.length && !remove.length) {
+    const { create, remove, update } = payload;
+    this.logger.debug({ clinicId, userId, payload });
+
+    if (!create.length && !remove.length && !update.length) {
       throw new BadRequestException({
-        code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message: 'create and remove arrays could not be empty at the same time.',
+        code: ErrorCodes.INVALID_INPUT,
+        message: 'At least one operation must be provided',
       });
     }
-    return this.availabilityService.createOrUpdateAvailability({
-      ...createOrUpdateAvailabilityBodyDto,
-      remove: createOrUpdateAvailabilityBodyDto.remove,
-      identity,
-    });
+
+    return this.availabilityService.bulkAction(identity, payload);
   }
 }

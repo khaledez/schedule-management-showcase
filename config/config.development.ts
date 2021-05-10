@@ -1,9 +1,10 @@
 import { Dialect } from 'sequelize/types';
+import { SCHEDULE_MGMT_TOPIC, VISIT_MGMT_TOPIC } from '../src/common/constants';
 
 export const config = () => ({
   serviceName: 'schedule-management',
   baseURL: undefined,
-  apiURL: "https://api.dev.monmedx.com",
+  apiURL: 'https://api.dev.monmedx.com',
   port: 3000,
   database: {
     dialect: 'mysql' as Dialect,
@@ -12,16 +13,19 @@ export const config = () => ({
     username: process.env.DB_USERNAME || 'root',
     password: process.env.DB_PASSWORD || 'password',
     database: process.env.DB_NAME || 'dash',
+    benchmark: true,
+    // eslint-disable-next-line no-console
+    logging: console.log,
     define: {
       timestamps: false,
       underscored: true,
     },
     pool: {
-      min: 3,
-      max: 15,
-      idle: 20000,
+      max: 10,
+      min: 2,
     },
   },
+  topicList: [SCHEDULE_MGMT_TOPIC, VISIT_MGMT_TOPIC],
   cognito: {
     userPoolId: 'ca-central-1_QdrFL8ZgJ',
     clientId: 'pjlj97r3fkhoibcv2t7ln8doi',
@@ -29,6 +33,6 @@ export const config = () => ({
   },
   paginationInfo: {
     default: 10,
-    max: 100
-  }
+    max: 100,
+  },
 });

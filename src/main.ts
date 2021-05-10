@@ -9,6 +9,7 @@ import {
 } from '@dashps/monmedx-common';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { CONFIG_SERVICE, PORT, SERVICE_NAME } from './common/constants';
+import { FireEventService } from './fire-event.service';
 
 async function bootstrap() {
   const logger = new Logger('bootstrap');
@@ -30,6 +31,9 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableShutdownHooks();
+
+  const fireService = app.get(FireEventService);
+  fireService.fireEvent();
 
   await app.listen(port);
 
