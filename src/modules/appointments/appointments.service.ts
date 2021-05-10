@@ -126,8 +126,8 @@ export class AppointmentsService {
         data: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
           ...appt,
           previousAppointment: appt.previousAppointmentId,
-          primaryAction: actions[i].nextAction && actions[i].nextAction,
-          secondaryActions: actions[i].secondaryActions,
+          primaryAction: actions[i]?.nextAction ? actions[i].nextAction : [],
+          secondaryActions: actions[i]?.secondaryActions ? actions[i].secondaryActions : [],
           provisionalAppointment: !appt.availabilityId,
         })),
         // TODO: calculate has previous data
