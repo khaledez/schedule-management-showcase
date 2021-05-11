@@ -7,5 +7,5 @@ COPY . .
 RUN npm run build
 RUN chmod -R 765 /usr/src/app
 RUN chmod +x /usr/src/app/entrypoint.sh
-ENTRYPOINT [ "/usr/src/app/entrypoint.sh" ]
-CMD [ "node", "src/main.js" ]
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+CMD [ "npm", "start" ]
