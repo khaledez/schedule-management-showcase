@@ -96,7 +96,7 @@ export class AppointmentsService {
         where: {
           ...sequelizeFilter,
           clinicId: identity.clinicId,
-          upcomingAppointment: true
+          upcomingAppointment: true,
         },
         order: sequelizeSort,
         limit,
@@ -310,10 +310,7 @@ export class AppointmentsService {
     }
 
     //change other appointments upcoming_appointment field to 0
-    await this.appointmentsRepository.update(
-      { upcomingAppointment: false },
-      { where: { patientId } }
-      );
+    await this.appointmentsRepository.update({ upcomingAppointment: false }, { where: { patientId } });
 
     const result = await this.appointmentsRepository.create(inputAttr, options);
 
