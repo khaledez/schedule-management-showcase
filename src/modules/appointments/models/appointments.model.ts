@@ -107,6 +107,11 @@ export class AppointmentsModel
     this.setDataValue('date', moment(value).format('YYYY-MM-DD'));
   }
 
+  @Column(DataType.VIRTUAL)
+  get startDate() {
+    return moment(`${this.date} ${this.startTime}`, 'YYYY-MM-DD hh:mm:ss').toDate();
+  }
+
   @IsDate
   @Column(DataType.DATE)
   provisionalDate: Date;
