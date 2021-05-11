@@ -96,6 +96,7 @@ export class AppointmentsService {
         where: {
           ...sequelizeFilter,
           clinicId: identity.clinicId,
+          upcomingAppointment: true
         },
         order: sequelizeSort,
         limit,
@@ -284,6 +285,7 @@ export class AppointmentsService {
       appointmentStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
     }
 
+    const { patientId } = dto;
     const startDate = DateTime.fromJSDate(dto.date);
 
     const inputAttr: AppointmentsModelAttributes = {
@@ -306,6 +308,12 @@ export class AppointmentsService {
     if (transaction) {
       options.transaction = transaction;
     }
+
+    //change other appointments upcoming_appointment field to 0
+    await this.appointmentsRepository.scope('active').update(
+      { upcomingAppointment: false },
+      { where: { patientId } }
+      );
 
     const result = await this.appointmentsRepository.create(inputAttr, options);
 
