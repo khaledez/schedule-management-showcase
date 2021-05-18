@@ -70,6 +70,7 @@ export class AppointmentsListener {
             provisionalDate: new Date(provisionalDate),
             provisionalTypeId,
             appointmentTypeId: provisionalTypeId,
+            upcomingAppointment: true,
           },
           transaction,
         );

@@ -310,7 +310,7 @@ export class AppointmentsService {
     }
 
     //change other appointments upcoming_appointment field to 0
-    await this.appointmentsRepository.update({ upcomingAppointment: false }, { where: { patientId } });
+    await this.appointmentsRepository.update({ upcomingAppointment: false }, { where: { patientId }, transaction });
 
     const result = await this.appointmentsRepository.create(inputAttr, options);
 
