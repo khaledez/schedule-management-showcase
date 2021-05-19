@@ -1,4 +1,4 @@
-import { Model, CreatedAt, UpdatedAt, DeletedAt, Column } from 'sequelize-typescript';
+import { Model, CreatedAt, UpdatedAt, DeletedAt, Column, DefaultScope } from 'sequelize-typescript';
 import { Optional } from 'sequelize/types';
 
 export interface BaseModelAttributes {
@@ -18,6 +18,15 @@ export type BaseModelCreationAttributes = Optional<
 >;
 
 // note that the id will auto added by sequelize.
+
+@DefaultScope(() => ({
+  attributes: {
+    exclude: ['deletedAt', 'deletedBy'],
+  },
+  where: {
+    deletedBy: null,
+  },
+}))
 export class BaseModel<T, U = T> extends Model<T, U> {
   @Column
   clinicId: number;
