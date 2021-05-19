@@ -137,21 +137,46 @@ export class LookupsService {
       const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
       const appointmentActionsPlain = internalAppointmentsActions.map((e) => e.get({ plain: true }));
       this.logger.debug({
-        function: 'service/lookup/findAppointmentsActions',
+        function: 'service/lookup/findAppointmentsActions appointment statuses',
         internalAppointmentsStatus,
       });
+
+      this.logger.debug({
+        title: 'get all internal appointment actions',
+        appointmentActionsPlain,
+      });
+
+      const nextActions = {
+        WAIT_LIST: ['SCHEDULE'],
+        SCHEDULE: ['CONFIRM'],
+        CONFIRM: ['CHECK_IN'],
+        CHECK_IN: ['READY'],
+        READY: ['COMPLETE'],
+        COMPLETE: [],
+        CANCELED: [],
+      };
 
       // TODO: MMX-S4/S5 create fcm and check the status
       // At S2 status are sorted in the order so the next id is next status
       const appointmentsPrimaryActions = ids.map((id: number) => {
+        const statusData = internalAppointmentsStatus.find((statusObj) => statusObj.id === id);
         return {
           currentActionId: id,
-          nextAction: internalAppointmentsStatus.find((statusObj) => statusObj.id === id + 1),
+          // next status type calculated depend ids !!!
+          // nextAction: internalAppointmentsStatus.find((statusObj) => statusObj.id === id + 1),
+          nextAction: internalAppointmentsStatus.find(
+            (statusObj) => statusObj.code === nextActions[statusData.code][0],
+          ),
         };
+      });
+
+      this.logger.debug({
+        title: 'appointment primary action',
+        appointmentsPrimaryActions,
       });
       //TODO: MMX-later change the static way to dynamic.
       //TODO: MMX-CurrentSprint => static value
-      const nextAppointmentActions = {
+      const secondaryAppointmentActions = {
         WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
         SCHEDULE: ['CANCEL', 'CHANGE_DATE', 'CHANGE_APPT_TYPE', 'RESCHEDULE_APPT'],
         CONFIRM: ['CANCEL', 'CHANGE_APPT_TYPE'],
@@ -162,11 +187,11 @@ export class LookupsService {
 
       const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
         ...action,
-        secondaryActions:
-          action.nextAction &&
-          appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) =>
-            nextAppointmentActions[action.nextAction.code].includes(e.code),
-          ),
+        secondaryActions: action.nextAction
+          ? appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) =>
+              secondaryAppointmentActions[action.nextAction.code].includes(e.code),
+            )
+          : [],
       }));
       this.logger.debug({
         function: 'service/lookup/findAppointmentsActions',
