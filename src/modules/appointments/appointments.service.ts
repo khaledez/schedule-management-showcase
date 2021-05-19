@@ -227,7 +227,7 @@ export class AppointmentsService {
   }
 
   async findOne(id: number): Promise<any> {
-    const appointment = await this.appointmentsRepository.scope('active').findByPk(id, {
+    const appointment = await this.appointmentsRepository.scope('getOne').findByPk(id, {
       include: [
         {
           all: true,
@@ -243,6 +243,10 @@ export class AppointmentsService {
     }
     const appointmentAsPlain = appointment.get({ plain: true });
     const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
+    this.logger.debug({
+      title: 'appointment actions',
+      actions,
+    });
     return {
       ...appointmentAsPlain,
       primaryAction: actions[0].nextAction,

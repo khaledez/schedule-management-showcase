@@ -38,30 +38,30 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
 
 // note that the id will auto added by sequelize.
 // TODO update scope to correctly connect patient and lookups
-@DefaultScope(() => ({
-  attributes: {
-    exclude: ['deletedAt', 'deletedBy'],
-  },
-}))
 @Scopes(() => ({
   id: {
     attributes: {
       include: ['id'],
     },
   },
+  getOne: {
+    attributes: {
+      exclude: ['deletedAt', 'deletedBy'],
+    },
+    where: {
+      [`$status.code$`]: {
+        [Op.ne]: AppointmentStatusEnum.CANCELED,
+      },
+      [`$patient.status_code$`]: {
+        [Op.eq]: 'ACTIVE',
+      },
+      deletedBy: null,
+    },
+  },
   active: {
     attributes: {
       exclude: ['deletedAt', 'deletedBy'],
     },
-    // include: [
-    //   {
-    //     model: AppointmentStatusLookupsModel,
-    //     where: {
-    //       code: { [Op.ne]: AppointmentStatusEnum.COMPLETE },
-    //     },
-    //   },
-    //   { model: PatientsModel, where: { status: { [Op.eq]: 'ACTIVE' } } },
-    // ],
     where: {
       [`$status.code$`]: {
         [Op.ne]: AppointmentStatusEnum.COMPLETE,
@@ -69,6 +69,7 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
       [`$patient.status_code$`]: {
         [Op.eq]: 'ACTIVE',
       },
+      deletedBy: null,
     },
   },
 }))
