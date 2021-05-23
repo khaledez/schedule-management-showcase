@@ -1,4 +1,4 @@
-import { IsNumber, IsDate, IsOptional } from 'class-validator';
+import { IsNumber, IsDate, IsOptional, IsBoolean } from 'class-validator';
 import { IsPastDate } from '../../../utils/IsPastDate';
 import { Type, Transform } from 'class-transformer';
 
@@ -58,4 +58,8 @@ export class CreateGlobalAppointmentDto {
   @IsOptional()
   @IsNumber()
   doctorId?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  upcomingAppointment?: boolean;
 }
