@@ -59,4 +59,10 @@ export class AppointmentFilterDto {
   @ValidateNested()
   @Type(() => AppointmentFilterDto)
   not: AppointmentFilterDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FilterDateInputDto)
+  dob: FilterDateInputDto;
+
 }
