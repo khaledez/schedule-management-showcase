@@ -64,5 +64,4 @@ export class AppointmentFilterDto {
   @ValidateNested()
   @Type(() => FilterDateInputDto)
   dob: FilterDateInputDto;
-
 }

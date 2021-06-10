@@ -41,7 +41,9 @@ export class AppointmentsService {
     patientFullName: `$patient.full_name$`,
     patientHealthPlanNumber: `$patient.primary_health_plan_number$`,
     time: `$availability.start_time$`,
+    dob: `$patient.dob$`,
   };
+
   private readonly associationFieldsSortNames = {
     STATUS: {
       relation: 'status',
