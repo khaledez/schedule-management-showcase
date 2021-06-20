@@ -64,7 +64,7 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
     },
     where: {
       [`$status.code$`]: {
-        [Op.ne]: AppointmentStatusEnum.COMPLETE,
+        [Op.notIn]: [AppointmentStatusEnum.COMPLETE, AppointmentStatusEnum.CANCELED],
       },
       [`$patient.status_code$`]: {
         [Op.eq]: 'ACTIVE',
