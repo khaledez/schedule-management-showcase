@@ -127,6 +127,7 @@ QA:
     url: http://api.qa.monmedx.com
   only:
     - 'qa'
+    - 'development'
 
   before_script:
     - 'pip install awscli --upgrade --user'
