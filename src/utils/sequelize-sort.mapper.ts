@@ -1,4 +1,4 @@
-import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import { ErrorCodes } from '../common/enums/error-code.enum';
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 
 // eslint-disable-next-line complexity

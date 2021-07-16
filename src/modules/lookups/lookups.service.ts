@@ -6,14 +6,14 @@ import {
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
-} from 'src/common/constants';
+} from '../../common/constants';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
 import { Op } from 'sequelize';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
-import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
-import { AppointmentActionEnum } from 'src/common/enums/appointment-action.enum';
+import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
+import { AppointmentActionEnum } from '../../common/enums/appointment-action.enum';
 
 @Injectable()
 export class LookupsService {

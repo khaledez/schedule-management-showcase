@@ -11,7 +11,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { BAD_REQUEST } from 'src/common/constants';
+import { BAD_REQUEST } from '../../common/constants';
 import { EventCreateDto, EventUpdateDto } from './events.dto';
 import { EventDeleteResponse, EventMutateResponse, EventReadResponse } from './events.interfaces';
 import { EventsService } from './events.service';

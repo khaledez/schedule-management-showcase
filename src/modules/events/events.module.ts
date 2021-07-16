@@ -1,6 +1,6 @@
 import { TracingModule } from '@narando/nest-xray';
 import { Module } from '@nestjs/common';
-import { EVENTS_REPOSITORY } from 'src/common/constants';
+import { EVENTS_REPOSITORY } from '../../common/constants';
 import { DatabaseModule } from '../database/database.module';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';

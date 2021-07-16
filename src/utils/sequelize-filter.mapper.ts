@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import { ErrorCodes } from '../common/enums/error-code.enum';
 import { InternalServerErrorException, Logger, BadRequestException } from '@nestjs/common';
 import { QueryParamsDto } from '../common/dtos/query-params.dto';
 

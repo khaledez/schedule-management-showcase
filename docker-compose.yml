@@ -11,5 +11,10 @@ services:
     ports:
       - '3306:3306'
 
+  adminer:
+    image: adminer:latest
+    ports:
+      - '8080:8080'
+
 volumes:
   db:

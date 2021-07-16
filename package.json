@@ -33,7 +33,7 @@
     "seed:generate": "npx sequelize-cli seed:generate --name ${1}"
   },
   "dependencies": {
-    "@dashps/monmedx-common": "^1.0.20",
+    "@dashps/monmedx-common": "^3.4.7",
     "@narando/nest-xray": "^1.4.2",
     "@nestjs/common": "^7.0.1",
     "@nestjs/config": "^0.6.1",

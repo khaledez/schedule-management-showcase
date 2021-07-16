@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsISO8601, IsNumber, IsOptional, IsString } from 'class-validator';
-import { BaseModelAttributes } from 'src/common/models';
+import { BaseModelAttributes } from '../../../common/models';
 import { AvailabilityModelAttributes } from '../models/availability.interfaces';
 
 export class UpdateAvailabilityDto

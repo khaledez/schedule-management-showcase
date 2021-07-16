@@ -1,6 +1,6 @@
 import { FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
-import { FilterAvailabilityInputDto, ResultWithErrors, FilterDateInputDto } from 'src/common/dtos';
-import { BaseModelAttributes } from 'src/common/models';
+import { FilterAvailabilityInputDto, ResultWithErrors, FilterDateInputDto } from '../../common/dtos';
+import { BaseModelAttributes } from '../../common/models';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 

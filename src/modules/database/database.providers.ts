@@ -2,7 +2,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import { ConfigService } from '@nestjs/config';
 import { SEQUELIZE } from '../../common/constants';
-import { getSSMParameterValue } from 'src/utils/ssmGetParameter';
+import { getSSMParameterValue } from '../../utils/ssmGetParameter';
 import { AppointmentsModel } from '../appointments/models/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { DurationMinutesLookupsModel } from '../lookups/models/duration-minutes.model';
@@ -15,8 +15,7 @@ import { PatientsModel } from '../appointments/models/patients.model';
 import { EventModel } from '../events/models';
 const AWSXRay = require('aws-xray-sdk');
 AWSXRay.captureHTTPsGlobal(require('https'));
-const common_1 = require('@nestjs/common');
-const logger = new common_1.Logger('bootstrap');
+
 export const databaseProviders = [
   {
     provide: SEQUELIZE,

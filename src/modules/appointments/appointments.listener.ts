@@ -1,8 +1,8 @@
-import { IConfirmCompleteEvent } from '@dashps/monmedx-common';
+import { IConfirmCompleteVisitEvent } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Sequelize, Transaction } from 'sequelize';
-import { SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'src/common/constants';
+import { SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from '../../common/constants';
 import { AppointmentsService } from './appointments.service';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class AppointmentsListener {
   ) {}
 
   @OnEvent(VISIT_COMPLETE_EVENT_NAME, { async: true })
-  async handleCompleteVisitEvent(payload: IConfirmCompleteEvent) {
+  async handleCompleteVisitEvent(payload: IConfirmCompleteVisitEvent) {
     this.logger.log({
       function: 'handleCompleteVisitEvent',
       payload,

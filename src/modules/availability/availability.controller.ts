@@ -3,7 +3,7 @@ import { AvailabilityService } from './availability.service';
 import { Identity, IIdentity } from '@dashps/monmedx-common';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
-import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import { ErrorCodes } from '../../common/enums/error-code.enum';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { split } from 'lodash';
 import { QueryFindAvailabilityDto } from './dto/query-find-availability.dto';

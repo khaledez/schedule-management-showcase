@@ -1,4 +1,4 @@
-import { Table, Column, IsDate, ForeignKey, BelongsTo, DefaultScope, DataType, Scopes } from 'sequelize-typescript';
+import { Table, Column, IsDate, ForeignKey, BelongsTo, DataType, Scopes } from 'sequelize-typescript';
 import { BaseModel, BaseModelAttributes } from '../../../common/models/base.model';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
@@ -6,7 +6,7 @@ import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { PatientsModel } from './patients.model';
 import { Op } from 'sequelize';
-import { AppointmentStatusEnum } from 'src/common/enums/appointment-status.enum';
+import { AppointmentStatusEnum } from '../../../common/enums/appointment-status.enum';
 import * as moment from 'moment';
 
 export interface AppointmentsModelAttributes extends BaseModelAttributes {

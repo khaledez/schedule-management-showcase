@@ -6,7 +6,7 @@ import { AppointmentActionsLookupsModel } from './models/appointment-actions.mod
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { Identity } from '@dashps/monmedx-common';
-import { IdentityDto } from 'src/common/dtos/identity.dto';
+import { IdentityDto } from '../../common/dtos/identity.dto';
 
 @Controller('lookups')
 export class LookupsController {

@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
-import { ErrorCodes } from 'src/common/enums/error-code.enum';
+import { ErrorCodes } from '../common/enums/error-code.enum';
 
 export const getSSMParameterValue = async (paramName: string) => {
   const ssm = new AWS.SSM({ apiVersion: '2014-11-06' });

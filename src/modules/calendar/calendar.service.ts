@@ -2,7 +2,7 @@ import { FilterDateInputDto, FilterIdsInputDto, IIdentity } from '@dashps/monmed
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { Includeable, Op, WhereAttributeHash, WhereOptions } from 'sequelize';
-import { BAD_REQUEST } from 'src/common/constants';
+import { BAD_REQUEST } from '../../common/constants';
 import { AppointmentsModel } from '../appointments/models/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { EventModel, EventModelAttributes } from '../events/models';
