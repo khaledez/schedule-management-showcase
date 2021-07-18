@@ -14,12 +14,12 @@ import {
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { AppointmentsModel } from './models/appointments.model';
-import { IdentityDto } from '../../common/dtos/identity.dto';
+import { IdentityDto } from '../../common/dtos';
 import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { Identity, TransactionInterceptor, TransactionParam } from '@dashps/monmedx-common';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
-import { FilterBodyDto } from '../../common/dtos/filter-body.dto';
+import { FilterBodyDto } from '../../common/dtos';
 import { PaginationInterceptor } from '@dashps/monmedx-common';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
@@ -107,12 +107,12 @@ export class AppointmentsController {
       appointmentData,
     });
 
-    const waitlistStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    const waitListStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
     // TODO: what if i entered the same body dto multiple-time!
     return this.appointmentsService.createProvisionalAppointment(
       {
         ...appointmentData,
-        appointmentStatusId: waitlistStatusId, // TODO: get this id from appointmentStatusModel at the service.
+        appointmentStatusId: waitListStatusId, // TODO: get this id from appointmentStatusModel at the service.
         clinicId: identity.clinicId,
         createdBy: identity.userId,
         provisionalDate: appointmentData.date,

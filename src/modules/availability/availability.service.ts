@@ -89,6 +89,11 @@ export class AvailabilityService {
     return availability;
   }
 
+  async doesExist(id: number): Promise<boolean> {
+    const availability = await this.availabilityRepository.findByPk(id);
+    return availability !== null;
+  }
+
   /**
    *
    * @param ids array of availability ids to be deleted

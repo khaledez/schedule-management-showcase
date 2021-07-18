@@ -34,12 +34,13 @@ export class EventsService {
 
   async addAppointmentToEventByAvailability(
     userId: number,
-    availbilityId: number,
+    availabilityId: number,
     appointmentId: number,
+    transaction: Transaction,
   ): Promise<void> {
     await this.eventModel.update(
       { appointmentId: appointmentId, updatedBy: userId, updatedAt: new Date() },
-      { where: { availabilityId: availbilityId } },
+      { where: { availabilityId: availabilityId }, transaction },
     );
   }
 

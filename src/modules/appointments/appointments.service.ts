@@ -303,6 +303,7 @@ export class AppointmentsService {
       endDate: startDate.plus({ minutes: DEFAULT_EVENT_DURATION_MINS }).toJSDate(),
       provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
       staffId: dto.doctorId,
+      availabilityId: dto.availabilityId,
     };
 
     this.logger.debug({
@@ -310,19 +311,28 @@ export class AppointmentsService {
       payload: inputAttr,
     });
 
-    const options: CreateOptions = {};
-    if (transaction) {
-      options.transaction = transaction;
+    if (dto.availabilityId) {
+      await this.validateAvailabilityId(dto.availabilityId);
     }
 
     //change other appointments upcoming_appointment field to 0
     await this.appointmentsRepository.update({ upcomingAppointment: false }, { where: { patientId }, transaction });
 
-    const result = await this.appointmentsRepository.create(inputAttr, options);
+    const options: CreateOptions = {};
+    if (transaction) {
+      options.transaction = transaction;
+    }
+
+    const result: AppointmentsModel = await this.appointmentsRepository.create(inputAttr, options);
 
     // attach this appointment the event
     if (dto.availabilityId) {
-      await this.eventsService.addAppointmentToEventByAvailability(dto.createdBy, dto.availabilityId, result.id);
+      await this.eventsService.addAppointmentToEventByAvailability(
+        dto.createdBy,
+        dto.availabilityId,
+        result.id,
+        transaction,
+      );
     } else {
       // here create new calender event without availability
       await this.eventsService.create(
@@ -655,5 +665,16 @@ export class AppointmentsService {
       count,
       date: moment(date).format('YYYY-MM-DD'),
     }));
+  }
+
+  private async validateAvailabilityId(id: number): Promise<void> {
+    const doesAvailabilityExists = await this.availabilityService.doesExist(id);
+    if (!doesAvailabilityExists) {
+      throw new NotFoundException({
+        fields: ['availability_id'],
+        code: 'NOT_FOUND',
+        message: 'The availability does not exits!',
+      });
+    }
   }
 }
