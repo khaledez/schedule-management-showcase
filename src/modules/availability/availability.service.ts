@@ -1,28 +1,28 @@
+import { IIdentity } from '@dashps/monmedx-common';
 import {
-  Injectable,
-  Inject,
   BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
-  InternalServerErrorException,
 } from '@nestjs/common';
-import { AvailabilityModel } from './models/availability.model';
-import { AVAILABILITY_REPOSITORY, BAD_REQUEST, SEQUELIZE } from '../../common/constants';
-import { CreateAvailabilityDto } from './dto/create.dto';
-import { Sequelize } from 'sequelize-typescript';
-import { Op } from 'sequelize';
-import { Transaction } from 'sequelize/types';
-import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
-import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
-import { ErrorCodes } from '../../common/enums/error-code.enum';
-import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
-import { UpdateAvailabilityDto } from './dto/update.dto';
-import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { DateTime } from 'luxon';
-import { AvailabilityModelAttributes } from './models/availability.interfaces';
-import { IIdentity } from '@dashps/monmedx-common';
+import { Op } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { Transaction } from 'sequelize/types';
+import { AVAILABILITY_REPOSITORY, BAD_REQUEST, SEQUELIZE } from '../../common/constants';
+import { ErrorCodes } from '../../common/enums/error-code.enum';
 import { EventsService } from '../events/events.service';
 import { EventModel, EventModelAttributes } from '../events/models';
+import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
+import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
+import { CreateAvailabilityDto } from './dto/create.dto';
+import { UpdateAvailabilityDto } from './dto/update.dto';
+import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
+import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
+import { AvailabilityModelAttributes } from './models/availability.interfaces';
+import { AvailabilityModel } from './models/availability.model';
 
 @Injectable()
 export class AvailabilityService {

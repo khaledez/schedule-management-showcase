@@ -1,28 +1,28 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Injectable, Inject, BadRequestException, NotFoundException, Logger, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { PagingInfoInterface } from 'common/interfaces/pagingInfo.interface';
+import { map } from 'lodash';
+import { DateTime } from 'luxon';
+import * as moment from 'moment';
+import { CreateOptions, FindOptions, Op, Transaction, UpdateOptions } from 'sequelize';
 import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from '../../common/constants/index';
-import { AppointmentsModel, AppointmentsModelAttributes } from './models/appointments.model';
-import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
-import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
-import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
-import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
-import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
-import { LookupsService } from '../lookups/lookups.service';
+import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
 import { ErrorCodes } from '../../common/enums/error-code.enum';
 import { sequelizeFilterMapper } from '../../utils/sequelize-filter.mapper';
-import { AvailabilityService } from '../availability/availability.service';
-import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Op, FindOptions, Transaction, CreateOptions, UpdateOptions } from 'sequelize';
-import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { sequelizeSortMapper } from '../../utils/sequelize-sort.mapper';
-import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
-import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
-import { map } from 'lodash';
-import * as moment from 'moment';
-import { PagingInfoInterface } from '../../common/interfaces/pagingInfo.interface';
-import { DateTime } from 'luxon';
+import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
+import { LookupsService } from '../lookups/lookups.service';
+import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
+import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
+import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
+import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
+import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
+import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
+import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
+import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { AppointmentsModel, AppointmentsModelAttributes } from './models/appointments.model';
 import { PatientsModel } from './models/patients.model';
 
 @Injectable()

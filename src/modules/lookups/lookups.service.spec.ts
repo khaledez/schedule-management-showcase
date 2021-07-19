@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { lookupsProviders } from './lookups.provider';
-import { LookupsService } from './lookups.service';
+import { lookupsProviders } from 'modules/lookups/lookups.provider';
+import { LookupsService } from 'modules/lookups/lookups.service';
 
 describe('LookupsService', () => {
   let service: LookupsService;
