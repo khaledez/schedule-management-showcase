@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AvailabilityController } from './availability.controller';
-import { AvailabilityService } from './availability.service';
-import { availabilityProviders } from './availability.provider';
 import { DatabaseModule } from '../database/database.module';
-import { TracingModule } from '@narando/nest-xray';
 import { EventsModule } from '../events/events.module';
+import { AvailabilityController } from './availability.controller';
+import { availabilityProviders } from './availability.provider';
+import { AvailabilityService } from './availability.service';
 
 @Module({
-  imports: [DatabaseModule, TracingModule.forRoot({ serviceName: 'availability' }), EventsModule],
+  imports: [DatabaseModule, EventsModule],
   controllers: [AvailabilityController],
   providers: [AvailabilityService, ...availabilityProviders],
   exports: [AvailabilityService],

@@ -1,20 +1,18 @@
 /* eslint @typescript-eslint/no-var-requires: "off" */
-import { Sequelize } from 'sequelize-typescript';
 import { ConfigService } from '@nestjs/config';
+import { Sequelize } from 'sequelize-typescript';
 import { SEQUELIZE } from '../../common/constants';
+import { LookupsModel } from '../../common/models/lookup.model';
 import { getSSMParameterValue } from '../../utils/ssmGetParameter';
 import { AppointmentsModel } from '../appointments/models/appointments.model';
+import { PatientsModel } from '../appointments/models/patients.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
-import { DurationMinutesLookupsModel } from '../lookups/models/duration-minutes.model';
-import { TimeGroupsLookupsModel } from '../lookups/models/time-groups.model';
+import { EventModel } from '../events/models';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
-import { LookupsModel } from '../../common/models/lookup.model';
-import { PatientsModel } from '../appointments/models/patients.model';
-import { EventModel } from '../events/models';
-const AWSXRay = require('aws-xray-sdk');
-AWSXRay.captureHTTPsGlobal(require('https'));
+import { DurationMinutesLookupsModel } from '../lookups/models/duration-minutes.model';
+import { TimeGroupsLookupsModel } from '../lookups/models/time-groups.model';
 
 export const databaseProviders = [
   {
@@ -29,7 +27,6 @@ export const databaseProviders = [
       }
       const sequelize = new Sequelize({
         ...config,
-        // dialectModule: AWSXRay.captureMySQL(require('mysql2')),
       });
       sequelize.addModels([
         AppointmentsModel,
@@ -43,8 +40,6 @@ export const databaseProviders = [
         PatientsModel,
         EventModel,
       ]);
-      // sequelize.addModels([__dirname + '../**/models/*.model{.ts,.js}']);
-      // await sequelize.sync();
       return sequelize;
     },
     inject: [ConfigService],

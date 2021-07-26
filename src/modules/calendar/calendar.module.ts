@@ -1,4 +1,3 @@
-import { TracingModule } from '@narando/nest-xray';
 import { Module } from '@nestjs/common';
 import { EVENTS_REPOSITORY } from '../../common/constants';
 import { DatabaseModule } from '../database/database.module';
@@ -15,7 +14,7 @@ const repoProviders = [
 ];
 
 @Module({
-  imports: [DatabaseModule, EventsModule, TracingModule.forRoot({ serviceName: 'calendar' })],
+  imports: [DatabaseModule, EventsModule],
   controllers: [CalendarController],
   providers: [CalendarService, ...repoProviders],
   exports: [CalendarService],
