@@ -1,27 +1,23 @@
-import { Module, MiddlewareConsumer } from '@nestjs/common';
+import { AuthModule, requestLoggerMiddleware } from '@dashps/monmedx-common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TerminusModule } from '@nestjs/terminus';
+import { ConfigurationModule } from 'modules/config/config.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { requestLoggerMiddleware, AuthModule } from '@dashps/monmedx-common';
-import { TerminusModule } from '@nestjs/terminus';
-import { DatabaseModule } from './modules/database/database.module';
+import { FireEventService } from './fire-event.service';
+import { GeneralHealthIndicator } from './general-health.provider';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
-import { LookupsModule } from './modules/lookups/lookups.module';
-import config from '../config';
-import { EventEmitterModule } from '@nestjs/event-emitter';
-import { GeneralHealthIndicator } from './general-health.provider';
-import { EventsModule } from './modules/events/events.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
-import { FireEventService } from './fire-event.service';
+import { DatabaseModule } from './modules/database/database.module';
+import { EventsModule } from './modules/events/events.module';
+import { LookupsModule } from './modules/lookups/lookups.module';
 
 @Module({
   imports: [
     TerminusModule,
-    ConfigModule.forRoot({
-      load: config,
-      isGlobal: true,
-    }),
+    ConfigurationModule,
     DatabaseModule,
     EventEmitterModule.forRoot(),
     AuthModule,
