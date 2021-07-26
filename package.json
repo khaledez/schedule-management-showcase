@@ -29,6 +29,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.config.ts",
+    "test:db:migrate": "NODE_ENV=test npm run db:migrate",
+    "test:db:drop": "NODE_ENV=test npm run db:drop",
+    "test:db:create": "NODE_ENV=test npm run db:create",
     "migration:generate": "npx sequelize-cli migration:generate --name ${1}",
     "seed:generate": "npx sequelize-cli seed:generate --name ${1}"
   },
