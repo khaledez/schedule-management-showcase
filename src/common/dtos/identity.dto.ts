@@ -1,7 +1,10 @@
-import { IsString, IsNumber } from 'class-validator';
+import { IIdentity, IUser } from '@dashps/monmedx-common';
 import { Transform } from 'class-transformer';
+import { IsNumber, IsString } from 'class-validator';
 
-export class IdentityDto {
+export class IdentityDto implements IIdentity {
+  userLang: string;
+  userInfo: IUser;
   @Transform((value) => Number(value))
   @IsNumber()
   userId: number;

@@ -5,6 +5,7 @@ export const PORT = 'port'; // caution : don't change this line
 
 export const APPOINTMENTS_REPOSITORY = 'APPOINTMENTS_REPOSITORY';
 export const AVAILABILITY_REPOSITORY = 'AVAILABILITY_REPOSITORY';
+export const PATIENT_INFO_REPOSITORY = 'PATIENT_INFO_REPOSITORY';
 export const EVENTS_REPOSITORY = 'EVENTS_REPOSITORY';
 export const DURATION_MINUTES_LOOKUPS_REPOSITORY = 'DURATION_MINUTES_LOOKUPS_REPOSITORY';
 export const TIME_GROUPS_LOOKUPS_REPOSITORY = 'TIME_GROUPS_LOOKUPS_REPOSITORY';
@@ -19,3 +20,4 @@ export const VISIT_COMPLETE_EVENT_NAME = 'visit_complete';
 
 export const SCHEDULE_MGMT_TOPIC = 'schedule-management';
 export const VISIT_MGMT_TOPIC = 'visit-management';
+export const PATIENT_MGMT_TOPIC = 'patient-management';

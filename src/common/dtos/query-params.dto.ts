@@ -1,34 +1,32 @@
-import { IsOptional, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsNumber, IsOptional } from 'class-validator';
 import { AppointmentFilterDto } from '../../modules/appointments/dto/appointment-filter.dto';
 import { AppointmentSortDto } from '../../modules/appointments/dto/appointment-sort.dto';
 
 export class QueryParamsDto {
   @IsOptional()
-  @Transform((value) => JSON.parse(value))
-  filter: AppointmentFilterDto;
+  filter?: AppointmentFilterDto;
 
   @IsOptional()
-  @Transform((value) => JSON.parse(value))
-  sort: AppointmentSortDto[];
-
-  @IsOptional()
-  @Transform((value) => Number(value))
-  @IsNumber()
-  first: number;
+  sort?: AppointmentSortDto[];
 
   @IsOptional()
   @Transform((value) => Number(value))
   @IsNumber()
-  last: number;
+  first?: number;
 
   @IsOptional()
   @Transform((value) => Number(value))
   @IsNumber()
-  after: number;
+  last?: number;
 
   @IsOptional()
   @Transform((value) => Number(value))
   @IsNumber()
-  before: number;
+  after?: number;
+
+  @IsOptional()
+  @Transform((value) => Number(value))
+  @IsNumber()
+  before?: number;
 }

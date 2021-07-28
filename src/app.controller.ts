@@ -1,13 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
 import { Public } from '@dashps/monmedx-common';
-import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
-import { AppService } from './app.service';
+import { Controller, Get } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
+import { SERVICE_NAME } from 'common/constants';
 import { GeneralHealthIndicator } from './general-health.provider';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService,
+    private readonly configService: ConfigService,
     private health: HealthCheckService,
     private generalHealthIndicator: GeneralHealthIndicator,
   ) {}
@@ -15,16 +16,13 @@ export class AppController {
   @Public()
   @Get()
   getHello(): string {
-    return this.appService.getStatusOk();
+    return this.configService.get(SERVICE_NAME);
   }
 
   @Public()
   @Get('health-check')
   @HealthCheck()
   check() {
-    return this.health.check([
-      // eslint-disable-next-line require-await
-      async () => this.generalHealthIndicator.isHealthy(),
-    ]);
+    return this.health.check([() => this.generalHealthIndicator.isHealthy()]);
   }
 }

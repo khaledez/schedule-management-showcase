@@ -1,19 +1,22 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PagingInfoInterface } from 'common/interfaces/pagingInfo.interface';
+import { PageInfo, QueryParamsDto } from 'common/dtos';
+import { ErrorCodes } from 'common/enums';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
+import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import * as moment from 'moment';
 import { CreateOptions, FindOptions, Op, Transaction, UpdateOptions } from 'sequelize';
 import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from '../../common/constants/index';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
-import { ErrorCodes } from '../../common/enums/error-code.enum';
 import { sequelizeFilterMapper } from '../../utils/sequelize-filter.mapper';
 import { sequelizeSortMapper } from '../../utils/sequelize-sort.mapper';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
+import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
 import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
@@ -22,8 +25,6 @@ import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
-import { AppointmentsModel, AppointmentsModelAttributes } from './models/appointments.model';
-import { PatientsModel } from './models/patients.model';
 
 @Injectable()
 export class AppointmentsService {
@@ -49,43 +50,30 @@ export class AppointmentsService {
       relation: 'status',
       column: 'code',
     },
+    DATE: {
+      column: 'date',
+    },
   };
 
-  // TODO: MMX-later add scopes at the appointment types/status/actions
-  // TODO: MMX-S3 handle datatype any.
-  // TODO: MMX-currentSprint handle returning type.
-  // TODO: MMX-later handle pagination
-  // eslint-disable-next-line complexity
-  async findAll(args?): Promise<any> {
-    this.logger.debug({
-      function: 'service/appt/findAll Line0',
-      args,
-    });
-    const { query, identity, pagingInfo = {} } = args;
-    const { limit, offset, reverseSort } = pagingInfo as PagingInfoInterface;
-    this.logger.debug({
-      function: 'service/appt/findAll Line1',
-      pagingInfo,
-      query,
-      limit,
-      offset,
-    });
+  async searchWithPatientInfo(
+    identity: IIdentity,
+    queryParams: QueryParamsDto,
+    pagingFilter: PagingInfoInterface,
+  ): Promise<[AppointmentsModelAttributes[], PageInfo]> {
+    const { limit, offset } = pagingFilter || { limit: 30, offset: 0 };
+
     // custom filter by appointmentCategory
-    const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(query, this.logger);
+    const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(queryParams, this.logger);
 
     // common filters
     const sequelizeFilter = sequelizeFilterMapper(
       this.logger,
-      query,
+      queryParams,
       this.associationFieldsFilterNames,
       filterByAppointmentCategory,
     );
-    const sequelizeSort = sequelizeSortMapper(this.logger, query, this.associationFieldsSortNames, reverseSort);
-    this.logger.debug({
-      function: 'BEFORE => service/appt/findAll sequelizeFilter, sequelizeSort',
-      sequelizeFilter,
-      sequelizeSort,
-    });
+    const sequelizeSort = sequelizeSortMapper(this.logger, queryParams, this.associationFieldsSortNames, false);
+
     try {
       const options: FindOptions = {
         // benchmark: true,
@@ -105,38 +93,28 @@ export class AppointmentsService {
         offset,
       };
       const { rows: appointments, count } = await this.appointmentsRepository.scope('active').findAndCountAll(options);
-      this.logger.log({
-        function: 'service/appt/findAll options',
-        options,
-        appointments,
-      });
-      const appointmentsStatusIds = [];
+
+      const appointmentsStatusIds: number[] = [];
       const appointmentsAsPlain = appointments.map((e) => {
         appointmentsStatusIds.push(e.status.id);
         return e.get({ plain: true });
       });
-      this.logger.debug({
-        function: 'service/appt/findall status',
-        appointmentsStatusIds,
-      });
-      const actions = await this.lookupsService.findAppointmentsActions(appointmentsStatusIds);
-      this.logger.debug({
-        function: 'service/appt/findall action',
-        actions,
-      });
 
-      return {
-        data: appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
-          ...appt,
-          previousAppointment: appt.previousAppointmentId,
-          primaryAction: actions[i]?.nextAction ? actions[i].nextAction : [],
-          secondaryActions: actions[i]?.secondaryActions ? actions[i].secondaryActions : [],
-          provisionalAppointment: !appt.availabilityId,
-        })),
-        // TODO: calculate has previous data
-        hasPreviousPage: false,
-        count,
-      };
+      const actions = await this.lookupsService.findAppointmentsActions(appointmentsStatusIds);
+
+      const searchResult = appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
+        ...appt,
+        previousAppointment: appt.previousAppointmentId,
+        primaryAction: actions[i]?.nextAction ? actions[i].nextAction : [],
+        secondaryActions: actions[i]?.secondaryActions ? actions[i].secondaryActions : [],
+        provisionalAppointment: !appt.availabilityId,
+        date: appt.startDate.toISOString(),
+      }));
+
+      return [
+        searchResult,
+        { hasPreviousPage: false, hasNextPage: false, endCursor: '', startCursor: '', total: count },
+      ];
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall catch error',
@@ -488,11 +466,7 @@ export class AppointmentsService {
     return this.findOne(id);
   }
 
-  async findAppointmentByPatientId(
-    id: number,
-    queryData: UpComingAppointmentQueryDto,
-    identity,
-  ): Promise<AppointmentsModel> {
+  findAppointmentByPatientId(id: number, queryData: UpComingAppointmentQueryDto): Promise<AppointmentsModelAttributes> {
     const query: any = {
       filter: {
         patientId: {
@@ -512,11 +486,8 @@ export class AppointmentsService {
         in: [true, false],
       };
     }
-    const { data } = await this.findAll({
-      identity,
-      query,
-    });
-    return data[0];
+
+    return this.appointmentsRepository.findOne(query);
   }
 
   // async filterAppointments(data) {
@@ -559,13 +530,8 @@ export class AppointmentsService {
         upcoming_appointment: false,
       });
       // GOAL: exclude the own data for an appointment
-      const {
-        id,
-        createdAt,
-        updatedAt,
-        upcomingAppointment,
-        ...othersData
-      } = oldAppointment.toJSON() as AppointmentsModel;
+      const { id, createdAt, updatedAt, upcomingAppointment, ...othersData } =
+        oldAppointment.toJSON() as AppointmentsModel;
       this.logger.log({
         id,
         createdAt,
@@ -631,8 +597,6 @@ export class AppointmentsService {
         [Op.ne]: null,
       },
       clinicId,
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       date: {
         [Op.between]: [query.fromDate, query.toDate],
       },
@@ -654,7 +618,7 @@ export class AppointmentsService {
           },
         },
         {
-          model: PatientsModel,
+          model: PatientInfoModel,
           as: 'patient',
         },
       ],

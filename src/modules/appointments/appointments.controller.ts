@@ -1,33 +1,37 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
+  Identity,
+  IIdentity,
+  PaginationInterceptor,
+  PagingInfo,
+  PagingInfoInterface,
+  TransactionInterceptor,
+  TransactionParam,
+} from '@dashps/monmedx-common';
+import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
+  Headers,
   Logger,
-  Query,
   Param,
   ParseIntPipe,
-  UseInterceptors,
   Patch,
+  Post,
+  Query,
+  UseInterceptors,
 } from '@nestjs/common';
-import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
-import { AppointmentsModel } from './models/appointments.model';
-import { IdentityDto } from '../../common/dtos';
-import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
-import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { Identity, TransactionInterceptor, TransactionParam } from '@dashps/monmedx-common';
-import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
-import { FilterBodyDto } from '../../common/dtos';
-import { PaginationInterceptor } from '@dashps/monmedx-common';
-import { LookupsService } from '../lookups/lookups.service';
-import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
-import { PagingInfo } from '../../common/decorators/pagingInfo.decorator';
-import { PagingInfoInterface } from '../../common/interfaces/pagingInfo.interface';
-import { CreateAppointmentAdhocDto } from './dto/create-appointment-adhoc.dto';
-import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { PatientInfoService } from 'modules/patient-info';
 import { Transaction } from 'sequelize';
+import { QueryParamsDto } from '../../common/dtos';
+import { IdentityDto } from '../../common/dtos/identity.dto';
+import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
+import { LookupsService } from '../lookups/lookups.service';
+import { AppointmentsModel } from './appointments.model';
+import { AppointmentsService } from './appointments.service';
+import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
+import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
+import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
+import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -35,26 +39,28 @@ export class AppointmentsController {
   constructor(
     private readonly appointmentsService: AppointmentsService,
     private readonly lookupsService: LookupsService,
+    private readonly patientSvc: PatientInfoService,
   ) {}
 
   // search using post method
   @Post('search')
   @UseInterceptors(PaginationInterceptor)
-  search(
-    @Identity() identity: IdentityDto,
+  async search(
+    @Identity() identity: IIdentity,
     @PagingInfo() pagingInfo: PagingInfoInterface,
-    @Body() body: FilterBodyDto,
-  ) {
+    @Body() body: QueryParamsDto,
+  ): Promise<unknown> {
     this.logger.debug({
       function: 'controller/appointment/search',
       identity,
       body,
     });
-    return this.appointmentsService.findAll({
-      query: body,
-      identity,
-      pagingInfo,
-    });
+    const [data, pageInfo] = await this.appointmentsService.searchWithPatientInfo(identity, body, pagingInfo);
+
+    return {
+      data,
+      ...pageInfo,
+    };
   }
 
   // get total appointment for each day for a specific period
@@ -82,9 +88,9 @@ export class AppointmentsController {
   getAppointmentByPatientId(
     @Param('patientId', ParseIntPipe) patientId: number,
     @Query() query: UpComingAppointmentQueryDto,
-    @Identity() identity: IdentityDto,
+    //@Identity() identity: IdentityDto,
   ) {
-    return this.appointmentsService.findAppointmentByPatientId(patientId, query, identity);
+    return this.appointmentsService.findAppointmentByPatientId(patientId, query);
   }
 
   //TODO: MMX-S3 create a function for not provisional appointments only.
@@ -98,6 +104,7 @@ export class AppointmentsController {
   @Post('provisional')
   async createProvisionalAppointment(
     @Identity() identity: IdentityDto,
+    @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
     @TransactionParam() transaction: Transaction,
   ): Promise<AppointmentsModel> {
@@ -107,9 +114,11 @@ export class AppointmentsController {
       appointmentData,
     });
 
+    const patientPromise = this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+
     const waitListStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
     // TODO: what if i entered the same body dto multiple-time!
-    return this.appointmentsService.createProvisionalAppointment(
+    const apptPromise = this.appointmentsService.createProvisionalAppointment(
       {
         ...appointmentData,
         appointmentStatusId: waitListStatusId, // TODO: get this id from appointmentStatusModel at the service.
@@ -119,42 +128,10 @@ export class AppointmentsController {
       },
       transaction,
     );
-  }
 
-  @UseInterceptors(TransactionInterceptor)
-  @Post('adhoc')
-  async createAdHoc(
-    @Identity() identity: IdentityDto,
-    @Body() appointmentData: CreateAppointmentAdhocDto,
-    @TransactionParam() transaction: Transaction,
-  ): Promise<AppointmentsModel> {
-    this.logger.debug({
-      function: 'appointment/createProvisionalAppointment',
-      identity,
-      appointmentData,
-    });
+    const [appt] = await Promise.all([apptPromise, patientPromise]);
 
-    const readyStatus = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.READY);
-    const typeFUBId = await this.lookupsService.getTypeByCode('FUP');
-
-    this.logger.debug({
-      appointmentData,
-      readyStatus,
-      typeFUBId: `${typeFUBId}`,
-    });
-
-    return this.appointmentsService.createAnAppointmentWithFullResponse(
-      {
-        ...appointmentData,
-        appointmentStatusId: readyStatus,
-        clinicId: identity.clinicId,
-        createdBy: identity.userId,
-        // @ts-ignore
-        appointmentTypeId: typeFUBId,
-        provisionalDate: appointmentData.date,
-      },
-      transaction,
-    );
+    return appt;
   }
 
   /**
@@ -162,36 +139,23 @@ export class AppointmentsController {
    * @param identity
    * @param appointmentData
    */
-  @Post('appointments')
-  createAppointment(
+  @Post()
+  async createAppointment(
     @Identity() identity: IdentityDto,
+    @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentBodyDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
-    return this.appointmentsService.createNonProvisionalAppointment({
-      ...appointmentData,
-      clinicId: identity.clinicId,
-      createdBy: identity.userId,
-    });
-  }
 
-  /**
-   *
-   * @param identity
-   * @param appointmentData
-   * create not provisional appointment for backdoor.
-   */
-  @Post('backdoor')
-  createAppointmentBackdoorApi(
-    @Identity() identity: IdentityDto,
-    @Body() appointmentData: CreateNonProvisionalAppointmentDto,
-  ): Promise<AppointmentsModel> {
-    this.logger.debug({ identity, appointmentData });
-    return this.appointmentsService.createNonProvisionalAppointment({
+    const patientPromise = this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    const apptPromise = this.appointmentsService.createNonProvisionalAppointment({
       ...appointmentData,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
-      provisionalDate: appointmentData.date,
     });
+
+    const [appt] = await Promise.all([apptPromise, patientPromise]);
+
+    return appt;
   }
 }

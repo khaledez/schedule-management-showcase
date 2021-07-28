@@ -1,13 +1,13 @@
-import { Table, Column, IsDate, ForeignKey, BelongsTo, DataType, Scopes } from 'sequelize-typescript';
-import { BaseModel, BaseModelAttributes } from '../../../common/models/base.model';
-import { AvailabilityModel } from '../../availability/models/availability.model';
-import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
-import { AppointmentActionsLookupsModel } from '../../lookups/models/appointment-actions.model';
-import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
-import { PatientsModel } from './patients.model';
-import { Op } from 'sequelize';
-import { AppointmentStatusEnum } from '../../../common/enums/appointment-status.enum';
 import * as moment from 'moment';
+import { Op } from 'sequelize';
+import { BelongsTo, Column, DataType, ForeignKey, IsDate, Scopes, Table } from 'sequelize-typescript';
+import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
+import { BaseModel, BaseModelAttributes } from '../../common/models/base.model';
+import { AvailabilityModel } from '../availability/models/availability.model';
+import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
+import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
+import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
+import { PatientInfoModel } from '../patient-info/patient-info.model';
 
 export interface AppointmentsModelAttributes extends BaseModelAttributes {
   patientId: number;
@@ -44,20 +44,6 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
       include: ['id'],
     },
   },
-  getOne: {
-    attributes: {
-      exclude: ['deletedAt', 'deletedBy'],
-    },
-    where: {
-      [`$status.code$`]: {
-        [Op.ne]: AppointmentStatusEnum.CANCELED,
-      },
-      [`$patient.status_code$`]: {
-        [Op.eq]: 'ACTIVE',
-      },
-      deletedBy: null,
-    },
-  },
   active: {
     attributes: {
       exclude: ['deletedAt', 'deletedBy'],
@@ -76,9 +62,10 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel
   extends BaseModel<AppointmentsModelAttributes, AppointmentsModelAttributes>
-  implements AppointmentsModelAttributes {
+  implements AppointmentsModelAttributes
+{
   @Column
-  @ForeignKey(() => PatientsModel)
+  @ForeignKey(() => PatientInfoModel)
   patientId: number;
 
   get doctorId(): number {
@@ -161,8 +148,8 @@ export class AppointmentsModel
   @Column
   modeCode: string;
 
-  @BelongsTo(() => PatientsModel, 'patientId')
-  patient: PatientsModel;
+  @BelongsTo(() => PatientInfoModel, 'patientId')
+  patient: PatientInfoModel;
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
   type: AppointmentTypesLookupsModel;

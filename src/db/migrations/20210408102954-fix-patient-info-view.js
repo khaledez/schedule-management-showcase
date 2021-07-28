@@ -15,9 +15,8 @@ module.exports = {
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.sequelize.query('DROP VIEW `new_patient_info_view`;')
-    .then(() => {
+    return queryInterface.sequelize.query('DROP VIEW `new_patient_info_view`;').then(() => {
       queryInterface.sequelize.query('DROP VIEW `new_patients_view`;');
-    })
+    });
   },
 };

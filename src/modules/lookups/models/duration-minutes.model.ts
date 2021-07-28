@@ -1,4 +1,4 @@
-import { Table, Column } from 'sequelize-typescript';
+import { Column, Table } from 'sequelize-typescript';
 import { LookupsModel, LookupsModelAttributes } from '../../../common/models/lookup.model';
 
 export interface DurationMinutesLookupsAttributes extends LookupsModelAttributes {
@@ -8,7 +8,8 @@ export interface DurationMinutesLookupsAttributes extends LookupsModelAttributes
 @Table({ tableName: 'DurationMinutesLookups', underscored: true })
 export class DurationMinutesLookupsModel
   extends LookupsModel<DurationMinutesLookupsAttributes>
-  implements DurationMinutesLookupsAttributes {
+  implements DurationMinutesLookupsAttributes
+{
   @Column
   value: number;
 }

@@ -1,6 +1,6 @@
-import { Table, Column, HasOne, ForeignKey, BelongsTo, DefaultScope, Scopes, IsDate } from 'sequelize-typescript';
+import { BelongsTo, Column, DefaultScope, ForeignKey, HasOne, IsDate, Scopes, Table } from 'sequelize-typescript';
 import { BaseModel } from '../../../common/models/base.model';
-import { AppointmentsModel } from '../../appointments/models/appointments.model';
+import { AppointmentsModel } from '../../appointments/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './availability.interfaces';
 @DefaultScope(() => ({
@@ -22,7 +22,8 @@ import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './a
 @Table({ tableName: 'Availability', underscored: true })
 export class AvailabilityModel
   extends BaseModel<AvailabilityModelAttributes, AvailabilityCreationAttributes>
-  implements AvailabilityModelAttributes {
+  implements AvailabilityModelAttributes
+{
   @Column
   staffId: number;
 

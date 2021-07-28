@@ -1,12 +1,13 @@
-import { Table, Column, HasMany } from 'sequelize-typescript';
+import { Column, HasMany, Table } from 'sequelize-typescript';
 import { LookupWithCodeAttributes } from '.';
 import { LookupsModel } from '../../../common/models/lookup.model';
-import { AppointmentsModel } from '../../appointments/models/appointments.model';
+import { AppointmentsModel } from '../../appointments/appointments.model';
 
 @Table({ tableName: 'AppointmentStatusLookups', underscored: true })
 export class AppointmentStatusLookupsModel
   extends LookupsModel<LookupWithCodeAttributes>
-  implements LookupWithCodeAttributes {
+  implements LookupWithCodeAttributes
+{
   @Column
   code: string;
 

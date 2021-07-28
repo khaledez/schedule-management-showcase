@@ -3,6 +3,7 @@ import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TerminusModule } from '@nestjs/terminus';
 import { ConfigurationModule } from 'modules/config/config.module';
+import { PatientInfoModule } from 'modules/patient-info';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { FireEventService } from './fire-event.service';
@@ -26,6 +27,7 @@ import { LookupsModule } from './modules/lookups/lookups.module';
     LookupsModule,
     EventsModule,
     CalendarModule,
+    PatientInfoModule,
   ],
   controllers: [AppController],
   providers: [AppService, GeneralHealthIndicator, FireEventService],

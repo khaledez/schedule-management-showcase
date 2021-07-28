@@ -1,12 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import { AppModule } from 'app.module';
 
-describe('AppController (e2e)', () => {
+describe('Appointments module e2e', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -15,7 +14,7 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', async () => {
-    await request(app.getHttpServer()).get('/').expect(200).expect('schedule-management');
+  it('searches for appointments', async () => {
+    // TODO implement
   });
 });

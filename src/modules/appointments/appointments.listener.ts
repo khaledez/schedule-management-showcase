@@ -1,8 +1,8 @@
 import { IConfirmCompleteVisitEvent } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'common/constants';
 import { Sequelize, Transaction } from 'sequelize';
-import { SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from '../../common/constants';
 import { AppointmentsService } from './appointments.service';
 
 @Injectable()

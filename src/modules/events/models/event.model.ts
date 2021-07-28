@@ -1,6 +1,6 @@
 import { BelongsTo, Column, DataType, Scopes, Table } from 'sequelize-typescript';
 import { BaseModel, BaseModelAttributes } from '../../../common/models';
-import { AppointmentsModel, AppointmentsModelAttributes } from '../../appointments/models/appointments.model';
+import { AppointmentsModel, AppointmentsModelAttributes } from '../../appointments/appointments.model';
 import { AvailabilityModelAttributes } from '../../availability/models/availability.interfaces';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 import { Invitee } from '../events.interfaces';

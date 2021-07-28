@@ -5,7 +5,6 @@ import { QueryParamsDto } from '../common/dtos/query-params.dto';
 
 const arrayToObject = (arr) => Object.assign({}, ...arr.map((item) => ({ ...item })));
 
-// eslint-disable-next-line complexity
 export function sequelizeFilterMapper(logger: Logger, query: QueryParamsDto, associationFieldsNames, customFilters) {
   try {
     let filters = query && query.filter;

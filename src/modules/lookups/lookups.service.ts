@@ -1,19 +1,19 @@
-import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
-import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Op } from 'sequelize';
 import {
+  APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
+  APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
+  APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
-  APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
-  APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
-  APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
 } from '../../common/constants';
-import { TimeGroupsLookupsModel } from './models/time-groups.model';
-import { Op } from 'sequelize';
-import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
-import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
-import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
-import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
 import { AppointmentActionEnum } from '../../common/enums/appointment-action.enum';
+import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
+import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
+import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
+import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
+import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
+import { TimeGroupsLookupsModel } from './models/time-groups.model';
 
 @Injectable()
 export class LookupsService {
@@ -133,18 +133,9 @@ export class LookupsService {
    */
   public async findAppointmentsActions(ids: Array<number>) {
     try {
-      const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll();
+      const internalAppointmentsStatus = this.appointmentStatusLookupsRepository.findAll();
       const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
       const appointmentActionsPlain = internalAppointmentsActions.map((e) => e.get({ plain: true }));
-      this.logger.debug({
-        function: 'service/lookup/findAppointmentsActions appointment statuses',
-        internalAppointmentsStatus,
-      });
-
-      this.logger.debug({
-        title: 'get all internal appointment actions',
-        appointmentActionsPlain,
-      });
 
       const nextActions = {
         WAIT_LIST: ['SCHEDULE'],
@@ -156,24 +147,19 @@ export class LookupsService {
         CANCELED: [],
       };
 
+      const internalStatuses = await internalAppointmentsStatus;
       // TODO: MMX-S4/S5 create fcm and check the status
       // At S2 status are sorted in the order so the next id is next status
       const appointmentsPrimaryActions = ids.map((id: number) => {
-        const statusData = internalAppointmentsStatus.find((statusObj) => statusObj.id === id);
+        const statusData = internalStatuses.find((statusObj) => statusObj.id === id);
         return {
           currentActionId: id,
           // next status type calculated depend ids !!!
           // nextAction: internalAppointmentsStatus.find((statusObj) => statusObj.id === id + 1),
-          nextAction: internalAppointmentsStatus.find(
-            (statusObj) => statusObj.code === nextActions[statusData.code][0],
-          ),
+          nextAction: internalStatuses.find((statusObj) => statusObj.code === nextActions[statusData.code][0]),
         };
       });
 
-      this.logger.debug({
-        title: 'appointment primary action',
-        appointmentsPrimaryActions,
-      });
       //TODO: MMX-later change the static way to dynamic.
       //TODO: MMX-CurrentSprint => static value
       const secondaryAppointmentActions = {
@@ -193,11 +179,7 @@ export class LookupsService {
             )
           : [],
       }));
-      this.logger.debug({
-        function: 'service/lookup/findAppointmentsActions',
-        appointmentsPrimaryActions,
-        appointmentsActions,
-      });
+
       return appointmentsActions;
     } catch (error) {
       throw new BadRequestException({

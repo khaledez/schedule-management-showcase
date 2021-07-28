@@ -1,12 +1,12 @@
 /* eslint @typescript-eslint/no-var-requires: "off" */
 import { ConfigService } from '@nestjs/config';
+import { LookupsModel } from 'common/models';
+import { AppointmentsModel } from 'modules/appointments/appointments.model';
+import { AvailabilityModel } from 'modules/availability/models/availability.model';
+import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import { Sequelize } from 'sequelize-typescript';
 import { SEQUELIZE } from '../../common/constants';
-import { LookupsModel } from '../../common/models/lookup.model';
 import { getSSMParameterValue } from '../../utils/ssmGetParameter';
-import { AppointmentsModel } from '../appointments/models/appointments.model';
-import { PatientsModel } from '../appointments/models/patients.model';
-import { AvailabilityModel } from '../availability/models/availability.model';
 import { EventModel } from '../events/models';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
@@ -37,7 +37,7 @@ export const databaseProviders = [
         AppointmentStatusLookupsModel,
         AppointmentTypesLookupsModel,
         LookupsModel,
-        PatientsModel,
+        PatientInfoModel,
         EventModel,
       ]);
       return sequelize;
