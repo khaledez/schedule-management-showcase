@@ -7,8 +7,7 @@ module.exports = {
         `INSERT INTO PatientInfo (id, full_name, primary_health_plan_number, clinic_id, dob, status_code)
       SELECT P.id, P.full_name, P.primary_health_plan_number,
       P.clinic_id, P.dob, P.status_code
-      FROM new_patients_view P
-      JOIN Appointments A ON (A.patient_id = P.id)`,
+      FROM new_patients_view P`,
         { transaction: t },
       );
       await queryInterface.sequelize.query('DROP VIEW IF EXISTS `new_patients_view`;', { transaction: t });

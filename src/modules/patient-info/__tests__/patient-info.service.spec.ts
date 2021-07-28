@@ -27,7 +27,7 @@ describe('patient-info service', () => {
 
   beforeEach(async () => {
     // remove everything in the table
-    await module.get<typeof PatientInfoModel>(PATIENT_INFO_REPOSITORY).destroy({ truncate: true });
+    await module.get<typeof PatientInfoModel>(PATIENT_INFO_REPOSITORY).destroy({ truncate: true, cascade: true });
   });
 
   test('create and read patient from db', async () => {
