@@ -1,8 +1,15 @@
-import { ErrorCodes } from '../common/enums/error-code.enum';
 import { InternalServerErrorException, Logger } from '@nestjs/common';
+import { QueryParamsDto } from 'common/dtos';
+import { AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
+import { ErrorCodes } from '../common/enums/error-code.enum';
 
 // eslint-disable-next-line complexity
-export function sequelizeSortMapper(logger: Logger, query, associationFields, shouldReverseSort: boolean) {
+export function sequelizeSortMapper(
+  logger: Logger,
+  query: QueryParamsDto,
+  associationFields: AssociationFieldsSortCriteria,
+  shouldReverseSort: boolean,
+) {
   try {
     const sort = query && query.sort && query.sort[0];
     // to get the last elements i need to reverse sort and git the limit
@@ -33,13 +40,17 @@ export function sequelizeSortMapper(logger: Logger, query, associationFields, sh
       sortJSON: sort,
     });
     let order = [];
-    const associationFieldsKeys = Object.keys(associationFields).map((e) => e);
-    if (associationFieldsKeys.includes(sort.key)) {
+    if (associationFields[sort.key]) {
       const { relation, column } = associationFields[sort.key];
-      order = [[relation, column, reverseSort(sort.order, shouldReverseSort)]];
+      if (relation) {
+        order = [[relation, column, reverseSort(sort.order, shouldReverseSort)]];
+      } else {
+        order = [[sort.key, reverseSort(sort.order, shouldReverseSort)]];
+      }
     } else {
       order = [[sort.key, reverseSort(sort.order, shouldReverseSort)]];
     }
+
     return order;
   } catch (error) {
     throw new InternalServerErrorException({

@@ -26,6 +26,13 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 
+export interface AssociationFieldsSortCriteria {
+  [key: string]: {
+    relation?: string;
+    column: string;
+  };
+}
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -45,7 +52,7 @@ export class AppointmentsService {
     dob: `$patient.dob$`,
   };
 
-  private readonly associationFieldsSortNames = {
+  private readonly associationFieldsSortNames: AssociationFieldsSortCriteria = {
     STATUS: {
       relation: 'status',
       column: 'code',
@@ -92,6 +99,7 @@ export class AppointmentsService {
         limit,
         offset,
       };
+
       const { rows: appointments, count } = await this.appointmentsRepository.scope('active').findAndCountAll(options);
 
       const appointmentsStatusIds: number[] = [];
