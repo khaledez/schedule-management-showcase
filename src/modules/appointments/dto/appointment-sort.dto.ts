@@ -1,5 +1,5 @@
-import { IsOptional, IsEnum } from 'class-validator';
-import { Order } from '../../../common/enums/order.enum';
+import { IsEnum, IsOptional } from 'class-validator';
+import { Order } from 'common/enums/order.enum';
 
 enum Key {
   DATE,
