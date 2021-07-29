@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PageInfo } from 'common/dtos';
 import { ErrorCodes } from 'common/enums';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
@@ -63,8 +62,8 @@ export class AppointmentsService {
     identity: IIdentity,
     queryParams: QueryParamsDto,
     pagingFilter: PagingInfoInterface,
-  ): Promise<[AppointmentsModelAttributes[], PageInfo]> {
-    const { limit, offset } = pagingFilter || { limit: 30, offset: 0 };
+  ): Promise<[AppointmentsModelAttributes[], number]> {
+    const { limit, offset } = pagingFilter || { limit: 15, offset: 0 };
 
     // custom filter by appointmentCategory
     const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(queryParams, this.logger);
@@ -116,10 +115,7 @@ export class AppointmentsService {
         date: appt.startDate.toISOString(),
       }));
 
-      return [
-        searchResult,
-        { hasPreviousPage: false, hasNextPage: false, endCursor: '', startCursor: '', total: count },
-      ];
+      return [searchResult, count];
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall catch error',

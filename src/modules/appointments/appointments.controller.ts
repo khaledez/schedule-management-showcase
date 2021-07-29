@@ -55,11 +55,11 @@ export class AppointmentsController {
       identity,
       body,
     });
-    const [data, pageInfo] = await this.appointmentsService.searchWithPatientInfo(identity, body, pagingInfo);
+    const [data, count] = await this.appointmentsService.searchWithPatientInfo(identity, body, pagingInfo);
 
     return {
       data,
-      ...pageInfo,
+      total: count,
     };
   }
 
