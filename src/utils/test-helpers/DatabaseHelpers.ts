@@ -23,3 +23,9 @@ export async function dropDB() {
     migrate.stderr.pipe(process.stderr);
   });
 }
+
+export async function prepareTestDB() {
+  jest.setTimeout(30_000);
+  await createDB();
+  await migrateDB();
+}

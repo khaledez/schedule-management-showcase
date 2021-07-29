@@ -12,25 +12,25 @@ export class QueryParamsDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => AppointmentSortDto)
-  sort: AppointmentSortDto[];
+  sort?: AppointmentSortDto[];
 
   @IsOptional()
   @Transform((value) => Number(value))
   @IsNumber()
-  first: number;
+  first?: number;
 
   @IsOptional()
   @Transform((value) => Number(value))
   @IsNumber()
-  last: number;
+  last?: number;
 
   @IsOptional()
   @Transform((value) => Number(value))
   @IsNumber()
-  after: number;
+  after?: number;
 
   @IsOptional()
   @Transform((value) => Number(value))
   @IsNumber()
-  before: number;
+  before?: number;
 }

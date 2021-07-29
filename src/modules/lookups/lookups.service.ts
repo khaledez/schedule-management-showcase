@@ -6,14 +6,15 @@ import {
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
-} from '../../common/constants';
-import { AppointmentActionEnum } from '../../common/enums/appointment-action.enum';
-import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
+} from 'common/constants';
+import { AppointmentActionEnum } from 'common/enums';
+import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
+import { IIdentity } from '@dashps/monmedx-common';
 
 @Injectable()
 export class LookupsService {
@@ -217,5 +218,28 @@ export class LookupsService {
       attributes: ['id'],
     });
     return result?.id;
+  }
+
+  /**
+   * Validate if a given list of appointments ids are valid types
+   *
+   * @param appointmentTypesIds List of the appointment ids to be validated
+   * @param identity
+   */
+  public async validateAppointmentsTypes(appointmentTypesIds: Array<number>, identity: IIdentity): Promise<void> {
+    const allAppointmentTypes = await this.findAllAppointmentTypesLookups(identity);
+    const validTypesIds: Set<number> = new Set(allAppointmentTypes.map((appointmentType) => appointmentType.id));
+    const invalidIds = [];
+    appointmentTypesIds.forEach((typeId) => {
+      if (!validTypesIds.has(typeId)) {
+        invalidIds.push(typeId);
+      }
+    });
+    if (invalidIds.length !== 0) {
+      throw new BadRequestException({
+        message: "The appointment types doesn't exist",
+        ids: invalidIds,
+      });
+    }
   }
 }

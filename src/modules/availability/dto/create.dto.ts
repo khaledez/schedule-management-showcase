@@ -1,7 +1,8 @@
 import { Transform } from 'class-transformer';
-import { IsNumber, IsString, IsISO8601 } from 'class-validator';
-import { BaseModelAttributes } from '../../../common/models';
+import { IsNumber, IsString, IsISO8601, IsPositive } from 'class-validator';
+import { BaseModelAttributes } from 'common/models';
 import { AvailabilityModelAttributes } from '../models/availability.interfaces';
+import { IsFutureDateTime } from 'common/decorators/IsFutureDateTime';
 
 export class CreateAvailabilityDto
   implements
@@ -12,10 +13,12 @@ export class CreateAvailabilityDto
 
   @IsString()
   @IsISO8601({ strict: true })
+  @IsFutureDateTime()
   startDate: string;
 
   @IsNumber()
   @Transform((val) => parseInt(val))
+  @IsPositive()
   durationMinutes: number;
 
   @IsNumber()

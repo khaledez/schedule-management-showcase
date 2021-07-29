@@ -12,12 +12,14 @@ import { AppointmentsModel } from '../appointments.model';
 import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateNonProvisionalAppointmentDto } from '../dto/create-non-provisional-appointment.dto';
+import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
 
 describe('appointment service', () => {
   let apptService: AppointmentsService;
   let moduleRef: TestingModule;
 
   beforeAll(async () => {
+    await prepareTestDB();
     moduleRef = await Test.createTestingModule({
       imports: [AppointmentsModule, ConfigurationModule],
     }).compile();
@@ -27,6 +29,7 @@ describe('appointment service', () => {
 
   afterAll(async () => {
     await moduleRef.close();
+    await dropDB();
   });
 
   beforeEach(async () => {

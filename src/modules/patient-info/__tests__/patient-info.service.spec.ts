@@ -6,6 +6,7 @@ import * as nock from 'nock';
 import { PatientInfoService } from '..';
 import { PatientInfoAttributes, PatientInfoModel } from '../patient-info.model';
 import { PatientInfoModule } from '../patient-info.module';
+import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
 
 describe('patient-info service', () => {
   let patientInfoSvc: PatientInfoService;
@@ -13,6 +14,8 @@ describe('patient-info service', () => {
   let apiURL: string;
 
   beforeAll(async () => {
+    await prepareTestDB();
+
     module = await Test.createTestingModule({
       imports: [PatientInfoModule, ConfigurationModule],
     }).compile();
@@ -23,6 +26,7 @@ describe('patient-info service', () => {
 
   afterAll(async () => {
     await module.close();
+    await dropDB();
   });
 
   beforeEach(async () => {

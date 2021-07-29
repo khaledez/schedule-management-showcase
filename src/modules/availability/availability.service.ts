@@ -11,8 +11,8 @@ import { DateTime } from 'luxon';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Transaction } from 'sequelize/types';
-import { AVAILABILITY_REPOSITORY, BAD_REQUEST, SEQUELIZE } from '../../common/constants';
-import { ErrorCodes } from '../../common/enums/error-code.enum';
+import { AVAILABILITY_REPOSITORY, BAD_REQUEST, SEQUELIZE } from 'common/constants';
+import { ErrorCodes } from 'common/enums';
 import { EventsService } from '../events/events.service';
 import { EventModel, EventModelAttributes } from '../events/models';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
@@ -23,6 +23,8 @@ import { BulkUpdateResult } from './interfaces/availability-bulk-update.interfac
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityModel } from './models/availability.model';
+import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
+import { LookupsService } from 'modules/lookups/lookups.service';
 
 @Injectable()
 export class AvailabilityService {
@@ -33,6 +35,7 @@ export class AvailabilityService {
     @Inject(SEQUELIZE)
     private readonly sequelize: Sequelize,
     private readonly eventsService: EventsService,
+    private readonly lookupsService: LookupsService,
   ) {}
 
   async findAll({ identity }): Promise<AvailabilityEdgesInterface> {
@@ -248,6 +251,27 @@ export class AvailabilityService {
         const [updated, created] = await Promise.all([updatedP, createdP]);
 
         return { created, updated: Array.isArray(updated) ? updated : [updated] };
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+
+  async createAvailabilityGroup(
+    payload: CreateAvailabilityGroupBodyDto,
+    identity: IIdentity,
+  ): Promise<Array<AvailabilityModelAttributes>> {
+    const availabilityGroup: Array<CreateAvailabilityDto> = payload.availabilityGroup;
+    const appointmentTypesIds = availabilityGroup.map((availability) => availability.appointmentTypeId);
+    await this.lookupsService.validateAppointmentsTypes(appointmentTypesIds, identity);
+    try {
+      return await this.sequelize.transaction((transaction: Transaction) => {
+        const availabilityGroup: Array<CreateAvailabilityDto> = payload.availabilityGroup;
+        return this.bulkCreate(availabilityGroup, identity, transaction);
       });
     } catch (error) {
       this.logger.error(error);

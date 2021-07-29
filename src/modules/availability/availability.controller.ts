@@ -8,12 +8,18 @@ import { AvailabilityEdgesInterface } from 'modules/availability/interfaces/avai
 import { split } from 'lodash';
 import { QueryFindAvailabilityDto } from 'modules/availability/dto/query-find-availability.dto';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
+import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
+import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
+import { AvailabilityValidator } from 'modules/availability/availability.validator';
 
 @Controller('availability')
 export class AvailabilityController {
   private readonly logger = new Logger(AvailabilityController.name);
 
-  constructor(private readonly availabilityService: AvailabilityService) {}
+  constructor(
+    private readonly availabilityService: AvailabilityService,
+    private readonly validator: AvailabilityValidator,
+  ) {}
 
   @Get()
   findAll(
@@ -53,5 +59,14 @@ export class AvailabilityController {
     }
 
     return this.availabilityService.bulkAction(identity, payload);
+  }
+
+  @Post('/create-group')
+  createAvailabilityGroup(
+    @Body() payload: CreateAvailabilityGroupBodyDto,
+    @Identity() identity: IIdentity,
+  ): Promise<Array<AvailabilityModelAttributes>> {
+    this.validator.validateCreateAvailabilityGroup(payload);
+    return this.availabilityService.createAvailabilityGroup(payload, identity);
   }
 }
