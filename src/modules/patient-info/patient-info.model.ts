@@ -21,7 +21,8 @@ export interface PatientInfoAttributes {
 @Table({ tableName: 'PatientInfo', underscored: true, paranoid: false })
 export class PatientInfoModel
   extends Model<PatientInfoAttributes, PatientInfoAttributes>
-  implements PatientInfoAttributes {
+  implements PatientInfoAttributes
+{
   @PrimaryKey
   @Column
   id: number;

@@ -20,17 +20,17 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
+import { IdentityDto } from 'common/dtos/identity.dto';
+import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { PatientInfoService } from 'modules/patient-info';
 import { Transaction } from 'sequelize';
-import { QueryParamsDto } from '../../common/dtos';
-import { IdentityDto } from '../../common/dtos/identity.dto';
-import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel } from './appointments.model';
 import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentBodyDto } from './dto/create-appointment-body.dto';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
+import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
+import { QueryParamsDto } from './dto/query-params.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 
 @Controller('appointments')
@@ -78,10 +78,14 @@ export class AppointmentsController {
     return this.appointmentsService.findOne(id);
   }
 
-  // TODO: delete this after ability to change status
   @Patch(':id')
-  PatchOne(@Param('id', ParseIntPipe) id: number, @Body() body) {
-    return this.appointmentsService.patchAppointment(id, body);
+  updateOneAppointment(
+    @Identity() identity: IdentityDto,
+    @Headers('Authorization') authToken: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateAppointmentDto,
+  ) {
+    return [];
   }
 
   @Get('patient-upcoming/:patientId')
@@ -93,9 +97,9 @@ export class AppointmentsController {
     return this.appointmentsService.findAppointmentByPatientId(patientId, query);
   }
 
-  //TODO: MMX-S3 create a function for not provisional appointments only.
   /**
    * Create a provisional appointment
+   * @deprecated
    * @param identity
    * @param appointmentData
    * @returns Created Appointment
@@ -114,11 +118,10 @@ export class AppointmentsController {
       appointmentData,
     });
 
-    const patientPromise = this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
 
     const waitListStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
-    // TODO: what if i entered the same body dto multiple-time!
-    const apptPromise = this.appointmentsService.createProvisionalAppointment(
+    return this.appointmentsService.createProvisionalAppointment(
       {
         ...appointmentData,
         appointmentStatusId: waitListStatusId, // TODO: get this id from appointmentStatusModel at the service.
@@ -128,10 +131,6 @@ export class AppointmentsController {
       },
       transaction,
     );
-
-    const [appt] = await Promise.all([apptPromise, patientPromise]);
-
-    return appt;
   }
 
   /**
@@ -143,19 +142,15 @@ export class AppointmentsController {
   async createAppointment(
     @Identity() identity: IdentityDto,
     @Headers('Authorization') authToken: string,
-    @Body() appointmentData: CreateAppointmentBodyDto,
+    @Body() appointmentData: CreateAppointmentDto,
   ): Promise<AppointmentsModel> {
     this.logger.debug({ identity, appointmentData });
 
-    const patientPromise = this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    const apptPromise = this.appointmentsService.createNonProvisionalAppointment({
+    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    return this.appointmentsService.createNonProvisionalAppointment({
       ...appointmentData,
       clinicId: identity.clinicId,
       createdBy: identity.userId,
     });
-
-    const [appt] = await Promise.all([apptPromise, patientPromise]);
-
-    return appt;
   }
 }

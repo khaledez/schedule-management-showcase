@@ -1,18 +1,18 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { APPOINTMENTS_REPOSITORY, PATIENT_INFO_REPOSITORY } from 'common/constants';
-import { QueryParamsDto } from 'common/dtos';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { ConfigurationModule } from 'modules/config/config.module';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
+import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
 import { AppointmentsModel } from '../appointments.model';
 import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateNonProvisionalAppointmentDto } from '../dto/create-non-provisional-appointment.dto';
-import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
+import { QueryParamsDto } from '../dto/query-params.dto';
 
 describe('appointment service', () => {
   let apptService: AppointmentsService;

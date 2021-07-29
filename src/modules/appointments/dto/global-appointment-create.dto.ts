@@ -1,8 +1,11 @@
-import { IsNumber, IsDate, IsOptional, IsBoolean } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsBoolean, IsDate, IsNumber, IsOptional } from 'class-validator';
 import { IsPastDate } from '../../../utils/IsPastDate';
-import { Type, Transform } from 'class-transformer';
 
 // this dto after modify the dto.
+/**
+ * @deprecated
+ */
 export class CreateGlobalAppointmentDto {
   @Transform((value) => Number(value))
   @IsNumber()

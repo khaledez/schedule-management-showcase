@@ -1,13 +1,28 @@
 import { Transform, Type } from 'class-transformer';
-import { IsNumber, IsOptional, ValidateNested } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, ValidateNested } from 'class-validator';
+import { Order } from 'common/enums/order.enum';
 import { AppointmentFilterDto } from 'modules/appointments/dto/appointment-filter.dto';
-import { AppointmentSortDto } from 'modules/appointments/dto/appointment-sort.dto';
+
+enum Key {
+  DATE,
+  STATUS,
+}
+
+export class AppointmentSortDto {
+  @IsOptional()
+  @IsEnum(Key)
+  key: string;
+
+  @IsOptional()
+  @IsEnum(Order)
+  order: string;
+}
 
 export class QueryParamsDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => AppointmentFilterDto)
-  filter: AppointmentFilterDto;
+  filter?: AppointmentFilterDto;
 
   @IsOptional()
   @ValidateNested()

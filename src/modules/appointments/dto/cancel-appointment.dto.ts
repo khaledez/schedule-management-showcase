@@ -1,25 +1,18 @@
-import { IsString, IsNumber, IsDate, IsDateString, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsBoolean, IsDate, IsNumber, IsString } from 'class-validator';
 
 // this dto after modify the dto.
 export class CancelAppointmentDto {
   @IsDate()
   @Type(() => Date)
-  date: Date;
+  provisionalDate: Date;
 
   @IsString()
-  cancellationReason: string;
+  reasonText: string;
 
   @IsNumber()
-  previousAppointmentId: number;
+  reasonId: number;
 
-  // TODO: this should not come from the code, it should use the default value which is TRUE
   @IsBoolean()
-  upcomingAppointment: boolean;
-
-  @IsNumber()
-  canceledBy: number;
-
-  @IsDateString()
-  canceledAt: Date;
+  keepAvailabiltySlot: boolean;
 }

@@ -1,7 +1,7 @@
+import { BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
+import { ErrorCodes } from 'common/enums/error-code.enum';
 import { Op } from 'sequelize';
-import { ErrorCodes } from '../common/enums/error-code.enum';
-import { InternalServerErrorException, Logger, BadRequestException } from '@nestjs/common';
-import { QueryParamsDto } from '../common/dtos/query-params.dto';
+import { QueryParamsDto } from '../dto/query-params.dto';
 
 const arrayToObject = (arr) => Object.assign({}, ...arr.map((item) => ({ ...item })));
 

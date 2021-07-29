@@ -1,9 +1,31 @@
 import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
 import { Type } from 'class-transformer';
-import { IsOptional, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { FilterTimeInputDto } from '../../../common/dtos';
-import { CustomFilterByAppointmentCategoryDto } from './custom-filter-by-appointment-category.dto';
-// TODO: currentSprint
+
+enum AppointmentCategoryKeys {
+  WAITLIST,
+  APPOINTMENT,
+  ALL,
+}
+
+export class CustomFilterByAppointmentCategoryDto {
+  @IsOptional()
+  @IsString()
+  @IsEnum(AppointmentCategoryKeys)
+  ne: string;
+
+  @IsOptional()
+  @IsString()
+  @IsEnum(AppointmentCategoryKeys)
+  eq: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(AppointmentCategoryKeys, { each: true })
+  in: AppointmentCategoryKeys[];
+}
+
 export class AppointmentFilterDto {
   @IsOptional()
   @ValidateNested()

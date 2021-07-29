@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PageInfo, QueryParamsDto } from 'common/dtos';
+import { PageInfo } from 'common/dtos';
 import { ErrorCodes } from 'common/enums';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
@@ -10,21 +10,18 @@ import * as moment from 'moment';
 import { CreateOptions, FindOptions, Op, Transaction, UpdateOptions } from 'sequelize';
 import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from '../../common/constants/index';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
-import { sequelizeFilterMapper } from '../../utils/sequelize-filter.mapper';
-import { sequelizeSortMapper } from '../../utils/sequelize-sort.mapper';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
-import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
-import { ChangeDoctorAppointmentDto } from './dto/change-doctor-appointment.dto';
-import { CreateGlobalAppointmentDto } from './dto/create-global-appointment.dto';
 import { CreateNonProvisionalAppointmentDto } from './dto/create-non-provisional-appointment.dto';
-import { ExtendAppointmentDto } from './dto/extend-appointment.dto';
+import { CreateGlobalAppointmentDto } from './dto/global-appointment-create.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
-import { ReassignAppointmentDto } from './dto/reassign-appointment.dto';
+import { QueryParamsDto } from './dto/query-params.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
+import { sequelizeSortMapper } from './utils/sequelize-sort.mapper';
 
 export interface AssociationFieldsSortCriteria {
   [key: string]: {
@@ -389,6 +386,20 @@ export class AppointmentsService {
     );
   }
 
+  // TODO: delete this after ability to change status
+  async patchAppointment(id: number, data: any, transaction?: Transaction): Promise<AppointmentsModel> {
+    const options: UpdateOptions = {
+      where: {
+        id,
+      },
+    };
+    if (transaction) {
+      options.transaction = transaction;
+    }
+    await this.appointmentsRepository.scope('id').update(data, options);
+    return this.findOne(id);
+  }
+
   // eslint-disable-next-line complexity
   readonly handleAppointmentCategoryFilter = (
     { filter = {} },
@@ -460,20 +471,6 @@ export class AppointmentsService {
     }
   };
 
-  // TODO: delete this after ability to change status
-  async patchAppointment(id: number, data: any, transaction?: Transaction): Promise<AppointmentsModel> {
-    const options: UpdateOptions = {
-      where: {
-        id,
-      },
-    };
-    if (transaction) {
-      options.transaction = transaction;
-    }
-    await this.appointmentsRepository.scope('id').update(data, options);
-    return this.findOne(id);
-  }
-
   findAppointmentByPatientId(id: number, queryData: UpComingAppointmentQueryDto): Promise<AppointmentsModelAttributes> {
     const query: any = {
       filter: {
@@ -496,106 +493,6 @@ export class AppointmentsService {
     }
 
     return this.appointmentsRepository.findOne(query);
-  }
-
-  // async filterAppointments(data) {
-  //   return this.appointmentsRepository.findAll();
-  // }
-  // OUT-OF-SCOPE: MMX-S3
-  // find by id and update the appointment
-  async findAndUpdateAppointment(
-    appointmentId: number,
-    appointmentFields: any, // TODO: create optional fields interface.
-  ): Promise<AppointmentsModel> {
-    // you might think why i do like this instead of update it in one query like update where id.
-    // the reason here that i need the result, update at mysql return value of effected rows.
-    // TODO: check the status/date, if it's already passed you have to throw error
-    const appointment: AppointmentsModel = await this.appointmentsRepository.scope('active').findByPk(appointmentId);
-    if (!appointment) {
-      throw new NotFoundException({
-        code: ErrorCodes.NOT_FOUND,
-        message: 'Appointment Not Found!',
-      });
-    }
-    try {
-      return await appointment.update(appointmentFields);
-    } catch (error) {
-      throw new BadRequestException({
-        code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message: error.message,
-        error,
-      });
-    }
-  }
-
-  // OUT-OF-SCOPE: MMX-S3
-  async deprecateThenCreateAppointment(
-    appointmentFieldsDataToCreate: any, //TODO create interface.
-  ): Promise<AppointmentsModel> {
-    try {
-      const { prev_appointment_id: appointmentIdToDeprecate } = appointmentFieldsDataToCreate;
-      const oldAppointment: AppointmentsModel = await this.findAndUpdateAppointment(appointmentIdToDeprecate, {
-        upcoming_appointment: false,
-      });
-      // GOAL: exclude the own data for an appointment
-      const {
-        id,
-        createdAt,
-        updatedAt,
-        upcomingAppointment,
-        ...othersData
-      } = oldAppointment.toJSON() as AppointmentsModel;
-      this.logger.log({
-        id,
-        createdAt,
-        updatedAt,
-        upcomingAppointment,
-        ...othersData,
-        ...appointmentFieldsDataToCreate,
-      });
-      return await this.appointmentsRepository.create({
-        ...othersData,
-        ...appointmentFieldsDataToCreate,
-      });
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  // OUT-OF-SCOPE: MMX-S3
-  async extendDate(extendAppointmentDto: ExtendAppointmentDto): Promise<AppointmentsModel> {
-    try {
-      return await this.deprecateThenCreateAppointment(extendAppointmentDto);
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  // OUT-OF-SCOPE: MMX-S3
-  async cancelAppointment(cancelAppointmentDto: CancelAppointmentDto): Promise<AppointmentsModel> {
-    try {
-      return await this.deprecateThenCreateAppointment(cancelAppointmentDto);
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  // OUT-OF-SCOPE: MMX-S3
-  async reassignAppointment(reassignAppointmentDto: ReassignAppointmentDto): Promise<AppointmentsModel> {
-    try {
-      return await this.deprecateThenCreateAppointment(reassignAppointmentDto);
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  // OUT-OF-SCOPE: MMX-S3
-  async changeDoctorAppointment(changeDoctorAppointmentDto: ChangeDoctorAppointmentDto): Promise<AppointmentsModel> {
-    try {
-      return await this.deprecateThenCreateAppointment(changeDoctorAppointmentDto);
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
   }
 
   async getAppointmentsByPeriods(clinicId: number, query: QueryAppointmentsByPeriodsDto): Promise<any> {

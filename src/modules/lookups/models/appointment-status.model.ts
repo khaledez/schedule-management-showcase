@@ -6,7 +6,8 @@ import { AppointmentsModel } from '../../appointments/appointments.model';
 @Table({ tableName: 'AppointmentStatusLookups', underscored: true })
 export class AppointmentStatusLookupsModel
   extends LookupsModel<LookupWithCodeAttributes>
-  implements LookupWithCodeAttributes {
+  implements LookupWithCodeAttributes
+{
   @Column
   code: string;
 

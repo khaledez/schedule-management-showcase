@@ -1,7 +1,7 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common';
-import { QueryParamsDto } from 'common/dtos';
+import { ErrorCodes } from 'common/enums/error-code.enum';
 import { AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
-import { ErrorCodes } from '../common/enums/error-code.enum';
+import { QueryParamsDto } from 'modules/appointments/dto/query-params.dto';
 
 // eslint-disable-next-line complexity
 export function sequelizeSortMapper(
