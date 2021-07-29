@@ -8,8 +8,7 @@ export interface DurationMinutesLookupsAttributes extends LookupsModelAttributes
 @Table({ tableName: 'DurationMinutesLookups', underscored: true })
 export class DurationMinutesLookupsModel
   extends LookupsModel<DurationMinutesLookupsAttributes>
-  implements DurationMinutesLookupsAttributes
-{
+  implements DurationMinutesLookupsAttributes {
   @Column
   value: number;
 }

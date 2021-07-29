@@ -8,8 +8,7 @@ export interface TimeGroupsLookupsAttributes extends LookupsModelAttributes {
 @Table({ tableName: 'TimeGroupsLookups', underscored: true })
 export class TimeGroupsLookupsModel
   extends LookupsModel<TimeGroupsLookupsAttributes>
-  implements TimeGroupsLookupsAttributes
-{
+  implements TimeGroupsLookupsAttributes {
   @Column
   startTime: string;
 

@@ -2,6 +2,7 @@ import { AuthModule, requestLoggerMiddleware } from '@dashps/monmedx-common';
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TerminusModule } from '@nestjs/terminus';
+import { AvailabilityTemplateModule } from 'modules/availability-template/availability-template.module';
 import { ConfigurationModule } from 'modules/config/config.module';
 import { PatientInfoModule } from 'modules/patient-info';
 import { AppController } from './app.controller';
@@ -27,6 +28,7 @@ import { LookupsModule } from './modules/lookups/lookups.module';
     LookupsModule,
     EventsModule,
     CalendarModule,
+    AvailabilityTemplateModule,
     PatientInfoModule,
   ],
   controllers: [AppController],

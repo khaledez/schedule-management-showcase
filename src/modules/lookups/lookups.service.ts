@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import { Op } from 'sequelize';
+import { FindOptions, Op } from 'sequelize';
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
@@ -82,15 +82,18 @@ export class LookupsService {
    * @param identity
    * example: NEW, FUP
    */
-  public findAllAppointmentTypesLookups(identity): Promise<AppointmentTypesLookupsModel[]> {
-    const { clinicId } = identity;
-    return this.appointmentTypesLookupsRepository.findAll({
-      where: {
-        clinicId: {
-          [Op.or]: [null, clinicId],
-        },
-      },
-    });
+  public findAllAppointmentTypesLookups(identity?): Promise<AppointmentTypesLookupsModel[]> {
+    const conditions: FindOptions<AppointmentTypesLookupsModel> = identity?.clinicId
+      ? {
+          where: {
+            clinicId: {
+              [Op.or]: [null, identity.clinicId],
+            },
+          },
+        }
+      : {};
+
+    return this.appointmentTypesLookupsRepository.findAll(conditions);
   }
   /**
    * Find Appointment status

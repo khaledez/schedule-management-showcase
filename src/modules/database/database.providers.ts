@@ -2,6 +2,8 @@
 import { ConfigService } from '@nestjs/config';
 import { LookupsModel } from 'common/models';
 import { AppointmentsModel } from 'modules/appointments/appointments.model';
+import { AvailabilityTemplateSlotModel } from 'modules/availability-template/model/availability-template-slot.model ';
+import { AvailabilityTemplateModel } from 'modules/availability-template/model/availability-template.model';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import { Sequelize } from 'sequelize-typescript';
@@ -31,6 +33,8 @@ export const databaseProviders = [
       sequelize.addModels([
         AppointmentsModel,
         AvailabilityModel,
+        AvailabilityTemplateModel,
+        AvailabilityTemplateSlotModel,
         DurationMinutesLookupsModel,
         TimeGroupsLookupsModel,
         AppointmentActionsLookupsModel,

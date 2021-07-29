@@ -54,9 +54,4 @@ export class AvailabilityController {
 
     return this.availabilityService.bulkAction(identity, payload);
   }
-
-  @Post('/create-group')
-  createAvailabilityGroup(@Identity() identity: IIdentity): string {
-    return 'hello';
-  }
 }

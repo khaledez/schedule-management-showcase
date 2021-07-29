@@ -62,8 +62,7 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel
   extends BaseModel<AppointmentsModelAttributes, AppointmentsModelAttributes>
-  implements AppointmentsModelAttributes
-{
+  implements AppointmentsModelAttributes {
   @Column
   @ForeignKey(() => PatientInfoModel)
   patientId: number;

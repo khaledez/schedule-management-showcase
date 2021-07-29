@@ -538,8 +538,13 @@ export class AppointmentsService {
         upcoming_appointment: false,
       });
       // GOAL: exclude the own data for an appointment
-      const { id, createdAt, updatedAt, upcomingAppointment, ...othersData } =
-        oldAppointment.toJSON() as AppointmentsModel;
+      const {
+        id,
+        createdAt,
+        updatedAt,
+        upcomingAppointment,
+        ...othersData
+      } = oldAppointment.toJSON() as AppointmentsModel;
       this.logger.log({
         id,
         createdAt,
