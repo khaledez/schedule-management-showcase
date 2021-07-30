@@ -3,8 +3,9 @@ import { PATIENT_INFO_REPOSITORY } from 'common/constants';
 import { DatabaseModule } from 'modules/database/database.module';
 import { PatientInfoModel } from './patient-info.model';
 import { PatientInfoService } from './patient-info.service';
+import { PatientInfoListener } from 'modules/patient-info/patient-info.listener';
 
-const patientInfoProviders = [{ provide: PATIENT_INFO_REPOSITORY, useValue: PatientInfoModel }];
+const patientInfoProviders = [{ provide: PATIENT_INFO_REPOSITORY, useValue: PatientInfoModel }, PatientInfoListener];
 
 @Module({
   imports: [DatabaseModule, HttpModule],

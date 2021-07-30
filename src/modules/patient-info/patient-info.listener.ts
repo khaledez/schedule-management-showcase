@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PatientInfoAttributes } from './patient-info.model';
 import { PatientInfoService } from './patient-info.service';
@@ -30,11 +30,14 @@ interface PatientProfileUpdatedEvent {
   data: PatientInfoPayload;
 }
 
-//@Injectable()
+@Injectable()
 export class PatientInfoListener {
   private readonly logger = new Logger(PatientInfoListener.name);
 
-  constructor(private readonly patientInfoSvc: PatientInfoService) {}
+  constructor(
+    @Inject(forwardRef(() => PatientInfoService))
+    private readonly patientInfoSvc: PatientInfoService,
+  ) {}
 
   @OnEvent(PATIENT_PROFILE_UPDATED_EVENT, { async: true })
   async handlePatientProfileUpdatedEvent(payload: PatientProfileUpdatedEvent) {
