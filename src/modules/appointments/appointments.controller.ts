@@ -59,7 +59,7 @@ export class AppointmentsController {
 
     return {
       data,
-      total: count,
+      count,
     };
   }
 
