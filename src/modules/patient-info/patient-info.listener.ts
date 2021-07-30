@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PatientInfoAttributes } from './patient-info.model';
 import { PatientInfoService } from './patient-info.service';
@@ -11,7 +11,7 @@ export interface PatientInfoPayload {
   dob: string;
   firstName: string;
   lastName: string;
-  primaryHealthPlan: { number: string };
+  primaryHealthPlanNumber: string;
   statusHistory: {
     status: {
       code: string;
@@ -35,7 +35,7 @@ export class PatientInfoListener {
   private readonly logger = new Logger(PatientInfoListener.name);
 
   constructor(
-    @Inject(forwardRef(() => PatientInfoService))
+    @Inject(PatientInfoService)
     private readonly patientInfoSvc: PatientInfoService,
   ) {}
 
@@ -71,7 +71,7 @@ export function patientInfoPayloadToAttributes(payload: PatientInfoPayload): Pat
     id: payload.id,
     dob: payload.dob,
     fullName: `${payload.firstName} ${payload.lastName}`,
-    primaryHealthPlanNumber: payload.primaryHealthPlan.number,
+    primaryHealthPlanNumber: payload.primaryHealthPlanNumber,
     statusCode: payload.statusHistory.status.code,
   };
 }
