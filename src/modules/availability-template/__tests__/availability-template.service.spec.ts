@@ -97,8 +97,9 @@ describe('AvailabilityTemplateService', () => {
     // Success case
     it('Creates an entry in database with valid dto', async () => {
       const obj = await service.createAvailabilityTemplate(mockDto);
-      expect(obj.name).toBe(mockDto.name);
-      expect(obj.availabilitySlots.length).toBe(mockSlots.length);
+      const template = obj.templates[0];
+      expect(template.name).toBe(mockDto.name);
+      expect(template.availabilitySlots.length).toBe(mockSlots.length);
     });
     // Failing cases
     // Rest of validation is done through pipes in controller
@@ -130,7 +131,7 @@ describe('AvailabilityTemplateService', () => {
     };
     it('Searches succesfully providing key (case insensitive)', async () => {
       await populateDatabase();
-      const res = await service.getAvailabilityTemplatesByName(identity.clinicId, 'typical');
+      const res = (await service.getAvailabilityTemplatesByName(identity.clinicId, 'typical')).templates;
       expect(res).toHaveLength(3);
       expect(res[0].name).toMatch('Khaled');
       expect(res[1].name).toMatch('2');
@@ -138,7 +139,7 @@ describe('AvailabilityTemplateService', () => {
     });
     it('Returns all templates provided no key', async () => {
       await populateDatabase();
-      const res = await service.getAvailabilityTemplatesByName(identity.clinicId);
+      const res = (await service.getAvailabilityTemplatesByName(identity.clinicId)).templates;
       expect(res).toHaveLength(3);
       expect(res[2].name).toMatch('Typical');
     });
@@ -148,9 +149,9 @@ describe('AvailabilityTemplateService', () => {
     // Create templates to search for
     const ids = [];
     const populateDatabase = async () => {
-      ids.push((await service.createAvailabilityTemplate(mockDto)).id);
-      ids.push((await service.createAvailabilityTemplate(mockDto)).id);
-      ids.push((await service.createAvailabilityTemplate(mockDto)).id);
+      ids.push((await service.createAvailabilityTemplate(mockDto)).templates[0].id);
+      ids.push((await service.createAvailabilityTemplate(mockDto)).templates[0].id);
+      ids.push((await service.createAvailabilityTemplate(mockDto)).templates[0].id);
     };
     it('Succesfully deletes and cascades an entry provided id', async () => {
       await populateDatabase();

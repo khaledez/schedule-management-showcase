@@ -1,3 +1,4 @@
+import { UserError } from 'common/interfaces/user-error.interface';
 import { BaseModelAttributes } from 'common/models';
 import { CreateSlotAttributes } from '../dto/create-slot.dto';
 
@@ -8,4 +9,9 @@ import { CreateSlotAttributes } from '../dto/create-slot.dto';
 export interface AvailabilityTemplateAttributes extends BaseModelAttributes {
   name: string;
   availabilitySlots: CreateSlotAttributes[];
+}
+
+export interface AvailabilityTemplateResult {
+  templates?: AvailabilityTemplateAttributes[];
+  errors?: UserError[];
 }

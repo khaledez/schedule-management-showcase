@@ -5,7 +5,7 @@ import { AvailabilitySlotDto } from './dto/availability-template-slot.dto';
 import { AvailabilityTemplateDto } from './dto/availability-template.dto';
 import { CreateAvailabilityTemplateDto } from './dto/create-template-dto';
 import { DeleteTemplateDto } from './dto/delete-template.dto';
-import { AvailabilityTemplateAttributes } from './interfaces/availability-template.interface';
+import { AvailabilityTemplateResult } from './interfaces/availability-template.interface';
 
 @Controller('availability-templates')
 export class AvailabilityTemplateController {
@@ -20,7 +20,7 @@ export class AvailabilityTemplateController {
   createAvailbailityTemplate(
     @Identity() identity: IIdentity,
     @Body() payload: CreateAvailabilityTemplateDto,
-  ): Promise<AvailabilityTemplateAttributes> {
+  ): Promise<AvailabilityTemplateResult> {
     // Map payload to service attributes
 
     const { userId, clinicId } = identity;
@@ -46,7 +46,7 @@ export class AvailabilityTemplateController {
    * @throws 401, Possible reasons: Cannot connect to db, Model uninitialized
    */
   @Get()
-  searchTemplatesByName(@Identity() identity, @Query() { query }): Promise<AvailabilityTemplateAttributes[]> {
+  searchTemplatesByName(@Identity() identity, @Query() { query }): Promise<AvailabilityTemplateResult> {
     return this.templateService.getAvailabilityTemplatesByName(identity.clinicId, query);
   }
 

@@ -5,6 +5,7 @@ import { LookupsService } from 'modules/lookups/lookups.service';
 import { Op, WhereOptions } from 'sequelize';
 import { AvailabilitySlotDto } from './dto/availability-template-slot.dto';
 import { AvailabilityTemplateDto } from './dto/availability-template.dto';
+import { AvailabilityTemplateResult } from './interfaces/availability-template.interface';
 import { AvailabilityTemplateSlotModel } from './model/availability-template-slot.model ';
 import { AvailabilityTemplateModel } from './model/availability-template.model';
 
@@ -21,12 +22,14 @@ export class AvailabilityTemplateService {
    * @param payload [name, userId, clinicId, array of AvailabilitySlot objects]
    * @returns Promise that resolves to added Template
    */
-  async createAvailabilityTemplate(payload: AvailabilityTemplateDto): Promise<AvailabilityTemplateModel> {
+  async createAvailabilityTemplate(payload: AvailabilityTemplateDto): Promise<AvailabilityTemplateResult> {
     // Validate if slot appointment type
     await this.validateSlotsLookupTypes(payload);
     try {
       // Creates nested slots automatically
-      return this.templateRepository.create(payload, { include: AvailabilityTemplateSlotModel });
+      const templates = [];
+      templates.push(await this.templateRepository.create(payload, { include: AvailabilityTemplateSlotModel }));
+      return { templates };
     } catch (error) {
       this.logger.error({ code: ErrorCodes.INTERNAL_SERVER_ERROR, function: 'createAvailabilityTemplate', error });
       throw new InternalServerErrorException({
@@ -41,7 +44,7 @@ export class AvailabilityTemplateService {
    * @param input name?: search key of AvialabilityTemplate, clinicId: corresponding clinic
    * @returns Promise that resolves to zero-multiple AvailabilityTemplates
    */
-  async getAvailabilityTemplatesByName(clinicId: number, name?: string): Promise<AvailabilityTemplateModel[]> {
+  async getAvailabilityTemplatesByName(clinicId: number, name?: string): Promise<AvailabilityTemplateResult> {
     let whereConditions: WhereOptions<AvailabilityTemplateModel> = {
       clinicId,
     };
@@ -52,7 +55,7 @@ export class AvailabilityTemplateService {
 
     try {
       // Find objects
-      const rv = await this.templateRepository.findAll({
+      const templates = await this.templateRepository.findAll({
         where: whereConditions,
         include: {
           model: AvailabilityTemplateSlotModel,
@@ -60,10 +63,10 @@ export class AvailabilityTemplateService {
         },
       });
       // Return empty object if none existent
-      if (!rv && rv.length === 0) {
-        return [];
+      if (!templates && templates.length === 0) {
+        return {};
       }
-      return rv;
+      return { templates };
     } catch (error) {
       this.logger.error({ code: ErrorCodes.INTERNAL_SERVER_ERROR, function: 'getAvailabilityTemplatesByName', error });
       throw new InternalServerErrorException({
