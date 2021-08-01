@@ -1,29 +1,8 @@
 import { FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
-import { FilterAvailabilityInputDto, ResultWithErrors, FilterDateInputDto } from '../../common/dtos';
-import { BaseModelAttributes } from '../../common/models';
+import { FilterAvailabilityInputDto, ResultWithErrors, FilterDateInputDto } from 'common/dtos';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
-
-export type CalendarType = 'EVENT' | 'APPOINTMENT' | 'AVAILABILITY';
-
-export interface CalendarEntry extends BaseModelAttributes {
-  entryType: CalendarType;
-
-  // deprecated - use startDate instead
-  date?: Date;
-  // deprecated
-  startTime?: string;
-  // deprecated - use endDate instead
-  endTime?: string;
-
-  startDate: Date;
-  endDate: Date;
-  durationMinutes?: number;
-  title?: string;
-  staffId: number;
-
-  __typename: string;
-}
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
 
 export interface Invitee {
   email: string;

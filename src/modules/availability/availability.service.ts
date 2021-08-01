@@ -41,6 +41,8 @@ import { AvailabilityEdgesInterface } from './interfaces/availability-edges.inte
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityModel } from './models/availability.model';
 import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
+import { CalendarType } from 'common/enums/calendar-type';
 
 @Injectable()
 export class AvailabilityService {
@@ -284,10 +286,7 @@ export class AvailabilityService {
    * The suggested availabilities will have the same appointmentType as passed in the request.
    * In addition the result will be sorted with the highest priority coming first.
    */
-  async getAvailabilitySuggestions(
-    identity: IIdentity,
-    payload: GetSuggestionsDto,
-  ): Promise<AvailabilityModelAttributes[]> {
+  async getAvailabilitySuggestions(identity: IIdentity, payload: GetSuggestionsDto): Promise<CalendarEntry[]> {
     const appointmentTypeId: number = payload.appointmentTypeId;
     const isValid: boolean = await this.lookupsService.doesAppointmentTypeExist(payload.appointmentTypeId);
     if (!isValid) {
@@ -308,7 +307,7 @@ export class AvailabilityService {
       const sortComparator = this.getSuggestionsPriorityComparator(timeGroup);
       suggestions.sort(sortComparator);
     }
-    return suggestions.slice(0, APPOINTMENT_SUGGESTIONS_RETURN_LIMIT);
+    return suggestions.slice(0, APPOINTMENT_SUGGESTIONS_RETURN_LIMIT).map((suggest) => this.toCalendarEntry(suggest));
   }
 
   getSuggestionsPriorityComparator(timeGroup: TimeGroup) {
@@ -418,6 +417,23 @@ export class AvailabilityService {
       return { [Op.eq]: staffId.eq };
     }
     return { [Op.notIn]: [] };
+  }
+
+  toCalendarEntry(availability: AvailabilityModelAttributes): CalendarEntry {
+    return {
+      __typename: 'CalendarAvailability',
+      id: availability.id,
+      clinicId: availability.clinicId,
+      staffId: availability.staffId,
+      startDate: availability.startDate,
+      endDate: availability.endDate,
+      entryType: CalendarType.AVAILABILITY,
+      createdBy: availability.createdBy,
+      createdAt: availability.createdAt,
+      updatedBy: availability.updatedBy,
+      updatedAt: availability.updatedAt,
+      durationMinutes: availability.durationMinutes,
+    };
   }
 }
 

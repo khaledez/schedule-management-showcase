@@ -16,6 +16,7 @@ import {
   getStaffIdWhereClauseTestCases,
   getSuggestionsData,
   getSuggestionsPriorityComparatorTestCases,
+  getToCalendarEntryTestData,
   getTransformDayTimeToSecondsTestCases,
   testCreateAvailabilityGroupInvalidAppointments,
   testCreateAvailabilityGroupSuccess,
@@ -172,6 +173,12 @@ describe('# AvailabilityService', () => {
       const test = buildGetZeroAvailabilitySuggestionsTestData();
       const result = await availabilityService.getAvailabilitySuggestions(identity, test.getSuggestionsDto);
       expect([]).toEqual(result);
+    });
+
+    test('# toCalendarEntry', () => {
+      const testData = getToCalendarEntryTestData();
+      const result = availabilityService.toCalendarEntry(testData.input);
+      expect(testData.expectedOutput).toEqual(result);
     });
   });
 });

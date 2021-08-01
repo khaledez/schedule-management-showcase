@@ -12,6 +12,7 @@ import { AvailabilityEdgesInterface } from 'modules/availability/interfaces/avai
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { CreateAvailabilityGroupBodyDto } from './dto/create-availability-group-body.dto';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
+import { CalendarEntriesPayloadDto } from 'common/dtos/calendar/calendar-entries-payload-dto';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -68,12 +69,16 @@ export class AvailabilityController {
    * @param payload
    */
   @Post('/suggestions')
-  getAvailabilitySuggestions(
+  async getAvailabilitySuggestions(
     @Identity() identity: IIdentity,
     @Body() payload: GetSuggestionsDto,
-  ): Promise<AvailabilityModelAttributes[]> {
-    return this.availabilityService.getAvailabilitySuggestions(identity, payload);
+  ): Promise<CalendarEntriesPayloadDto> {
+    const suggestions = await this.availabilityService.getAvailabilitySuggestions(identity, payload);
+    const responseDto = new CalendarEntriesPayloadDto();
+    responseDto.entries = suggestions;
+    return responseDto;
   }
+
   @Post('/create-group')
   createAvailabilityGroup(
     @Body() payload: CreateAvailabilityGroupBodyDto,

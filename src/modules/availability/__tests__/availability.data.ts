@@ -3,6 +3,8 @@ import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { Op } from 'sequelize';
 import { getTimeGroup, TimeGroupCode } from 'common/enums/time-group';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
+import { CalendarType } from 'common/enums/calendar-type';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
 
 export function testCreateAvailabilityGroupInvalidAppointments(): {
   dto: CreateAvailabilityGroupBodyDto;
@@ -206,6 +208,39 @@ export function getSuggestionsData() {
     buildCreateAvailabilityDto(2, '2032-10-25T09:30:00.000Z', 10, 1), // Won't find it, More than 90 days difference
     buildCreateAvailabilityDto(2, '2030-10-25T09:30:00.000Z', 10, 1), // Won't find it, More than 90 days difference
   ];
+}
+
+export function getToCalendarEntryTestData(): { input: AvailabilityModelAttributes; expectedOutput: CalendarEntry } {
+  return {
+    input: {
+      id: 1,
+      clinicId: 2,
+      staffId: 3,
+      startDate: new Date('2030-10-25T09:30:00.001Z'),
+      endDate: new Date('2030-10-25T09:30:00.002Z'),
+      durationMinutes: 4,
+      appointmentTypeId: 1,
+      startTime: '2030-10-25T09:30:00.003Z',
+      createdBy: 5,
+      createdAt: new Date('2030-10-25T09:30:00.004Z'),
+      updatedBy: 6,
+      updatedAt: new Date('2030-10-25T09:30:00.005Z'),
+    },
+    expectedOutput: {
+      __typename: 'CalendarAvailability',
+      id: 1,
+      clinicId: 2,
+      staffId: 3,
+      startDate: new Date('2030-10-25T09:30:00.001Z'),
+      endDate: new Date('2030-10-25T09:30:00.002Z'),
+      durationMinutes: 4,
+      entryType: CalendarType.AVAILABILITY,
+      createdBy: 5,
+      createdAt: new Date('2030-10-25T09:30:00.004Z'),
+      updatedBy: 6,
+      updatedAt: new Date('2030-10-25T09:30:00.005Z'),
+    },
+  };
 }
 
 function buildSuggestionForComparatorTest(staffId: number, date: string): AvailabilityModelAttributes {
