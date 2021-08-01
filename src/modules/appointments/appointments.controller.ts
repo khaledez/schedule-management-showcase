@@ -27,6 +27,7 @@ import { Transaction } from 'sequelize';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel } from './appointments.model';
 import { AppointmentsService } from './appointments.service';
+import { CreateAppointmentAdhocDto } from './dto/create-appointment-adhoc.dto';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
@@ -152,5 +153,47 @@ export class AppointmentsController {
       clinicId: identity.clinicId,
       createdBy: identity.userId,
     });
+  }
+
+  /**
+   * @deprecated
+   * @param identity
+   * @param appointmentData
+   * @param transaction
+   * @returns
+   */
+  @UseInterceptors(TransactionInterceptor)
+  @Post('adhoc')
+  async createAdHoc(
+    @Identity() identity: IIdentity,
+    @Body() appointmentData: CreateAppointmentAdhocDto,
+    @TransactionParam() transaction: Transaction,
+  ): Promise<AppointmentsModel> {
+    this.logger.debug({
+      function: 'appointment/createAdHoc',
+      identity,
+      appointmentData,
+    });
+
+    const readyStatus = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.READY);
+    const typeFUBId = await this.lookupsService.getTypeByCode('FUP');
+
+    this.logger.debug({
+      appointmentData,
+      readyStatus,
+      typeFUBId: `${typeFUBId}`,
+    });
+
+    return this.appointmentsService.createAnAppointmentWithFullResponse(
+      {
+        ...appointmentData,
+        appointmentStatusId: readyStatus,
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
+        appointmentTypeId: typeFUBId,
+        provisionalDate: appointmentData.date,
+      },
+      transaction,
+    );
   }
 }
