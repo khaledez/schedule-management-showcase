@@ -1,5 +1,5 @@
+import { IIdentity } from '@dashps/monmedx-common';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import { FindOptions, Op } from 'sequelize';
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
@@ -9,12 +9,12 @@ import {
 } from 'common/constants';
 import { AppointmentActionEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
+import { FindOptions, Op } from 'sequelize';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
-import { IIdentity } from '@dashps/monmedx-common';
 
 @Injectable()
 export class LookupsService {
@@ -218,6 +218,16 @@ export class LookupsService {
       attributes: ['id'],
     });
     return result?.id;
+  }
+
+  /**
+   * Check if an appointment type exists for a given id
+   * @param id appointment type id
+   */
+  async doesAppointmentTypeExist(id): Promise<boolean> {
+    // TODO: Once we support lookup configuration for clinic, we have to change this to include clinic id
+    const type = await this.appointmentTypesLookupsRepository.findByPk(id);
+    return type !== null;
   }
 
   /**

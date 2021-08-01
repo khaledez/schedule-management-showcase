@@ -1,14 +1,22 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
-import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ErrorCodes } from 'common/enums';
+import {
+  BadRequestException,
+  ConflictException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import * as moment from 'moment';
 import { CreateOptions, FindOptions, Op, Transaction, UpdateOptions } from 'sequelize';
-import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from '../../common/constants/index';
-import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
+import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
+import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
@@ -37,6 +45,7 @@ export class AppointmentsService {
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
     private readonly lookupsService: LookupsService,
+    @Inject(forwardRef(() => AvailabilityService))
     private readonly availabilityService: AvailabilityService,
     private readonly eventsService: EventsService,
   ) {}
@@ -68,7 +77,7 @@ export class AppointmentsService {
     // custom filter by appointmentCategory
     const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(queryParams, this.logger);
 
-    // common filters
+    // common data-filters
     const sequelizeFilter = sequelizeFilterMapper(
       this.logger,
       queryParams,
@@ -166,6 +175,7 @@ export class AppointmentsService {
       const { startDate, appointmentTypeId, staffId } = nonProvisionalAvailability;
       const scheduleStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.SCHEDULE);
       body = {
+        date: startDate,
         startDate,
         appointmentTypeId,
         staffId,
@@ -196,7 +206,6 @@ export class AppointmentsService {
           updateAvailability,
         });
       }
-
       const actions = await this.lookupsService.findAppointmentsActions([result.appointmentStatusId]);
       return {
         ...result,
@@ -254,6 +263,21 @@ export class AppointmentsService {
       condition: !!appt && !!appt.id,
     });
     return !!appt && !!appt.id;
+  }
+
+  /**
+   * Get patient next provisional appointment
+   * @param patientId
+   */
+  async getPatientProvisionalAppointment(patientId: number): Promise<AppointmentsModel> {
+    const waitListStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    const options: FindOptions = {
+      where: {
+        patientId,
+        appointmentStatusId: waitListStatusId,
+      },
+    };
+    return this.appointmentsRepository.findOne(options);
   }
 
   async createAnAppointmentWithFullResponse(

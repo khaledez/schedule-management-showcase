@@ -1,16 +1,17 @@
-import { Controller, Get, Post, Body, Logger, BadRequestException, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { AvailabilityService } from 'modules/availability/availability.service';
 import { Identity, IIdentity } from '@dashps/monmedx-common';
-import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
-import { BulkUpdateResult } from 'modules/availability/interfaces/availability-bulk-update.interface';
+import { BadRequestException, Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { ErrorCodes } from 'common/enums/error-code.enum';
-import { AvailabilityEdgesInterface } from 'modules/availability/interfaces/availability-edges.interface';
 import { split } from 'lodash';
-import { QueryFindAvailabilityDto } from 'modules/availability/dto/query-find-availability.dto';
-import { AvailabilityModel } from 'modules/availability/models/availability.model';
-import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
-import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
+import { AvailabilityService } from 'modules/availability/availability.service';
 import { AvailabilityValidator } from 'modules/availability/availability.validator';
+import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
+import { GetSuggestionsDto } from 'modules/availability/dto/GetSuggestionsDto';
+import { QueryFindAvailabilityDto } from 'modules/availability/dto/query-find-availability.dto';
+import { BulkUpdateResult } from 'modules/availability/interfaces/availability-bulk-update.interface';
+import { AvailabilityEdgesInterface } from 'modules/availability/interfaces/availability-edges.interface';
+import { AvailabilityModel } from 'modules/availability/models/availability.model';
+import { CreateAvailabilityGroupBodyDto } from './dto/create-availability-group-body.dto';
+import { AvailabilityModelAttributes } from './models/availability.interfaces';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -61,6 +62,18 @@ export class AvailabilityController {
     return this.availabilityService.bulkAction(identity, payload);
   }
 
+  /**
+   * Returns nine suggestions for the next appointment according to the given details
+   * @param identity
+   * @param payload
+   */
+  @Post('/suggestions')
+  getAvailabilitySuggestions(
+    @Identity() identity: IIdentity,
+    @Body() payload: GetSuggestionsDto,
+  ): Promise<AvailabilityModelAttributes[]> {
+    return this.availabilityService.getAvailabilitySuggestions(identity, payload);
+  }
   @Post('/create-group')
   createAvailabilityGroup(
     @Body() payload: CreateAvailabilityGroupBodyDto,

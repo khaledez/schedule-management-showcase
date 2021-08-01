@@ -5,6 +5,8 @@ import { availabilityProviders } from 'modules/availability/availability.provide
 import { DatabaseModule } from 'modules/database/database.module';
 import { EventsModule } from 'modules/events/events.module';
 import { LookupsModule } from 'modules/lookups/lookups.module';
+import { forwardRef } from '@nestjs/common';
+import { AppointmentsModule } from 'modules/appointments/appointments.module';
 import { ConfigurationModule } from 'modules/config/config.module';
 
 describe('AvailabilityController', () => {
@@ -12,7 +14,7 @@ describe('AvailabilityController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [DatabaseModule, EventsModule, LookupsModule, ConfigurationModule],
+      imports: [DatabaseModule, EventsModule, LookupsModule, forwardRef(() => AppointmentsModule), ConfigurationModule],
       controllers: [AvailabilityController],
       providers: [AvailabilityService, ...availabilityProviders],
     }).compile();
@@ -20,7 +22,7 @@ describe('AvailabilityController', () => {
     controller = module.get<AvailabilityController>(AvailabilityController);
   });
 
-  it('should be defined', () => {
+  test('should be defined', () => {
     expect(controller).toBeDefined();
   });
 });

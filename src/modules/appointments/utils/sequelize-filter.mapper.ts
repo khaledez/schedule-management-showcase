@@ -31,7 +31,7 @@ export function sequelizeFilterMapper(logger: Logger, query: QueryParamsDto, ass
       filters = Object.assign(where, filter);
     }
 
-    // filters = JSON.parse(filters);
+    // data-filters = JSON.parse(data-filters);
     logger.debug({
       function: 'sequelizeFilterMapper',
       filtersJSON: filters,

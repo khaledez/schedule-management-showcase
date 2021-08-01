@@ -47,9 +47,9 @@ describe('appointment service', () => {
       filter: { dob: { eq: new Date('1992-05-01') } },
     };
     const pagination: PagingInfoInterface = { limit: 30, offset: 0 };
-    const [result, pageInfo] = await apptService.searchWithPatientInfo(identity, query, pagination);
+    const [result, count] = await apptService.searchWithPatientInfo(identity, query, pagination);
 
-    expect(pageInfo.total).toBe(0);
+    expect(count).toBe(0);
     expect(result).toHaveLength(0);
   });
 

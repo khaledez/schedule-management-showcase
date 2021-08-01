@@ -3,10 +3,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PATIENT_INFO_REPOSITORY } from 'common/constants';
 import { ConfigurationModule } from 'modules/config/config.module';
 import * as nock from 'nock';
+import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
 import { PatientInfoService } from '..';
 import { PatientInfoAttributes, PatientInfoModel } from '../patient-info.model';
 import { PatientInfoModule } from '../patient-info.module';
-import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
 
 describe('patient-info service', () => {
   let patientInfoSvc: PatientInfoService;
@@ -15,7 +15,6 @@ describe('patient-info service', () => {
 
   beforeAll(async () => {
     await prepareTestDB();
-
     module = await Test.createTestingModule({
       imports: [PatientInfoModule, ConfigurationModule],
     }).compile();

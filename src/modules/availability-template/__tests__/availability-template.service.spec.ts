@@ -38,9 +38,9 @@ describe('AvailabilityTemplateService', () => {
     config = await module.get<ConfigService>('ConfigService');
   });
 
-  afterAll((done) => {
-    db.close();
-    module.close();
+  afterAll(async (done) => {
+    await db.close();
+    await module.close();
     done();
   });
 

@@ -1,30 +1,46 @@
 import { IIdentity } from '@dashps/monmedx-common';
 import {
   BadRequestException,
+  forwardRef,
   Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  APPOINTMENT_PROXIMITY_DAYS,
+  APPOINTMENT_SUGGESTIONS_QUERY_LIMIT,
+  APPOINTMENT_SUGGESTIONS_RETURN_LIMIT,
+  AVAILABILITY_REPOSITORY,
+  BAD_REQUEST,
+  DAY_TO_MILLI_SECOND,
+  HOUR_TO_SECONDS,
+  MIN_TO_SECONDS,
+  SEQUELIZE,
+} from 'common/constants';
+import { ErrorCodes } from 'common/enums/error-code.enum';
+import { getTimeGroup } from 'common/enums/time-group';
+import { TimeGroup } from 'common/interfaces/time-group-period';
 import { DateTime } from 'luxon';
-import { Op } from 'sequelize';
+import { AppointmentsService } from 'modules/appointments/appointments.service';
+import { GetSuggestionsDto } from 'modules/availability/dto/GetSuggestionsDto';
+import { LookupsService } from 'modules/lookups/lookups.service';
+import sequelize, { FindOptions, Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Transaction } from 'sequelize/types';
-import { AVAILABILITY_REPOSITORY, BAD_REQUEST, SEQUELIZE } from 'common/constants';
-import { ErrorCodes } from 'common/enums';
 import { EventsService } from '../events/events.service';
 import { EventModel, EventModelAttributes } from '../events/models';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
+import { CreateAvailabilityGroupBodyDto } from './dto/create-availability-group-body.dto';
 import { CreateAvailabilityDto } from './dto/create.dto';
 import { UpdateAvailabilityDto } from './dto/update.dto';
 import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityModel } from './models/availability.model';
-import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
-import { LookupsService } from 'modules/lookups/lookups.service';
+import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 
 @Injectable()
 export class AvailabilityService {
@@ -36,6 +52,8 @@ export class AvailabilityService {
     private readonly sequelize: Sequelize,
     private readonly eventsService: EventsService,
     private readonly lookupsService: LookupsService,
+    @Inject(forwardRef(() => AppointmentsService))
+    private readonly appointmentsService: AppointmentsService,
   ) {}
 
   async findAll({ identity }): Promise<AvailabilityEdgesInterface> {
@@ -102,7 +120,7 @@ export class AvailabilityService {
    * @param ids array of availability ids to be deleted
    *
    */
-  private async bulkRemove(ids: Array<number>, identity: IIdentity, transaction: Transaction): Promise<Array<number>> {
+  async bulkRemove(ids: Array<number>, identity: IIdentity, transaction: Transaction): Promise<Array<number>> {
     try {
       const availPromise = this.availabilityRepository.update(
         {
@@ -174,7 +192,7 @@ export class AvailabilityService {
     return AvailabilityModel.findAll({ transaction, plain: true, where: { id: { [Op.in]: ids } } });
   }
 
-  private async bulkCreate(
+  async bulkCreate(
     create: Array<CreateAvailabilityDto>,
     identity: IIdentity,
     transaction: Transaction,
@@ -261,6 +279,107 @@ export class AvailabilityService {
     }
   }
 
+  /**
+   * Returns nine suggestions for the next appointment according to the given details
+   * The suggested availabilities will have the same appointmentType as passed in the request.
+   * In addition the result will be sorted with the highest priority coming first.
+   */
+  async getAvailabilitySuggestions(
+    identity: IIdentity,
+    payload: GetSuggestionsDto,
+  ): Promise<AvailabilityModelAttributes[]> {
+    const appointmentTypeId: number = payload.appointmentTypeId;
+    const isValid: boolean = await this.lookupsService.doesAppointmentTypeExist(payload.appointmentTypeId);
+    if (!isValid) {
+      throw new BadRequestException({
+        fields: ['appointmentTypeId'],
+        message: 'Unknown appointment type',
+        code: BAD_REQUEST,
+      });
+    }
+    const referenceDate: Date = await this.pickReferenceDate(payload.referenceDate, payload.patientId);
+    const suggestions: AvailabilityModel[] = await this.getSuggestions(
+      referenceDate,
+      appointmentTypeId,
+      payload.staffId,
+    );
+    if (payload.timeGroup) {
+      const timeGroup: TimeGroup = getTimeGroup(payload.timeGroup);
+      const sortComparator = this.getSuggestionsPriorityComparator(timeGroup);
+      suggestions.sort(sortComparator);
+    }
+    return suggestions.slice(0, APPOINTMENT_SUGGESTIONS_RETURN_LIMIT);
+  }
+
+  getSuggestionsPriorityComparator(timeGroup: TimeGroup) {
+    const start = this.transformDayTimeToSeconds(timeGroup.start);
+    const end = this.transformDayTimeToSeconds(timeGroup.end);
+    // eslint-disable-next-line complexity
+    return (suggestionA: AvailabilityModelAttributes, suggestionB: AvailabilityModelAttributes): number => {
+      const aDateTime = this.extractDayTimeInSeconds(suggestionA.startDate);
+      const bDateTime = this.extractDayTimeInSeconds(suggestionB.startDate);
+      if (start <= aDateTime && aDateTime <= end && start <= bDateTime && bDateTime <= end) {
+        return suggestionA.startDate.getTime() - suggestionB.startDate.getTime();
+      }
+      if (start <= aDateTime && aDateTime <= end) {
+        return -1;
+      }
+      if (start <= bDateTime && bDateTime <= end) {
+        return 1;
+      }
+      return suggestionA.startDate.getTime() - suggestionB.startDate.getTime();
+    };
+  }
+
+  extractDayTimeInSeconds(date: Date) {
+    const dateTime = date.toISOString().match(/\d{2}:\d{2}:\d{2}/)[0];
+    return this.transformDayTimeToSeconds(dateTime);
+  }
+
+  transformDayTimeToSeconds(time: string): number {
+    const actualTime: string[] = time.split(':');
+    return +actualTime[0] * HOUR_TO_SECONDS + +actualTime[1] * MIN_TO_SECONDS + +actualTime[2];
+  }
+
+  async pickReferenceDate(explicitDate: string, patientId: number): Promise<Date> {
+    if (explicitDate) {
+      return new Date(explicitDate);
+    }
+    const appointment = await this.appointmentsService.getPatientProvisionalAppointment(patientId);
+    if (appointment) {
+      return appointment.provisionalDate;
+    }
+    return new Date();
+  }
+
+  getSuggestions(
+    referenceDate: Date,
+    appointmentTypeId: number,
+    staffId: FilterIdsInputDto,
+  ): Promise<AvailabilityModel[]> {
+    const dateWhereClause = this.getSuggestionsDateWhereClause(referenceDate);
+    const staffIWhereClause = this.getStaffIdWhereClause(staffId);
+    const options: FindOptions = {
+      where: {
+        appointmentId: { [Op.is]: null },
+        appointmentTypeId,
+        date: dateWhereClause,
+        staffId: staffIWhereClause,
+      },
+      order: [
+        [
+          sequelize.fn(
+            'ABS',
+            sequelize.fn('TIMESTAMPDIFF', sequelize.literal('SECOND'), sequelize.col('date'), referenceDate),
+          ),
+          'ASC',
+        ],
+      ],
+      limit: APPOINTMENT_SUGGESTIONS_QUERY_LIMIT,
+    };
+    return this.availabilityRepository.findAll(options);
+  }
+
   async createAvailabilityGroup(
     payload: CreateAvailabilityGroupBodyDto,
     identity: IIdentity,
@@ -280,6 +399,25 @@ export class AvailabilityService {
         message: error.message,
       });
     }
+  }
+
+  getSuggestionsDateWhereClause(referenceDate: Date) {
+    const currentDateTime = new Date().getTime();
+    const referenceDateTime = referenceDate.getTime();
+    const lowerDateBound = new Date(
+      Math.max(currentDateTime, referenceDateTime - APPOINTMENT_PROXIMITY_DAYS * DAY_TO_MILLI_SECOND),
+    );
+    const upperDateBound = new Date(referenceDateTime + APPOINTMENT_PROXIMITY_DAYS * DAY_TO_MILLI_SECOND);
+    return { [Op.between]: [lowerDateBound, upperDateBound] };
+  }
+
+  getStaffIdWhereClause(staffId: FilterIdsInputDto) {
+    if (staffId && staffId.in) {
+      return { [Op.in]: staffId.in };
+    } else if (staffId && staffId.eq) {
+      return { [Op.eq]: staffId.eq };
+    }
+    return { [Op.notIn]: [] };
   }
 }
 
