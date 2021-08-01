@@ -1,10 +1,10 @@
 import { Type } from 'class-transformer';
-import { IsMilitaryTime, IsNumber, IsOptional } from 'class-validator';
+import { IsISO8601, IsNumber, IsOptional } from 'class-validator';
 
 export class UpdateAppointmentDto {
   @IsOptional()
-  @IsMilitaryTime({ message: 'Must be a valid representation of time in format HH:MM or HH:MM:SS' })
-  startTime: string;
+  @IsISO8601()
+  startDate: string;
 
   @IsOptional()
   @IsNumber()
@@ -24,7 +24,7 @@ export class UpdateAppointmentDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  statusappointmentStatusId: number;
+  appointmentStatusId: number;
 
   @IsOptional()
   complaintsNotes: string;

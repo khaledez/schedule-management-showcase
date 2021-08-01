@@ -1,8 +1,8 @@
 import { FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
-import { FilterAvailabilityInputDto, ResultWithErrors, FilterDateInputDto } from 'common/dtos';
+import { FilterAvailabilityInputDto, FilterDateInputDto, ResultWithErrors } from 'common/dtos';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
-import { CalendarEntry } from 'common/interfaces/calendar-entry';
 
 export interface Invitee {
   email: string;

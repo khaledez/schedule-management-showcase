@@ -1,5 +1,5 @@
 import { Dialect } from 'sequelize/types';
-import { PATIENT_MGMT_TOPIC, SCHEDULE_MGMT_TOPIC, VISIT_MGMT_TOPIC } from '../src/common/constants';
+import { PATIENT_MGMT_TOPIC, VISIT_MGMT_TOPIC } from '../src/common/constants';
 
 export const config = () => ({
   serviceName: 'schedule-management',
@@ -24,7 +24,7 @@ export const config = () => ({
       min: 2,
     },
   },
-  topicList: [SCHEDULE_MGMT_TOPIC, VISIT_MGMT_TOPIC, PATIENT_MGMT_TOPIC],
+  topicList: [VISIT_MGMT_TOPIC, PATIENT_MGMT_TOPIC],
   cognito: {
     userPoolId: 'ca-central-1_P6vKnQ2LG',
     clientId: '33qg4ep2bligir0h4l7nbdcjuj',

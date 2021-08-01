@@ -4,6 +4,7 @@ import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
+  APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
@@ -13,6 +14,7 @@ import { FindOptions, Op } from 'sequelize';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
+import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
 
@@ -31,6 +33,8 @@ export class LookupsService {
     private readonly appointmentTypesLookupsRepository: typeof AppointmentTypesLookupsModel,
     @Inject(APPOINTMENT_STATUS_LOOKUPS_REPOSITORY)
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
+    @Inject(APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY)
+    private readonly appointmentVisitModeRepository: typeof AppointmentVisitModeLookupModel,
   ) {}
   /**
    *
@@ -233,10 +237,13 @@ export class LookupsService {
   /**
    * Validate if a given list of appointments ids are valid types
    *
-   * @param appointmentTypesIds List of the appointment ids to be validated
    * @param identity
+   * @param appointmentTypesIds List of the appointment ids to be validated
    */
-  public async validateAppointmentsTypes(appointmentTypesIds: Array<number>, identity: IIdentity): Promise<void> {
+  public async validateAppointmentsTypes(identity: IIdentity, appointmentTypesIds: Array<number>): Promise<void> {
+    if (appointmentTypesIds || appointmentTypesIds.length === 0) {
+      return;
+    }
     const allAppointmentTypes = await this.findAllAppointmentTypesLookups(identity);
     const validTypesIds: Set<number> = new Set(allAppointmentTypes.map((appointmentType) => appointmentType.id));
     const invalidIds = [];
@@ -249,6 +256,56 @@ export class LookupsService {
       throw new BadRequestException({
         message: "The appointment types doesn't exist",
         ids: invalidIds,
+      });
+    }
+  }
+
+  async validateAppointmentVisitModes(identity: IIdentity, appointmentVisitModeIds: number[]): Promise<void> {
+    if (!appointmentVisitModeIds || appointmentVisitModeIds.length === 0) {
+      return;
+    }
+    const lookupData = await this.appointmentVisitModeRepository.findAll({
+      where: {
+        id: appointmentVisitModeIds,
+        clinicId: {
+          [Op.or]: [null, identity?.clinicId],
+        },
+      },
+    });
+
+    const distinctIds = [...new Set(appointmentVisitModeIds)];
+
+    if (distinctIds.length !== lookupData.length && distinctIds.length > 0) {
+      const returnedIds = lookupData.map((lookup) => lookup.get('id'));
+      const unknownIds = distinctIds.filter((id) => returnedIds.indexOf(id) < 0);
+      throw new BadRequestException({
+        message: `unknown visit mode IDs ${unknownIds}`,
+        fields: ['appointmentVisitModeId'],
+      });
+    }
+  }
+
+  async validateAppointmentStatuses(identity: IIdentity, appointmentStatusIds: number[]): Promise<void> {
+    if (!appointmentStatusIds || appointmentStatusIds.length === 0) {
+      return;
+    }
+    const lookupData = await this.appointmentStatusLookupsRepository.findAll({
+      where: {
+        id: appointmentStatusIds,
+        clinicId: {
+          [Op.or]: [null, identity?.clinicId],
+        },
+      },
+    });
+
+    const distinctIds = [...new Set(appointmentStatusIds)];
+
+    if (distinctIds.length !== lookupData.length && distinctIds.length > 0) {
+      const returnedIds = lookupData.map((lookup) => lookup.get('id'));
+      const unknownIds = distinctIds.filter((id) => returnedIds.indexOf(id) < 0);
+      throw new BadRequestException({
+        message: `unknown appointment status IDs ${unknownIds}`,
+        fields: ['appointmentStatusId'],
       });
     }
   }

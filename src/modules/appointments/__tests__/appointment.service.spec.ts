@@ -1,11 +1,7 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { APPOINTMENTS_REPOSITORY, PATIENT_INFO_REPOSITORY } from 'common/constants';
-import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
-import { AvailabilityService } from 'modules/availability/availability.service';
 import { ConfigurationModule } from 'modules/config/config.module';
-import { LookupsService } from 'modules/lookups/lookups.service';
-import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
 import { AppointmentsModel } from '../appointments.model';
@@ -75,30 +71,3 @@ const identity: IIdentity = {
   userLang: 'en',
   userInfo: null,
 };
-
-async function prepareAppointmentDto(
-  lookupsService: LookupsService,
-  availabilityService: AvailabilityService,
-  input: {
-    status: AppointmentStatusEnum;
-    type: AppointmentTypesLookupsModel;
-    date: Date;
-    durationMinutes: number;
-    patientId: number;
-    doctorId: number;
-  },
-): Promise<CreateNonProvisionalAppointmentDto> {
-  // 1. find an empty slot for the doctor
-
-  // 2. if not available create one
-  const apptDto: CreateNonProvisionalAppointmentDto = new CreateNonProvisionalAppointmentDto();
-  apptDto.clinicId = identity.clinicId;
-  apptDto.appointmentStatusId = await lookupsService.getStatusIdByCode(input.status);
-  apptDto.patientId = input.patientId;
-  apptDto.doctorId = input.doctorId;
-  apptDto.availabilityId = 1;
-  apptDto.date = input.date;
-  apptDto.createdBy = identity.userId;
-
-  return apptDto;
-}

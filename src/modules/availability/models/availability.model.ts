@@ -1,8 +1,9 @@
+import { BaseModel } from 'common/models/base.model';
 import { BelongsTo, Column, DefaultScope, ForeignKey, HasOne, IsDate, Scopes, Table } from 'sequelize-typescript';
-import { BaseModel } from '../../../common/models/base.model';
 import { AppointmentsModel } from '../../appointments/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './availability.interfaces';
+
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],

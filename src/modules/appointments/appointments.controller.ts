@@ -33,6 +33,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { QueryParamsDto } from './dto/query-params.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -82,18 +83,16 @@ export class AppointmentsController {
   @Patch(':id')
   updateOneAppointment(
     @Identity() identity: IdentityDto,
-    @Headers('Authorization') authToken: string,
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateAppointmentDto,
+    @Body() updateAppointmentDto: UpdateAppointmentDto,
   ) {
-    return [];
+    return this.appointmentsService.updateAppointment(identity, id, updateAppointmentDto);
   }
 
   @Get('patient-upcoming/:patientId')
   getAppointmentByPatientId(
     @Param('patientId', ParseIntPipe) patientId: number,
     @Query() query: UpComingAppointmentQueryDto,
-    //@Identity() identity: IdentityDto,
   ) {
     return this.appointmentsService.findAppointmentByPatientId(patientId, query);
   }

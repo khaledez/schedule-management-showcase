@@ -1,10 +1,10 @@
+import { CalendarType } from 'common/enums/calendar-type';
+import { getTimeGroup, TimeGroupCode } from 'common/enums/time-group';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
-import { Op } from 'sequelize';
-import { getTimeGroup, TimeGroupCode } from 'common/enums/time-group';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
-import { CalendarType } from 'common/enums/calendar-type';
-import { CalendarEntry } from 'common/interfaces/calendar-entry';
+import { Op } from 'sequelize';
 
 export function testCreateAvailabilityGroupInvalidAppointments(): {
   dto: CreateAvailabilityGroupBodyDto;

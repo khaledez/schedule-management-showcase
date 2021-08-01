@@ -1,4 +1,5 @@
 import { IIdentity } from '@dashps/monmedx-common';
+import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
   forwardRef,
@@ -19,11 +20,14 @@ import {
   MIN_TO_SECONDS,
   SEQUELIZE,
 } from 'common/constants';
-import { ErrorCodes } from 'common/enums/error-code.enum';
+import { ErrorCodes } from 'common/enums';
+import { CalendarType } from 'common/enums/calendar-type';
 import { getTimeGroup } from 'common/enums/time-group';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { TimeGroup } from 'common/interfaces/time-group-period';
 import { DateTime } from 'luxon';
 import { AppointmentsService } from 'modules/appointments/appointments.service';
+import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
 import { GetSuggestionsDto } from 'modules/availability/dto/GetSuggestionsDto';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import sequelize, { FindOptions, Op } from 'sequelize';
@@ -33,16 +37,12 @@ import { EventsService } from '../events/events.service';
 import { EventModel, EventModelAttributes } from '../events/models';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
-import { CreateAvailabilityGroupBodyDto } from './dto/create-availability-group-body.dto';
 import { CreateAvailabilityDto } from './dto/create.dto';
 import { UpdateAvailabilityDto } from './dto/update.dto';
 import { BulkUpdateResult } from './interfaces/availability-bulk-update.interface';
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityModel } from './models/availability.model';
-import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
-import { CalendarEntry } from 'common/interfaces/calendar-entry';
-import { CalendarType } from 'common/enums/calendar-type';
 
 @Injectable()
 export class AvailabilityService {
@@ -385,7 +385,7 @@ export class AvailabilityService {
   ): Promise<Array<AvailabilityModelAttributes>> {
     const availabilityGroup: Array<CreateAvailabilityDto> = payload.availabilityGroup;
     const appointmentTypesIds = availabilityGroup.map((availability) => availability.appointmentTypeId);
-    await this.lookupsService.validateAppointmentsTypes(appointmentTypesIds, identity);
+    await this.lookupsService.validateAppointmentsTypes(identity, appointmentTypesIds);
     try {
       return await this.sequelize.transaction((transaction: Transaction) => {
         const availabilityGroup: Array<CreateAvailabilityDto> = payload.availabilityGroup;

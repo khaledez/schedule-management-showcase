@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
-import { ErrorCodes } from 'common/enums';
 import {
   BadRequestException,
   ConflictException,
@@ -10,13 +9,19 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
+  DEFAULT_EVENT_DURATION_MINS,
+  SCHEDULE_MGMT_TOPIC,
+} from 'common/constants';
+import { ErrorCodes } from 'common/enums';
+import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import * as moment from 'moment';
 import { CreateOptions, FindOptions, Op, Transaction, UpdateOptions } from 'sequelize';
-import { APPOINTMENTS_REPOSITORY, DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
-import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
@@ -27,8 +32,11 @@ import { CreateGlobalAppointmentDto } from './dto/global-appointment-create.dto'
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { QueryParamsDto } from './dto/query-params.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
 import { sequelizeSortMapper } from './utils/sequelize-sort.mapper';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { snsTopic } = require('pubsub-service');
 
 export interface AssociationFieldsSortCriteria {
   [key: string]: {
@@ -121,7 +129,6 @@ export class AppointmentsService {
         primaryAction: actions[i]?.nextAction ? actions[i].nextAction : [],
         secondaryActions: actions[i]?.secondaryActions ? actions[i].secondaryActions : [],
         provisionalAppointment: !appt.availabilityId,
-        date: appt.startDate.toISOString(),
       }));
 
       return [searchResult, count];
@@ -294,21 +301,7 @@ export class AppointmentsService {
       appointmentStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
     }
 
-    const { patientId } = dto;
-    const startDate = DateTime.fromJSDate(dto.date);
-
-    const inputAttr: AppointmentsModelAttributes = {
-      ...dto,
-      appointmentStatusId,
-      date: startDate.toISODate(),
-      startTime: startDate.toSQLTime({ includeOffset: false, includeZone: false }),
-      durationMinutes: DEFAULT_EVENT_DURATION_MINS, // TODO support receiving duration minutes from user
-      endDate: startDate.plus({ minutes: DEFAULT_EVENT_DURATION_MINS }).toJSDate(),
-      provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
-      staffId: dto.doctorId,
-      availabilityId: dto.availabilityId,
-    };
-
+    const inputAttr = mapCreateGlobalDtoToAttributes(dto, appointmentStatusId);
     this.logger.debug({
       title: 'appointment create payload',
       payload: inputAttr,
@@ -319,7 +312,10 @@ export class AppointmentsService {
     }
 
     //change other appointments upcoming_appointment field to 0
-    await this.appointmentsRepository.update({ upcomingAppointment: false }, { where: { patientId }, transaction });
+    await this.appointmentsRepository.update(
+      { upcomingAppointment: false },
+      { where: { patientId: dto.patientId }, transaction },
+    );
 
     const options: CreateOptions = {};
     if (transaction) {
@@ -404,6 +400,105 @@ export class AppointmentsService {
         transaction,
       },
     );
+  }
+
+  updateAppointment(
+    identity: IIdentity,
+    appointmentId: number,
+    updateDto: UpdateAppointmentDto,
+  ): Promise<AppointmentsModelAttributes> {
+    return this.appointmentsRepository.sequelize.transaction<AppointmentsModelAttributes>(
+      async (transaction: Transaction) => {
+        // 1. fetch appointment
+        const appointment = await this.appointmentsRepository.findOne({
+          transaction,
+          where: { id: appointmentId, clinicId: identity.clinicId },
+        });
+        if (!appointment) {
+          throw new NotFoundException({
+            fields: ['appointmentId'],
+            message: `Appointment with id = ${appointmentId} not found`,
+            error: 'NOT_FOUND',
+          });
+        }
+
+        // 2. validate lookups
+        await Promise.all([
+          this.lookupsService.validateAppointmentStatuses(
+            identity,
+            updateDto.appointmentStatusId ? [updateDto.appointmentStatusId] : [],
+          ),
+          this.lookupsService.validateAppointmentVisitModes(
+            identity,
+            updateDto.appointmentVisitModeId ? [updateDto.appointmentVisitModeId] : [],
+          ),
+          this.lookupsService.validateAppointmentsTypes(
+            identity,
+            updateDto.appointmentTypeId ? [updateDto.appointmentTypeId] : [],
+          ),
+        ]);
+
+        // 3. update database
+        const attributes = mapUpdateDtoToAttributes(identity, appointment, updateDto);
+
+        this.logger.debug({ method: 'appointmentService/updateAppointment', updateDto, attributes });
+        const result = await this.appointmentsRepository.update(attributes, {
+          where: {
+            id: appointmentId,
+          },
+          transaction,
+        });
+
+        this.logger.debug({ method: 'appointmentService/updateAppointment', result });
+
+        const updatedAppt = await this.appointmentsRepository.findByPk(appointmentId, { transaction });
+
+        // 4. publish event if status changed to check in
+        this.publishEventIfStatusMatches(
+          AppointmentStatusEnum.CHECK_IN,
+          updatedAppt,
+          updateDto,
+          APPOINTMENT_CHECKIN_STATUS_EVENT,
+        );
+
+        return updatedAppt;
+      },
+    );
+  }
+
+  async publishEventIfStatusMatches(
+    targetStatus: AppointmentStatusEnum,
+    updatedAppointment: AppointmentsModelAttributes,
+    inputDto: UpdateAppointmentDto,
+    eventName: string,
+  ) {
+    if (!inputDto.appointmentStatusId) {
+      return;
+    }
+    try {
+      this.logger.debug({
+        method: 'appointmentsService/publishEventIfStatusMatches',
+        message: 'publishing event',
+        updatedAppointment,
+      });
+      const targetStatusId = await this.lookupsService.getStatusIdByCode(targetStatus);
+      if (targetStatusId === inputDto.appointmentStatusId) {
+        await snsTopic.sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
+          eventName,
+          source: SCHEDULE_MGMT_TOPIC,
+          clinicId: updatedAppointment.clinicId,
+          patientId: updatedAppointment.patientId,
+          data: updatedAppointment,
+        });
+      }
+    } catch (error) {
+      this.logger.error({
+        method: 'appointmentsService/publishEventIfStatusMatches',
+        error,
+        inputDto,
+        updatedAppointment,
+      });
+    }
   }
 
   // TODO: delete this after ability to change status
@@ -571,4 +666,43 @@ export class AppointmentsService {
       });
     }
   }
+}
+
+function mapUpdateDtoToAttributes(
+  identity: IIdentity,
+  appointment: AppointmentsModel,
+  updateDto: UpdateAppointmentDto,
+): AppointmentsModelAttributes {
+  const startDate = DateTime.fromISO(updateDto.startDate);
+  return {
+    id: appointment.id,
+    patientId: appointment.patientId,
+    startDate: startDate.toJSDate(),
+    endDate: startDate.plus({ minutes: updateDto.durationMinutes }).toJSDate(),
+    durationMinutes: updateDto.durationMinutes,
+    staffId: appointment.staffId,
+    provisionalDate: appointment.provisionalDate,
+    appointmentVisitModeId: updateDto.appointmentVisitModeId,
+    complaintsNotes: updateDto.complaintsNotes,
+    updatedBy: identity.userId,
+  };
+}
+
+function mapCreateGlobalDtoToAttributes(
+  dto: CreateGlobalAppointmentDto,
+  appointmentStatusId: number,
+): AppointmentsModelAttributes {
+  const startDate = DateTime.fromJSDate(dto.date);
+  const durationMins = dto.durationMinutes || DEFAULT_EVENT_DURATION_MINS;
+
+  return {
+    ...dto,
+    startDate: startDate.toJSDate(),
+    appointmentStatusId,
+    durationMinutes: durationMins,
+    endDate: startDate.plus({ minutes: durationMins }).toJSDate(),
+    provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
+    staffId: dto.doctorId,
+    availabilityId: dto.availabilityId,
+  };
 }

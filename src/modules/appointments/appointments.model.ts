@@ -1,5 +1,5 @@
-import * as moment from 'moment';
-import { Op } from 'sequelize';
+import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
+import { DATE, Op } from 'sequelize';
 import { BelongsTo, Column, DataType, ForeignKey, IsDate, Scopes, Table } from 'sequelize-typescript';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
 import { BaseModel, BaseModelAttributes } from '../../common/models/base.model';
@@ -14,26 +14,19 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
   staffId: number;
   availabilityId?: number;
   previousAppointmentId?: number;
-  appointmentTypeId?: number;
-  date: string;
+  startDate: Date;
   endDate: Date;
   durationMinutes: number;
-  startTime: string;
   provisionalDate: Date;
+  appointmentTypeId?: number;
   appointmentStatusId?: number;
-  appointmentStatusNameEn?: string;
-  appointmentStatusNameFr?: string;
   cancelRescheduleText?: string;
   cancelRescheduleReasonId?: number;
-  cancelRescheduleReasonEn?: string;
-  cancelRescheduleReasonFr?: string;
   upcomingAppointment?: boolean;
   canceledBy?: number;
   canceledAt?: Date;
-
-  appointmentTypeNameEn?: string;
-  appointmentTypeNameFr?: string;
-  modeCode?: string;
+  appointmentVisitModeId?: number;
+  complaintsNotes?: string;
 }
 
 // note that the id will auto added by sequelize.
@@ -86,19 +79,18 @@ export class AppointmentsModel
   @ForeignKey(() => AppointmentTypesLookupsModel)
   appointmentTypeId: number;
 
-  @IsDate
-  @Column
-  get date(): string {
-    return moment(this.getDataValue('date')).format('YYYY-MM-DD');
-  }
-  set date(value: string) {
-    this.setDataValue('date', moment(value).format('YYYY-MM-DD'));
-  }
+  @Column({
+    type: DATE,
+  })
+  startDate: Date;
 
-  @Column(DataType.VIRTUAL)
-  get startDate() {
-    return moment(`${this.date} ${this.startTime}`, 'YYYY-MM-DD hh:mm:ss').toDate();
-  }
+  @Column({
+    type: DATE,
+  })
+  endDate: Date;
+
+  @Column
+  durationMinutes: number;
 
   @IsDate
   @Column(DataType.DATE)
@@ -128,25 +120,10 @@ export class AppointmentsModel
   canceledAt: Date;
 
   @Column
-  endDate: Date;
+  appointmentVisitModeId: number;
+
   @Column
-  durationMinutes: number;
-  @Column
-  startTime: string;
-  @Column
-  appointmentStatusNameEn: string;
-  @Column
-  appointmentStatusNameFr: string;
-  @Column
-  cancelRescheduleReasonEn: string;
-  @Column
-  cancelRescheduleReasonFr: string;
-  @Column
-  appointmentTypeNameEn: string;
-  @Column
-  appointmentTypeNameFr: string;
-  @Column
-  modeCode: string;
+  complaintsNotes: string;
 
   @BelongsTo(() => PatientInfoModel, 'patientId')
   patient: PatientInfoModel;
@@ -159,4 +136,7 @@ export class AppointmentsModel
 
   @BelongsTo(() => AppointmentActionsLookupsModel, 'cancelRescheduleReasonId')
   cancelRescheduleReason: AppointmentActionsLookupsModel;
+
+  @BelongsTo(() => AppointmentVisitModeLookupModel, 'appointmentVisitModeId')
+  visitMode: AppointmentVisitModeLookupModel;
 }

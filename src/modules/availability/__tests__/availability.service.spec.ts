@@ -1,13 +1,16 @@
+import { BadRequestException, forwardRef } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { fail } from 'assert';
+import {
+  APPOINTMENT_PROXIMITY_DAYS,
+  APPOINTMENT_SUGGESTIONS_RETURN_LIMIT,
+  BAD_REQUEST,
+  DAY_TO_MILLI_SECOND,
+} from 'common/constants';
+import { AppointmentsModule } from 'modules/appointments/appointments.module';
 import { AvailabilityController } from 'modules/availability/availability.controller';
-import { AvailabilityService } from 'modules/availability/availability.service';
 import { availabilityProviders } from 'modules/availability/availability.provider';
-import { DatabaseModule } from 'modules/database/database.module';
-import { EventsModule } from 'modules/events/events.module';
-import { LookupsModule } from 'modules/lookups/lookups.module';
-import { ConfigurationModule } from 'modules/config/config.module';
-import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
-import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { AvailabilityService } from 'modules/availability/availability.service';
 import {
   buildGetNineAvailabilitySuggestionsTestData,
   buildGetOneAvailabilitySuggestionsTestData,
@@ -21,16 +24,13 @@ import {
   testCreateAvailabilityGroupInvalidAppointments,
   testCreateAvailabilityGroupSuccess,
 } from 'modules/availability/__tests__/availability.data';
-import { BadRequestException, forwardRef } from '@nestjs/common';
-import { AppointmentsModule } from 'modules/appointments/appointments.module';
-import {
-  APPOINTMENT_PROXIMITY_DAYS,
-  APPOINTMENT_SUGGESTIONS_RETURN_LIMIT,
-  BAD_REQUEST,
-  DAY_TO_MILLI_SECOND,
-} from 'common/constants';
+import { ConfigurationModule } from 'modules/config/config.module';
+import { DatabaseModule } from 'modules/database/database.module';
+import { EventsModule } from 'modules/events/events.module';
+import { LookupsModule } from 'modules/lookups/lookups.module';
 import { Op } from 'sequelize';
-import { fail } from 'assert';
+import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
 
 describe('# AvailabilityService', () => {
   let module: TestingModule;

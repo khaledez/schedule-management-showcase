@@ -201,13 +201,18 @@ function eventToAvailability(model: EventModelAttributes): CalendarAvailability 
 }
 
 function eventToAppointment(model: EventModelAttributes): CalendarAppointment {
-  const { date, ...appt } = model.appointment;
+  const appt = model.appointment;
   return {
-    ...appt,
     entryType: 'APPOINTMENT',
     __typename: 'CalendarAppointment',
-    startDate: DateTime.fromSQL(date).toJSDate(),
-    provisionalDate: model.appointment.provisionalDate,
+    startDate: appt.startDate,
+    provisionalDate: appt.provisionalDate,
+    canceledAt: appt.canceledAt,
+    canceledBy: appt.canceledBy,
+    patientId: appt.patientId,
+    endDate: appt.endDate,
+    staffId: appt.staffId,
+    availabilityId: appt.availabilityId,
   } as CalendarAppointment;
 }
 
