@@ -1,8 +1,9 @@
 import { Type } from 'class-transformer';
-import { IsArray } from 'class-validator';
+import { IsArray, IsNumber } from 'class-validator';
 
 export class DeleteTemplateDto {
-  @IsArray({ each: true })
+  @IsArray()
+  @IsNumber({}, { each: true })
   @Type(() => Number)
   ids: number[];
 }

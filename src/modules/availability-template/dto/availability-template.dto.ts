@@ -8,9 +8,11 @@ import { AvailabilitySlotDto } from './availability-template-slot.dto';
  */
 export class AvailabilityTemplateDto implements AvailabilityTemplateAttributes {
   @IsNumber()
+  @Type(() => Number)
   createdBy: number;
 
   @IsNumber()
+  @Type(() => Number)
   clinicId: number;
 
   @IsString()

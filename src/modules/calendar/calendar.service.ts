@@ -103,12 +103,11 @@ function processDateCondition(
   }
 
   if (filter.between) {
+    const startOfDate1 = DateTime.fromJSDate(filter.between[0]).toSQLDate();
+    const endOfDate2 = `${DateTime.fromJSDate(filter.between[1]).toSQLDate()} 23:59:59`; //Append end of day time
     return {
       [columnName]: {
-        [Op.between]: [
-          DateTime.fromJSDate(filter.between[0]).toSQLDate(),
-          DateTime.fromJSDate(filter.between[1]).toSQLDate(),
-        ],
+        [Op.between]: [startOfDate1, endOfDate2],
       },
     };
   }
