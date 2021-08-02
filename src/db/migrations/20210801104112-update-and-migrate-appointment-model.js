@@ -13,7 +13,6 @@ module.exports = {
           type: Sequelize.INTEGER,
         },
         clinic_id: {
-          allowNull: false,
           type: Sequelize.INTEGER,
         },
         name_en: {
@@ -22,10 +21,6 @@ module.exports = {
         },
         name_fr: {
           type: Sequelize.STRING,
-        },
-        value: {
-          allowNull: false,
-          type: Sequelize.INTEGER,
         },
         code: {
           type: Sequelize.STRING,

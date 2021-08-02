@@ -20,7 +20,6 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { IdentityDto } from 'common/dtos/identity.dto';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { PatientInfoService } from 'modules/patient-info';
 import { Transaction } from 'sequelize';
@@ -67,7 +66,7 @@ export class AppointmentsController {
 
   // get total appointment for each day for a specific period
   @Get('appointments-days')
-  async getAppointmentsByPeriods(@Identity() identity: IdentityDto, @Query() query: QueryAppointmentsByPeriodsDto) {
+  async getAppointmentsByPeriods(@Identity() identity: IIdentity, @Query() query: QueryAppointmentsByPeriodsDto) {
     this.logger.log({ query });
     this.logger.log({ identity });
     return {
@@ -82,7 +81,7 @@ export class AppointmentsController {
 
   @Patch(':id')
   updateOneAppointment(
-    @Identity() identity: IdentityDto,
+    @Identity() identity: IIdentity,
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
   ) {
@@ -107,7 +106,7 @@ export class AppointmentsController {
   @UseInterceptors(TransactionInterceptor)
   @Post('provisional')
   async createProvisionalAppointment(
-    @Identity() identity: IdentityDto,
+    @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
     @TransactionParam() transaction: Transaction,
@@ -140,7 +139,7 @@ export class AppointmentsController {
    */
   @Post()
   async createAppointment(
-    @Identity() identity: IdentityDto,
+    @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentDto,
   ): Promise<AppointmentsModel> {

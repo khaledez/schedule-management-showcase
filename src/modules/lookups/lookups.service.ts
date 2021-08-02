@@ -116,6 +116,16 @@ export class LookupsService {
     });
   }
 
+  public findAllAppointmentVisitModes({ clinicId }: IIdentity): Promise<AppointmentVisitModeLookupModel[]> {
+    return this.appointmentVisitModeRepository.findAll({
+      where: {
+        clinicId: {
+          [Op.or]: [null, clinicId],
+        },
+      },
+    });
+  }
+
   //TODO: MMX-CurrentSprint => static value
   nextAppointmentActions = {
     WAIT_LIST: [
@@ -245,13 +255,9 @@ export class LookupsService {
       return;
     }
     const allAppointmentTypes = await this.findAllAppointmentTypesLookups(identity);
-    const validTypesIds: Set<number> = new Set(allAppointmentTypes.map((appointmentType) => appointmentType.id));
-    const invalidIds = [];
-    appointmentTypesIds.forEach((typeId) => {
-      if (!validTypesIds.has(typeId)) {
-        invalidIds.push(typeId);
-      }
-    });
+    const validTypesIds = [...new Set(allAppointmentTypes.map((appointmentType) => appointmentType.id))];
+    const invalidIds = appointmentTypesIds.filter((id) => !validTypesIds.includes(id));
+
     if (invalidIds.length !== 0) {
       throw new BadRequestException({
         message: "The appointment types doesn't exist",
@@ -276,11 +282,12 @@ export class LookupsService {
     const distinctIds = [...new Set(appointmentVisitModeIds)];
 
     if (distinctIds.length !== lookupData.length && distinctIds.length > 0) {
-      const returnedIds = lookupData.map((lookup) => lookup.get('id'));
+      const returnedIds = lookupData.map((lookup) => lookup.id);
       const unknownIds = distinctIds.filter((id) => returnedIds.indexOf(id) < 0);
       throw new BadRequestException({
-        message: `unknown visit mode IDs ${unknownIds}`,
+        message: `unknown visit mode ID`,
         fields: ['appointmentVisitModeId'],
+        unknownIds,
       });
     }
   }
@@ -301,11 +308,12 @@ export class LookupsService {
     const distinctIds = [...new Set(appointmentStatusIds)];
 
     if (distinctIds.length !== lookupData.length && distinctIds.length > 0) {
-      const returnedIds = lookupData.map((lookup) => lookup.get('id'));
+      const returnedIds = lookupData.map((lookup) => lookup.id);
       const unknownIds = distinctIds.filter((id) => returnedIds.indexOf(id) < 0);
       throw new BadRequestException({
-        message: `unknown appointment status IDs ${unknownIds}`,
+        message: `unknown appointment status ID`,
         fields: ['appointmentStatusId'],
+        unknownIds,
       });
     }
   }

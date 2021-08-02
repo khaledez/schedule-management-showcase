@@ -25,7 +25,16 @@ describe('LookupsService', () => {
     return {
       ...entry,
       useValue: {
-        findAll: jest.fn(() => entry.data),
+        findAll: jest.fn(({ where }) => {
+          if (where?.id) {
+            if (Array.isArray(where.id)) {
+              const r = entry.data.filter((val) => where.id.includes(val.id));
+              return r;
+            }
+            return entry.data.filter((val) => val.id === where.id);
+          }
+          return entry.data;
+        }),
         findByPk: jest.fn((id) => {
           const filtered = entry.data.filter((value) => value.id === id);
           return filtered.length !== 0 ? filtered[0] : null;
@@ -41,7 +50,7 @@ describe('LookupsService', () => {
     lookupsService = await module.get<LookupsService>(LookupsService);
   });
 
-  it('should be defined', () => {
+  test('should be defined', () => {
     expect(lookupsService).toBeDefined();
   });
 
@@ -72,5 +81,26 @@ describe('LookupsService', () => {
       expect(err.response).toHaveProperty('message', "The appointment types doesn't exist");
       expect(err.response).toHaveProperty('ids', testCase.notFoundIds);
     }
+  });
+
+  // Visit mode validate tests
+  test('appointmentVisitMode validate empty ids', async () => {
+    await Promise.all([
+      expect(lookupsService.validateAppointmentVisitModes(getTestIdentity(50, 50), [])).resolves.toBeUndefined(),
+      expect(lookupsService.validateAppointmentVisitModes(getTestIdentity(50, 50), null)).resolves.toBeUndefined(),
+      expect(lookupsService.validateAppointmentVisitModes(getTestIdentity(50, 50), [null])).rejects.toThrow(
+        /unknown visit mode ID/,
+      ),
+    ]);
+  });
+
+  test.each([
+    { input: [7, 8], unknownIds: [7, 8] },
+    { input: [1, 2, 5, 6], unknownIds: [5, 6] },
+    { input: [6, 7, 8], unknownIds: [6, 7, 8] },
+  ])('appointmentVisitMode validate not found ids %#', async ({ input, unknownIds }) => {
+    await expect(lookupsService.validateAppointmentVisitModes(getTestIdentity(50, 50), input)).rejects.toMatchObject({
+      response: { fields: ['appointmentVisitModeId'], unknownIds },
+    });
   });
 });
