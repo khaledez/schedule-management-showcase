@@ -14,14 +14,14 @@ export function sequelizeSortMapper(
     const sort = query && query.sort && query.sort[0];
     // to get the last elements i need to reverse sort and git the limit
     let defaultOrder = [
-      ['date', 'DESC'],
+      ['start_date', 'DESC'],
       ['availability', 'start_time', 'DESC'],
       ['id', 'DESC'],
     ];
     // reverse sort
     if (shouldReverseSort) {
       defaultOrder = [
-        ['date', 'ASC'],
+        ['start_date', 'ASC'],
         ['availability', 'start_time', 'ASC'],
         ['id', 'ASC'],
       ];
@@ -45,7 +45,7 @@ export function sequelizeSortMapper(
       if (relation) {
         order = [[relation, column, reverseSort(sort.order, shouldReverseSort)]];
       } else {
-        order = [[sort.key, reverseSort(sort.order, shouldReverseSort)]];
+        order = [[column, reverseSort(sort.order, shouldReverseSort)]];
       }
     } else {
       order = [[sort.key, reverseSort(sort.order, shouldReverseSort)]];

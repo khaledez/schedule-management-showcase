@@ -71,7 +71,7 @@ export class AppointmentsService {
       column: 'code',
     },
     DATE: {
-      column: 'date',
+      column: 'start_date',
     },
   };
 
@@ -93,7 +93,6 @@ export class AppointmentsService {
       filterByAppointmentCategory,
     );
     const sequelizeSort = sequelizeSortMapper(this.logger, queryParams, this.associationFieldsSortNames, false);
-
     try {
       const options: FindOptions = {
         // benchmark: true,
