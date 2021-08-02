@@ -1,10 +1,6 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { APPOINTMENTS_REPOSITORY, PATIENT_INFO_REPOSITORY } from 'common/constants';
 import { ConfigurationModule } from 'modules/config/config.module';
-import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
-import { dropDB, prepareTestDB } from 'utils/test-helpers/DatabaseHelpers';
-import { AppointmentsModel } from '../appointments.model';
 import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateNonProvisionalAppointmentDto } from '../dto/create-non-provisional-appointment.dto';
@@ -15,7 +11,6 @@ describe('appointment service', () => {
   let moduleRef: TestingModule;
 
   beforeAll(async () => {
-    await prepareTestDB();
     moduleRef = await Test.createTestingModule({
       imports: [AppointmentsModule, ConfigurationModule],
     }).compile();
@@ -25,13 +20,6 @@ describe('appointment service', () => {
 
   afterAll(async () => {
     await moduleRef.close();
-    await dropDB();
-  });
-
-  beforeEach(async () => {
-    // remove everything in the table
-    await moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY).destroy({ truncate: true });
-    await moduleRef.get<typeof PatientInfoModel>(PATIENT_INFO_REPOSITORY).destroy({ truncate: true });
   });
 
   test('should be defined', () => {

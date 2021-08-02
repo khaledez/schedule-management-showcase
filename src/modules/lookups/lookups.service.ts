@@ -241,7 +241,7 @@ export class LookupsService {
    * @param appointmentTypesIds List of the appointment ids to be validated
    */
   public async validateAppointmentsTypes(identity: IIdentity, appointmentTypesIds: Array<number>): Promise<void> {
-    if (appointmentTypesIds || appointmentTypesIds.length === 0) {
+    if (!appointmentTypesIds || appointmentTypesIds.length === 0) {
       return;
     }
     const allAppointmentTypes = await this.findAllAppointmentTypesLookups(identity);

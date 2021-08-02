@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PATIENT_INFO_REPOSITORY } from 'common/constants';
 import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
 import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class PatientInfoService {
@@ -37,6 +38,16 @@ export class PatientInfoService {
 
   async deleteById(id: number): Promise<void> {
     await this.patientRepo.destroy({ where: { id } });
+  }
+
+  async deleteByIdsList(ids: number[]): Promise<void> {
+    await this.patientRepo.destroy({
+      where: {
+        id: {
+          [Op.in]: ids,
+        },
+      },
+    });
   }
 
   async fetchPatientInfo(authorizationToken: string, patientId: number): Promise<PatientInfoAttributes> {
