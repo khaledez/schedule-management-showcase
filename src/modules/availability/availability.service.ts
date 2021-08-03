@@ -27,7 +27,6 @@ import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { TimeGroup } from 'common/interfaces/time-group-period';
 import { DateTime } from 'luxon';
 import { AppointmentsService } from 'modules/appointments/appointments.service';
-import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
 import { GetSuggestionsDto } from 'modules/availability/dto/GetSuggestionsDto';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import sequelize, { FindOptions, Op } from 'sequelize';

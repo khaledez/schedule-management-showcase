@@ -2,6 +2,7 @@ import { IIdentity } from '@dashps/monmedx-common';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
+  APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
@@ -11,8 +12,9 @@ import {
 } from 'common/constants';
 import { AppointmentActionEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
-import { FindOptions, Op } from 'sequelize';
+import { FindOptions, Op, Transaction } from 'sequelize';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
+import { AppointmentCancelRescheduleReasonLookupModel } from './models/appointment-cancel-reschedule-reason.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
@@ -36,6 +38,8 @@ export class LookupsService {
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
     @Inject(APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY)
     private readonly appointmentVisitModeRepository: typeof AppointmentVisitModeLookupModel,
+    @Inject(APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY)
+    private readonly appointmentCancelRescheduleReasonRepo: typeof AppointmentCancelRescheduleReasonLookupModel,
   ) {}
   /**
    *
@@ -119,6 +123,18 @@ export class LookupsService {
 
   public findAllAppointmentVisitModes({ clinicId }: IIdentity): Promise<AppointmentVisitModeLookupModel[]> {
     return this.appointmentVisitModeRepository.findAll({
+      where: {
+        clinicId: {
+          [Op.or]: [null, clinicId],
+        },
+      },
+    });
+  }
+
+  public findAllAppointmentCancelRescheduleReasons({
+    clinicId,
+  }: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
+    return this.appointmentCancelRescheduleReasonRepo.findAll({
       where: {
         clinicId: {
           [Op.or]: [null, clinicId],
@@ -288,6 +304,38 @@ export class LookupsService {
       throw new BadRequestException({
         message: `unknown visit mode ID`,
         fields: ['appointmentVisitModeId'],
+        unknownIds,
+      });
+    }
+  }
+
+  async validateAppointmentCancelRescheduleReason(
+    identity: IIdentity,
+    appointmentCancelReschReasonIds: number[],
+    transaction?: Transaction,
+  ): Promise<void> {
+    if (!appointmentCancelReschReasonIds || appointmentCancelReschReasonIds.length === 0) {
+      return;
+    }
+
+    const lookupData = await this.appointmentCancelRescheduleReasonRepo.findAll({
+      where: {
+        id: appointmentCancelReschReasonIds,
+        clinicId: {
+          [Op.or]: [null, identity?.clinicId],
+        },
+      },
+      transaction,
+    });
+
+    const distinctIds = [...new Set(appointmentCancelReschReasonIds)];
+
+    if (distinctIds.length !== lookupData.length && distinctIds.length > 0) {
+      const returnedIds = lookupData.map((lookup) => lookup.id);
+      const unknownIds = distinctIds.filter((id) => !returnedIds.includes(id));
+      throw new BadRequestException({
+        message: `unknown cancel reschedule reason ID`,
+        fields: ['cancel_reschedule_reason_id'],
         unknownIds,
       });
     }

@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
@@ -9,6 +10,7 @@ import {
 import { lookupsProviders } from 'modules/lookups/lookups.provider';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import {
+  appointmentCancelRescheduleReasonLookups,
   appointmentStatusLookupData,
   appointmentTypesLookupData,
   appointmentVisitModeLookupData,
@@ -22,6 +24,7 @@ describe('LookupsService', () => {
     { provide: APPOINTMENT_TYPES_LOOKUPS_REPOSITORY, data: appointmentTypesLookupData() },
     { provide: APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY, data: appointmentVisitModeLookupData() },
     { provide: APPOINTMENT_STATUS_LOOKUPS_REPOSITORY, data: appointmentStatusLookupData() },
+    { provide: APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY, data: appointmentCancelRescheduleReasonLookups() },
   ].map((entry: { provide: string; data: any[] }) => {
     return {
       ...entry,
@@ -103,5 +106,29 @@ describe('LookupsService', () => {
     await expect(lookupsService.validateAppointmentVisitModes(getTestIdentity(50, 50), input)).rejects.toMatchObject({
       response: { fields: ['appointmentVisitModeId'], unknownIds },
     });
+  });
+
+  test('appointmentCancelRescheduleReason validate empty ids', async () => {
+    await Promise.all([
+      expect(
+        lookupsService.validateAppointmentCancelRescheduleReason(getTestIdentity(50, 50), []),
+      ).resolves.toBeUndefined(),
+      expect(
+        lookupsService.validateAppointmentCancelRescheduleReason(getTestIdentity(50, 50), null),
+      ).resolves.toBeUndefined(),
+      expect(lookupsService.validateAppointmentCancelRescheduleReason(getTestIdentity(50, 50), [null])).rejects.toThrow(
+        /unknown cancel reschedule reason ID/,
+      ),
+    ]);
+  });
+
+  test.each([
+    { input: [7, 8], unknownIds: [7, 8] },
+    { input: [1, 2, 5, 6], unknownIds: [5, 6] },
+    { input: [6, 7, 8], unknownIds: [6, 7, 8] },
+  ])('appointmentCancelRescheduleReason validate not found ids %p', async ({ input, unknownIds }) => {
+    await expect(
+      lookupsService.validateAppointmentCancelRescheduleReason(getTestIdentity(50, 50), input),
+    ).rejects.toMatchObject({ response: { fields: ['cancel_reschedule_reason_id'], unknownIds } });
   });
 });

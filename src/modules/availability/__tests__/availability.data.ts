@@ -342,7 +342,13 @@ export function validateAppointmentTypesIdsInvalidTestCase() {
   };
 }
 
-export function buildUpdateAvailabilityDto(id, appointmentTypeId, durationMinutes, staffId, startDate): UpdateAvailabilityDto {
+export function buildUpdateAvailabilityDto(
+  id,
+  appointmentTypeId,
+  durationMinutes,
+  staffId,
+  startDate,
+): UpdateAvailabilityDto {
   return {
     id,
     appointmentTypeId,

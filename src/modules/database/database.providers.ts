@@ -5,6 +5,7 @@ import { AppointmentsModel } from 'modules/appointments/appointments.model';
 import { AvailabilityTemplateSlotModel } from 'modules/availability-template/model/availability-template-slot.model ';
 import { AvailabilityTemplateModel } from 'modules/availability-template/model/availability-template.model';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
+import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import { Sequelize } from 'sequelize-typescript';
@@ -42,6 +43,7 @@ export const databaseProviders = [
         AppointmentStatusLookupsModel,
         AppointmentTypesLookupsModel,
         AppointmentVisitModeLookupModel,
+        AppointmentCancelRescheduleReasonLookupModel,
         LookupsModel,
         PatientInfoModel,
         EventModel,

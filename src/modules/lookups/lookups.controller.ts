@@ -39,4 +39,9 @@ export class LookupsController {
   public findAppointmentVisitModes(@Identity() identity: IIdentity) {
     return this.lookupsService.findAllAppointmentVisitModes(identity);
   }
+
+  @Get('/cancel-reschedule-reason')
+  public findAppointmentCancelRescheduleReasons(@Identity() identity: IIdentity) {
+    return this.lookupsService.findAllAppointmentCancelRescheduleReasons(identity);
+  }
 }

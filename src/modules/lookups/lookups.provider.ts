@@ -1,5 +1,6 @@
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
+  APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
@@ -7,6 +8,7 @@ import {
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
+import { AppointmentCancelRescheduleReasonLookupModel } from './models/appointment-cancel-reschedule-reason.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
@@ -38,4 +40,5 @@ export const lookupsProviders = [
     provide: APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
     useValue: AppointmentVisitModeLookupModel,
   },
+  { provide: APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY, useValue: AppointmentCancelRescheduleReasonLookupModel },
 ];

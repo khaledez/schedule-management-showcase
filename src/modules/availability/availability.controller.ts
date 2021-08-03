@@ -1,5 +1,6 @@
 import { Identity, IIdentity } from '@dashps/monmedx-common';
 import { Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { CalendarEntriesPayloadDto } from 'common/dtos/calendar/calendar-entries-payload-dto';
 import { split } from 'lodash';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { AvailabilityValidator } from 'modules/availability/availability.validator';
@@ -9,9 +10,6 @@ import { QueryFindAvailabilityDto } from 'modules/availability/dto/query-find-av
 import { BulkUpdateResult } from 'modules/availability/interfaces/availability-bulk-update.interface';
 import { AvailabilityEdgesInterface } from 'modules/availability/interfaces/availability-edges.interface';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
-import { CreateAvailabilityGroupBodyDto } from './dto/create-availability-group-body.dto';
-import { AvailabilityModelAttributes } from './models/availability.interfaces';
-import { CalendarEntriesPayloadDto } from 'common/dtos/calendar/calendar-entries-payload-dto';
 
 @Controller('availability')
 export class AvailabilityController {

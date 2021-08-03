@@ -1,4 +1,5 @@
 import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
+import { AppointmentCancelRescheduleReasonLookupModel } from '../models/appointment-cancel-reschedule-reason.model';
 import { AppointmentStatusLookupsModel } from '../models/appointment-status.model';
 import { AppointmentVisitModeLookupModel } from '../models/appointment-visit-mode.model';
 
@@ -31,5 +32,15 @@ export function appointmentVisitModeLookupData(): AppointmentVisitModeLookupMode
     Object.assign(Object.create(prototype), { id: 1, nameEn: 'In Person', code: 'IN_PERSON' }),
     Object.assign(Object.create(prototype), { id: 2, nameEn: 'Virtual', code: 'VIRTUAL' }),
     Object.assign(Object.create(prototype), { id: 3, nameEn: 'Phone', code: 'PHONE' }),
+  ];
+}
+
+export function appointmentCancelRescheduleReasonLookups(): AppointmentCancelRescheduleReasonLookupModel[] {
+  const prototype = AppointmentCancelRescheduleReasonLookupModel.prototype;
+
+  return [
+    Object.assign(Object.create(prototype), { id: 1, nameEn: 'Released', code: 'RELEASE' }),
+    Object.assign(Object.create(prototype), { id: 2, nameEn: 'Change doctor', code: 'DOCTOR_CHANGE' }),
+    Object.assign(Object.create(prototype), { id: 3, nameEn: 'No Show Up', code: 'NO_SHOW_UP' }),
   ];
 }
