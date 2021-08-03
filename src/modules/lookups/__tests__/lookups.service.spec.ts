@@ -4,6 +4,7 @@ import {
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
+  BAD_REQUEST,
 } from 'common/constants';
 import { lookupsProviders } from 'modules/lookups/lookups.provider';
 import { LookupsService } from 'modules/lookups/lookups.service';
@@ -78,8 +79,8 @@ describe('LookupsService', () => {
       fail("Shouldn't have made it here");
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestException);
-      expect(err.response).toHaveProperty('message', "The appointment types doesn't exist");
-      expect(err.response).toHaveProperty('ids', testCase.notFoundIds);
+      expect(err.response).toHaveProperty('message', `The appointment types doesn't exist: [${testCase.notFoundIds}]`);
+      expect(err.response).toHaveProperty('code', BAD_REQUEST);
     }
   });
 

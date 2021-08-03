@@ -5,6 +5,7 @@ import {
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
+  BAD_REQUEST,
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
@@ -260,8 +261,8 @@ export class LookupsService {
 
     if (invalidIds.length !== 0) {
       throw new BadRequestException({
-        message: "The appointment types doesn't exist",
-        ids: invalidIds,
+        message: `The appointment types doesn't exist: [${invalidIds}]`,
+        code: BAD_REQUEST,
       });
     }
   }

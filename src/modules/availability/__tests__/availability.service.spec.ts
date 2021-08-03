@@ -11,16 +11,18 @@ import {
   buildGetNineAvailabilitySuggestionsTestData,
   buildGetOneAvailabilitySuggestionsTestData,
   buildGetZeroAvailabilitySuggestionsTestData,
+  buildUpdateAvailabilityDto,
+  createAvailabilityDto,
   getExtractDayTimeInSecondsTestCases,
   getStaffIdWhereClauseTestCases,
   getSuggestionsData,
   getSuggestionsPriorityComparatorTestCases,
   getToCalendarEntryTestData,
   getTransformDayTimeToSecondsTestCases,
-  testCreateAvailabilityGroupInvalidAppointments,
-  testCreateAvailabilityGroupSuccess,
+  validateAppointmentTypesIdsInvalidTestCase,
+  validateAppointmentTypesIdsValidTestData,
 } from 'modules/availability/__tests__/availability.data';
-import { BadRequestException, forwardRef } from '@nestjs/common';
+import { BadRequestException, forwardRef, NotFoundException } from '@nestjs/common';
 import { AppointmentsModule } from 'modules/appointments/appointments.module';
 import {
   APPOINTMENT_PROXIMITY_DAYS,
@@ -29,7 +31,7 @@ import {
   DAY_TO_MILLI_SECOND,
 } from 'common/constants';
 import { Op } from 'sequelize';
-import { fail } from 'assert';
+import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 
 describe('# AvailabilityService', () => {
   let module: TestingModule;
@@ -53,7 +55,7 @@ describe('# AvailabilityService', () => {
     expect(availabilityService).toBeDefined();
   });
 
-  describe('# Create availability group functionality', () => {
+  describe('# availability bulk action functionality', () => {
     const identity = getTestIdentity(26, 26);
     const createdAvailabilitiesIds = [];
 
@@ -61,29 +63,74 @@ describe('# AvailabilityService', () => {
       await availabilityService.bulkRemove(createdAvailabilitiesIds, identity, null);
     });
 
-    test("# createAvailabilityGroup # The appointment types doesn't exist", async () => {
-      const testData = testCreateAvailabilityGroupInvalidAppointments();
+    test.each(validateAppointmentTypesIdsValidTestData())(
+      '# validateAppointmentTypesIds valid input: %p',
+      async (testCase) => {
+        await availabilityService.validateAppointmentTypesIds(getTestIdentity(62, 62), testCase);
+      },
+    );
+
+    test('# validateAppointmentTypesIds invalid input', async () => {
+      const testCase = validateAppointmentTypesIdsInvalidTestCase();
       try {
-        const result = await availabilityService.createAvailabilityGroup(testData.dto, identity);
-        result.forEach((avail) => createdAvailabilitiesIds.push(avail.id));
+        await availabilityService.validateAppointmentTypesIds(getTestIdentity(62, 62), testCase.payload);
         fail("Shouldn't have made it here");
-      } catch (error) {
-        expect(error.response).toHaveProperty('message', testData.message);
-        expect(error.response).toHaveProperty('ids', testData.ids);
+      } catch (err) {
+        expect(err).toBeInstanceOf(BadRequestException);
+        expect(err.response).toHaveProperty('message', testCase.expectedErrorMessage);
       }
     });
 
-    test('# createAvailabilityGroup # created successfully', async () => {
-      const testData = testCreateAvailabilityGroupSuccess();
-      const result = await availabilityService.createAvailabilityGroup(testData.dto, identity);
-      result.forEach((avail) => createdAvailabilitiesIds.push(avail.id));
-      expect(result.length).toEqual(testData.result.length);
-      result.forEach((availability, index) => {
-        expect(availability.appointmentTypeId).toEqual(testData.result[index].appointmentTypeId);
-        expect(availability.staffId).toEqual(testData.result[index].staffId);
-        expect(availability.durationMinutes).toEqual(testData.result[index].durationMinutes);
-        expect(availability.startDate.toISOString()).toEqual(testData.result[index].startDate);
-      });
+    test('# bulkAction all three actions', async () => {
+      const initialStaffId = 1;
+      const initialDuration = 15;
+      const initialTypeId = 1;
+      const initialDate = '2025-07-25T07:43:40.084Z';
+      const updatedStaffId = 2;
+      const updatedDuration = 20;
+      const updatedTypeId = 2;
+
+      const identity = getTestIdentity(82, 82);
+      const payload = new BulkUpdateAvailabilityDto();
+
+      payload.create = [createAvailabilityDto(initialStaffId, initialDate, initialDuration, initialTypeId)];
+      const createResult = await availabilityService.bulkAction(identity, payload);
+      createResult.created.forEach((availability) => createdAvailabilitiesIds.push(availability.id));
+      expect(1).toEqual(createResult.created.length);
+
+      payload.update = [
+        buildUpdateAvailabilityDto(
+          createResult.created[0].id,
+          updatedTypeId,
+          updatedDuration,
+          updatedStaffId,
+          initialDate,
+        ),
+      ];
+      const updateResult = await availabilityService.bulkAction(identity, payload);
+      updateResult.created.forEach((availability) => createdAvailabilitiesIds.push(availability.id));
+      expect(1).toEqual(updateResult.created.length);
+      expect(1).toEqual(updateResult.updated.length);
+      expect(updatedTypeId).toEqual(updateResult.updated[0].appointmentTypeId);
+      expect(updatedStaffId).toEqual(updateResult.updated[0].staffId);
+      expect(updatedDuration).toEqual(updateResult.updated[0].durationMinutes);
+
+      payload.remove = [updateResult.updated[0].id, updateResult.created[0].id];
+      payload.create = null;
+      payload.update = null;
+      await availabilityService.bulkAction(identity, payload);
+      try {
+        await availabilityService.findOne(payload.remove[0]);
+      } catch (err) {
+        expect(err).toBeInstanceOf(NotFoundException);
+        expect(err.response).toHaveProperty('message', 'This availability does not exits!');
+      }
+      try {
+        await availabilityService.findOne(payload.remove[1]);
+      } catch (err) {
+        expect(err).toBeInstanceOf(NotFoundException);
+        expect(err.response).toHaveProperty('message', 'This availability does not exits!');
+      }
     });
   });
 

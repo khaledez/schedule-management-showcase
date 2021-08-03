@@ -1,6 +1,5 @@
 import { Identity, IIdentity } from '@dashps/monmedx-common';
-import { BadRequestException, Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
-import { ErrorCodes } from 'common/enums/error-code.enum';
+import { Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { split } from 'lodash';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { AvailabilityValidator } from 'modules/availability/availability.validator';
@@ -50,16 +49,8 @@ export class AvailabilityController {
     @Identity() identity: IIdentity,
   ): Promise<BulkUpdateResult> {
     const { clinicId, userId } = identity;
-    const { create, remove, update } = payload;
     this.logger.debug({ clinicId, userId, payload });
-
-    if (!create.length && !remove.length && !update.length) {
-      throw new BadRequestException({
-        code: ErrorCodes.INVALID_INPUT,
-        message: 'At least one operation must be provided',
-      });
-    }
-
+    this.validator.validateBulkUpdateAvailabilityDto(payload);
     return this.availabilityService.bulkAction(identity, payload);
   }
 
@@ -77,14 +68,5 @@ export class AvailabilityController {
     const responseDto = new CalendarEntriesPayloadDto();
     responseDto.entries = suggestions;
     return responseDto;
-  }
-
-  @Post('/create-group')
-  createAvailabilityGroup(
-    @Body() payload: CreateAvailabilityGroupBodyDto,
-    @Identity() identity: IIdentity,
-  ): Promise<Array<AvailabilityModelAttributes>> {
-    this.validator.validateCreateAvailabilityGroup(payload);
-    return this.availabilityService.createAvailabilityGroup(payload, identity);
   }
 }

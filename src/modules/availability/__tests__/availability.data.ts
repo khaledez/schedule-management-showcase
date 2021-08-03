@@ -1,56 +1,11 @@
 import { CalendarType } from 'common/enums/calendar-type';
 import { getTimeGroup, TimeGroupCode } from 'common/enums/time-group';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
-import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { Op } from 'sequelize';
-
-export function testCreateAvailabilityGroupInvalidAppointments(): {
-  dto: CreateAvailabilityGroupBodyDto;
-  message: string;
-  ids: number[];
-} {
-  const dto: CreateAvailabilityGroupBodyDto = new CreateAvailabilityGroupBodyDto();
-  dto.availabilityGroup = [
-    buildCreateAvailabilityDto(1, '2034-05-25T07:43:40.084Z', 15, 4),
-    buildCreateAvailabilityDto(1, '2034-05-25T07:43:40.084Z', 15, 1),
-    buildCreateAvailabilityDto(1, '2034-05-25T07:43:40.084Z', 15, 5),
-  ];
-  return {
-    dto,
-    message: "The appointment types doesn't exist",
-    ids: [4, 5],
-  };
-}
-
-export function testCreateAvailabilityGroupSuccess(): {
-  dto: CreateAvailabilityGroupBodyDto;
-  result: Array<CreateAvailabilityDto>;
-} {
-  const dto: CreateAvailabilityGroupBodyDto = new CreateAvailabilityGroupBodyDto();
-  dto.availabilityGroup = [
-    buildCreateAvailabilityDto(1, '2034-05-25T07:43:40.084Z', 5, 1),
-    buildCreateAvailabilityDto(2, '2034-06-25T07:43:40.084Z', 10, 2),
-  ];
-  return {
-    dto,
-    result: [
-      {
-        staffId: 1,
-        startDate: '2034-05-25T07:43:40.084Z',
-        durationMinutes: 5,
-        appointmentTypeId: 1,
-      },
-      {
-        staffId: 2,
-        startDate: '2034-06-25T07:43:40.084Z',
-        durationMinutes: 10,
-        appointmentTypeId: 2,
-      },
-    ],
-  };
-}
+import { UpdateAvailabilityDto } from 'modules/availability/dto/update.dto';
+import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 
 export function getTransformDayTimeToSecondsTestCases() {
   return [
@@ -243,6 +198,160 @@ export function getToCalendarEntryTestData(): { input: AvailabilityModelAttribut
   };
 }
 
+export function assertNoIdDuplicatesValidInputTestData() {
+  return [
+    {
+      update: null,
+    },
+    {
+      update: [],
+    },
+    {
+      update: [
+        buildUpdateAvailabilityDto(1, 1, 1, 1, ''),
+        buildUpdateAvailabilityDto(2, 1, 1, 1, ''),
+        buildUpdateAvailabilityDto(3, 1, 1, 1, ''),
+      ],
+    },
+  ];
+}
+
+export function assertNoIdDuplicatesInvalidInputTestData(): UpdateAvailabilityDto[] {
+  return [
+    buildUpdateAvailabilityDto(1, 1, 1, 1, ''),
+    buildUpdateAvailabilityDto(2, 1, 1, 1, ''),
+    buildUpdateAvailabilityDto(1, 1, 1, 1, ''),
+  ];
+}
+
+export function assertNoSharedIdsValidInputTestData() {
+  return [
+    {
+      remove: null,
+      update: null,
+    },
+    {
+      remove: null,
+      update: [],
+    },
+    {
+      remove: [],
+      update: null,
+    },
+    {
+      remove: [],
+      update: [],
+    },
+    {
+      remove: [1],
+      update: [],
+    },
+    {
+      remove: [1],
+      update: null,
+    },
+    {
+      remove: [],
+      update: [buildUpdateAvailabilityDto(1, 1, 1, 1, '')],
+    },
+    {
+      remove: [1, 5],
+      update: [
+        buildUpdateAvailabilityDto(2, 1, 1, 1, ''),
+        buildUpdateAvailabilityDto(3, 1, 1, 1, ''),
+        buildUpdateAvailabilityDto(4, 1, 1, 1, ''),
+      ],
+    },
+  ];
+}
+
+export function assertNoSharedIdsInvalidInputTestData() {
+  return {
+    remove: [1, 2, 3],
+    update: [
+      buildUpdateAvailabilityDto(3, 1, 1, 1, ''),
+      buildUpdateAvailabilityDto(4, 1, 1, 1, ''),
+      buildUpdateAvailabilityDto(5, 1, 1, 1, ''),
+    ],
+  };
+}
+
+export function validateBulkUpdateAvailabilityDtoValidTestData() {
+  return {
+    remove: [1, 2],
+    update: [buildUpdateAvailabilityDto(3, 1, 1, 1, ''), buildUpdateAvailabilityDto(4, 1, 1, 1, '')],
+    create: [
+      createAvailabilityDto(1, '2025-07-25T07:43:40.084Z', 15, 1),
+      createAvailabilityDto(1, '2025-08-25T08:43:40.084Z', 15, 1),
+    ],
+  };
+}
+
+export function validateAppointmentTypesIdsValidTestData(): BulkUpdateAvailabilityDto[] {
+  return [
+    {
+      update: null,
+      create: null,
+      remove: null,
+    },
+    {
+      update: [],
+      create: [],
+      remove: null,
+    },
+    {
+      update: [buildUpdateAvailabilityDto(3, 1, 1, 1, ''), buildUpdateAvailabilityDto(4, 1, 1, 1, '')],
+      create: null,
+      remove: null,
+    },
+    {
+      update: [],
+      create: [
+        createAvailabilityDto(1, '2025-07-25T07:43:40.084Z', 15, 1),
+        createAvailabilityDto(1, '2025-08-25T08:43:40.084Z', 15, 1),
+      ],
+      remove: null,
+    },
+    {
+      update: [buildUpdateAvailabilityDto(3, 1, 1, 1, ''), buildUpdateAvailabilityDto(4, 1, 1, 1, '')],
+      create: [
+        createAvailabilityDto(1, '2025-07-25T07:43:40.084Z', 15, 1),
+        createAvailabilityDto(1, '2025-08-25T08:43:40.084Z', 15, 1),
+      ],
+      remove: null,
+    },
+  ];
+}
+
+export function validateAppointmentTypesIdsInvalidTestCase() {
+  return {
+    payload: {
+      update: [
+        buildUpdateAvailabilityDto(3, 1, 1, 1, ''),
+        buildUpdateAvailabilityDto(4, 2, 1, 1, ''),
+        buildUpdateAvailabilityDto(5, 4, 1, 1, ''),
+      ],
+      create: [
+        createAvailabilityDto(1, '2025-07-25T07:43:40.084Z', 15, 1),
+        createAvailabilityDto(1, '2025-08-26T08:43:40.084Z', 15, 6),
+        createAvailabilityDto(1, '2025-08-27T08:43:40.084Z', 15, 5),
+      ],
+      remove: null,
+    },
+    expectedErrorMessage: "The appointment types doesn't exist: [6,5,4]",
+  };
+}
+
+export function buildUpdateAvailabilityDto(id, appointmentTypeId, durationMinutes, staffId, startDate): UpdateAvailabilityDto {
+  return {
+    id,
+    appointmentTypeId,
+    durationMinutes,
+    staffId,
+    startDate,
+  };
+}
+
 function buildSuggestionForComparatorTest(staffId: number, date: string): AvailabilityModelAttributes {
   return {
     staffId: staffId,
@@ -267,4 +376,18 @@ function buildCreateAvailabilityDto(
     durationMinutes,
     appointmentTypeId,
   };
+}
+
+export function createAvailabilityDto(
+  staffId: number,
+  startDate: string,
+  durationMinutes: number,
+  appointmentTypeId: number,
+) {
+  const availabilityDto: CreateAvailabilityDto = new CreateAvailabilityDto();
+  availabilityDto.staffId = staffId;
+  availabilityDto.startDate = startDate;
+  availabilityDto.durationMinutes = durationMinutes;
+  availabilityDto.appointmentTypeId = appointmentTypeId;
+  return availabilityDto;
 }

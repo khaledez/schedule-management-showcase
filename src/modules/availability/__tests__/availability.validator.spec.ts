@@ -1,12 +1,18 @@
 import { AvailabilityValidator } from 'modules/availability/availability.validator';
-import { CreateAvailabilityGroupBodyDto } from 'modules/availability/dto/create-availability-group-body.dto';
-import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { BadRequestException } from '@nestjs/common';
+import {
+  assertNoIdDuplicatesInvalidInputTestData,
+  assertNoIdDuplicatesValidInputTestData,
+  assertNoSharedIdsInvalidInputTestData,
+  assertNoSharedIdsValidInputTestData,
+  validateBulkUpdateAvailabilityDtoValidTestData,
+} from 'modules/availability/__tests__/availability.data';
+import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 
 describe('AvailabilityValidator', () => {
   const validator: AvailabilityValidator = new AvailabilityValidator();
 
-  it('#findOverlappedPeriods: No overlapped periods', () => {
+  test('#findOverlappedPeriods: No overlapped periods', () => {
     const periods = [
       {
         id: 1,
@@ -28,7 +34,7 @@ describe('AvailabilityValidator', () => {
     expect(result).toEqual([]);
   });
 
-  it('#findOverlappedPeriods: Should have overlapped periods', () => {
+  test('#findOverlappedPeriods: Should have overlapped periods', () => {
     const periods = [
       {
         id: 1,
@@ -59,55 +65,49 @@ describe('AvailabilityValidator', () => {
     ]);
   });
 
-  it('#validateCreateAvailabilityGroup: Should be valid CreateAvailabilityGroupBodyDto', () => {
-    const payload: CreateAvailabilityGroupBodyDto = new CreateAvailabilityGroupBodyDto();
-    payload.availabilityGroup = [
-      createAvailabilityDto(1, '2021-07-25T07:43:40.084Z', 15, 1),
-      createAvailabilityDto(1, '2021-08-25T08:43:40.084Z', 15, 1),
-    ];
-    validator.validateCreateAvailabilityGroup(payload);
+  test.each(assertNoIdDuplicatesValidInputTestData())('#assertNoIdDuplicates valid input: %p', (testCase) => {
+    validator.assertNoIdDuplicates(testCase.update);
   });
 
-  it('#validateCreateAvailabilityGroup: Should be invalid CreateAvailabilityGroupBodyDto # invalid object type', () => {
-    const payload: CreateAvailabilityGroupBodyDto = new CreateAvailabilityGroupBodyDto();
-    payload.availabilityGroup = [
-      {
-        staffId: 1,
-        startDate: '2021-07-25T07:43:40.084Z',
-        durationMinutes: 100,
-        appointmentTypeId: 1,
-      },
-    ];
+  test('#assertNoIdDuplicates invalid input', () => {
+    const update = assertNoIdDuplicatesInvalidInputTestData();
     try {
-      validator.validateCreateAvailabilityGroup(payload);
-    } catch (error) {
-      expect(error).toBeInstanceOf(BadRequestException);
-      expect(error.response).toHaveProperty('msg', 'Invalid availability objects');
-      expect(error.response).toHaveProperty('objects', [0]);
+      validator.assertNoIdDuplicates(update);
+      fail("Shouldn't have made it here");
+    } catch (err) {
+      expect(err).toBeInstanceOf(BadRequestException);
+      expect(err.response).toHaveProperty('message', 'duplicate entries in the update list');
     }
   });
 
-  it('#validateCreateAvailabilityGroup: Should have overlapped period', () => {
-    const payload: CreateAvailabilityGroupBodyDto = new CreateAvailabilityGroupBodyDto();
-    payload.availabilityGroup = [
-      createAvailabilityDto(1, '2021-07-25T07:43:40.084Z', 100, 1),
-      createAvailabilityDto(2, '2021-08-25T08:43:40.084Z', 15, 1),
-    ];
+  test.each(assertNoSharedIdsValidInputTestData())('#assertNoSharedIds valid input: %p', (testCase) => {
+    validator.assertNoSharedIds(testCase.remove, testCase.update);
+  });
+
+  test('#assertNoSharedIds invalid input', () => {
+    const payload = assertNoSharedIdsInvalidInputTestData();
     try {
-      validator.validateCreateAvailabilityGroup(payload);
-    } catch (error) {
-      expect(error).toBeInstanceOf(BadRequestException);
-      expect(error.response).toHaveProperty('msg', 'Overlapped periods are not allowed in a single request');
-      expect(error.response).toHaveProperty('dates', { availabilityIndex: 0, overlappedWith: [1] });
+      validator.assertNoSharedIds(payload.remove, payload.update);
+      fail("Shouldn't have made it here");
+    } catch (err) {
+      expect(err).toBeInstanceOf(BadRequestException);
+      expect(err.response).toHaveProperty('message', 'You cannot update & delete the same record in the same time');
     }
+  });
+
+  test('#validateBulkUpdateAvailabilityDto invalid dto', () => {
+    const payload = new BulkUpdateAvailabilityDto();
+    try {
+      validator.validateBulkUpdateAvailabilityDto(payload);
+      fail("Shouldn't have made it here");
+    } catch (err) {
+      expect(err).toBeInstanceOf(BadRequestException);
+      expect(err.response).toHaveProperty('message', 'At least one operation must be provided');
+    }
+  });
+
+  test('#validateBulkUpdateAvailabilityDto invalid dto', () => {
+    const payload = validateBulkUpdateAvailabilityDtoValidTestData();
+    validator.validateBulkUpdateAvailabilityDto(payload);
   });
 });
-
-function createAvailabilityDto(staffId: number, startDate: string, durationMinutes: number, appointmentTypeId: number) {
-  const availabilityDto: CreateAvailabilityDto = new CreateAvailabilityDto();
-  availabilityDto.staffId = staffId;
-  availabilityDto.startDate = startDate;
-  availabilityDto.durationMinutes = durationMinutes;
-  availabilityDto.appointmentTypeId = appointmentTypeId;
-  return availabilityDto;
-}

@@ -232,23 +232,7 @@ export class AvailabilityService {
   }
 
   async bulkAction(identity: IIdentity, payload: BulkUpdateAvailabilityDto): Promise<BulkUpdateResult> {
-    // prevent any conflicts between remove & update
-    // a. make sure user is not updating && deleting the same availability
-    if (payload?.update?.filter((updReq) => payload?.remove?.includes(updReq.id))?.length > 0) {
-      throw new BadRequestException({
-        code: BAD_REQUEST,
-        message: 'You cannot update & delete the same record in the same time',
-      });
-    }
-    // b. make sure update list has no duplicate ids
-    const uniqueIds = new Set(payload?.update?.map((updReq) => updReq.id));
-    if (uniqueIds.size > 0 && payload?.update?.length !== uniqueIds.size) {
-      throw new BadRequestException({
-        code: BAD_REQUEST,
-        message: 'duplicate entries in the update list',
-      });
-    }
-
+    await this.validateAppointmentTypesIds(identity, payload);
     try {
       return await this.sequelize.transaction(async (transaction: Transaction) => {
         this.logger.debug(payload);
@@ -279,6 +263,13 @@ export class AvailabilityService {
         message: error.message,
       });
     }
+  }
+
+  async validateAppointmentTypesIds(identity: IIdentity, payload: BulkUpdateAvailabilityDto) {
+    const ids = [];
+    payload.create?.forEach((item) => ids.push(item.appointmentTypeId));
+    payload.update?.forEach((item) => ids.push(item.appointmentTypeId));
+    await this.lookupsService.validateAppointmentsTypes(identity, ids);
   }
 
   /**
@@ -377,27 +368,6 @@ export class AvailabilityService {
       limit: APPOINTMENT_SUGGESTIONS_QUERY_LIMIT,
     };
     return this.availabilityRepository.findAll(options);
-  }
-
-  async createAvailabilityGroup(
-    payload: CreateAvailabilityGroupBodyDto,
-    identity: IIdentity,
-  ): Promise<Array<AvailabilityModelAttributes>> {
-    const availabilityGroup: Array<CreateAvailabilityDto> = payload.availabilityGroup;
-    const appointmentTypesIds = availabilityGroup.map((availability) => availability.appointmentTypeId);
-    await this.lookupsService.validateAppointmentsTypes(identity, appointmentTypesIds);
-    try {
-      return await this.sequelize.transaction((transaction: Transaction) => {
-        const availabilityGroup: Array<CreateAvailabilityDto> = payload.availabilityGroup;
-        return this.bulkCreate(availabilityGroup, identity, transaction);
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw new InternalServerErrorException({
-        code: ErrorCodes.INTERNAL_SERVER_ERROR,
-        message: error.message,
-      });
-    }
   }
 
   getSuggestionsDateWhereClause(referenceDate: Date) {
