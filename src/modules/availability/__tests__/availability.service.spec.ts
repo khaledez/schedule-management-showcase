@@ -13,12 +13,10 @@ import {
   buildGetZeroAvailabilitySuggestionsTestData,
   buildUpdateAvailabilityDto,
   createAvailabilityDto,
-  getExtractDayTimeInSecondsTestCases,
   getStaffIdWhereClauseTestCases,
   getSuggestionsData,
   getSuggestionsPriorityComparatorTestCases,
   getToCalendarEntryTestData,
-  getTransformDayTimeToSecondsTestCases,
   validateAppointmentTypesIdsInvalidTestCase,
   validateAppointmentTypesIdsValidTestData,
 } from 'modules/availability/__tests__/availability.data';
@@ -149,16 +147,8 @@ describe('# AvailabilityService', () => {
       await availabilityService.bulkRemove(createdAvailabilitiesIds, identity, null);
     });
 
-    test.each(getTransformDayTimeToSecondsTestCases())('# transformDayTimeToSeconds', (testCase) => {
-      expect(availabilityService.transformDayTimeToSeconds(testCase.dayTime)).toEqual(testCase.expected);
-    });
-
-    test.each(getExtractDayTimeInSecondsTestCases())('# extractDayTimeInSeconds', (testCase) => {
-      expect(availabilityService.extractDayTimeInSeconds(new Date(testCase.date))).toEqual(testCase.expected);
-    });
-
     test.each(getStaffIdWhereClauseTestCases())('# getStaffIdWhereClause', (testCase) => {
-      expect(availabilityService.getStaffIdWhereClause(testCase.filter)).toEqual(testCase.expected);
+      expect(availabilityService.getEntityIdWhereClause(testCase.filter)).toEqual(testCase.expected);
     });
 
     test('# getSuggestionsDateWhereClause', () => {

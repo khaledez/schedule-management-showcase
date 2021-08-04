@@ -1,5 +1,14 @@
-import { getTimeGroup, TimeGroupCode } from 'common/enums/time-group';
+import {
+  extractDayTimeInSeconds,
+  getTimeGroup,
+  TimeGroupCode,
+  transformDayTimeToSeconds,
+} from 'common/enums/time-group';
 import { TimeGroup } from 'common/interfaces/time-group-period';
+import {
+  getExtractDayTimeInSecondsTestCases,
+  getTransformDayTimeToSecondsTestCases,
+} from 'common/enums/__tests__/enum-utils.data';
 
 describe('# TimeGroup functionality test', () => {
   test('# Test getTimeGroup for valid input using values', () => {
@@ -28,5 +37,13 @@ describe('# TimeGroup functionality test', () => {
       const timeGroup: TimeGroup = getTimeGroup(code);
       expect(timeGroup).toBeNull();
     });
+  });
+
+  test.each(getTransformDayTimeToSecondsTestCases())('# transformDayTimeToSeconds', (testCase) => {
+    expect(transformDayTimeToSeconds(testCase.dayTime)).toEqual(testCase.expected);
+  });
+
+  test.each(getExtractDayTimeInSecondsTestCases())('# extractDayTimeInSeconds', (testCase) => {
+    expect(extractDayTimeInSeconds(new Date(testCase.date))).toEqual(testCase.expected);
   });
 });

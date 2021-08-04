@@ -1,4 +1,4 @@
-import { IIdentity } from '@dashps/monmedx-common';
+import { FilterDateInputDto, IIdentity } from '@dashps/monmedx-common';
 import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
@@ -16,13 +16,11 @@ import {
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DAY_TO_MILLI_SECOND,
-  HOUR_TO_SECONDS,
-  MIN_TO_SECONDS,
   SEQUELIZE,
 } from 'common/constants';
 import { ErrorCodes } from 'common/enums';
 import { CalendarType } from 'common/enums/calendar-type';
-import { getTimeGroup } from 'common/enums/time-group';
+import { getTimeGroup, isInTimeGroup } from 'common/enums/time-group';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { TimeGroup } from 'common/interfaces/time-group-period';
 import { DateTime } from 'luxon';
@@ -42,10 +40,13 @@ import { BulkUpdateResult } from './interfaces/availability-bulk-update.interfac
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityModel } from './models/availability.model';
+import { SearchAvailabilityDto } from 'modules/availability/dto/search-availability-dto';
+import { AvailabilityCountForDay } from 'common/interfaces/availability-count-for-day';
 
 @Injectable()
 export class AvailabilityService {
   private readonly logger = new Logger(AvailabilityService.name);
+
   constructor(
     @Inject(AVAILABILITY_REPOSITORY)
     private readonly availabilityRepository: typeof AvailabilityModel,
@@ -288,6 +289,7 @@ export class AvailabilityService {
     }
     const referenceDate: Date = await this.pickReferenceDate(payload.referenceDate, payload.patientId);
     const suggestions: AvailabilityModel[] = await this.getSuggestions(
+      identity.clinicId,
       referenceDate,
       appointmentTypeId,
       payload.staffId,
@@ -301,33 +303,19 @@ export class AvailabilityService {
   }
 
   getSuggestionsPriorityComparator(timeGroup: TimeGroup) {
-    const start = this.transformDayTimeToSeconds(timeGroup.start);
-    const end = this.transformDayTimeToSeconds(timeGroup.end);
     // eslint-disable-next-line complexity
     return (suggestionA: AvailabilityModelAttributes, suggestionB: AvailabilityModelAttributes): number => {
-      const aDateTime = this.extractDayTimeInSeconds(suggestionA.startDate);
-      const bDateTime = this.extractDayTimeInSeconds(suggestionB.startDate);
-      if (start <= aDateTime && aDateTime <= end && start <= bDateTime && bDateTime <= end) {
+      if (isInTimeGroup(suggestionA.startDate, timeGroup) && isInTimeGroup(suggestionB.startDate, timeGroup)) {
         return suggestionA.startDate.getTime() - suggestionB.startDate.getTime();
       }
-      if (start <= aDateTime && aDateTime <= end) {
+      if (isInTimeGroup(suggestionA.startDate, timeGroup)) {
         return -1;
       }
-      if (start <= bDateTime && bDateTime <= end) {
+      if (isInTimeGroup(suggestionB.startDate, timeGroup)) {
         return 1;
       }
       return suggestionA.startDate.getTime() - suggestionB.startDate.getTime();
     };
-  }
-
-  extractDayTimeInSeconds(date: Date) {
-    const dateTime = date.toISOString().match(/\d{2}:\d{2}:\d{2}/)[0];
-    return this.transformDayTimeToSeconds(dateTime);
-  }
-
-  transformDayTimeToSeconds(time: string): number {
-    const actualTime: string[] = time.split(':');
-    return +actualTime[0] * HOUR_TO_SECONDS + +actualTime[1] * MIN_TO_SECONDS + +actualTime[2];
   }
 
   async pickReferenceDate(explicitDate: string, patientId: number): Promise<Date> {
@@ -342,15 +330,17 @@ export class AvailabilityService {
   }
 
   getSuggestions(
+    clinicId: number,
     referenceDate: Date,
     appointmentTypeId: number,
     staffId: FilterIdsInputDto,
   ): Promise<AvailabilityModel[]> {
     const dateWhereClause = this.getSuggestionsDateWhereClause(referenceDate);
-    const staffIWhereClause = this.getStaffIdWhereClause(staffId);
+    const staffIWhereClause = this.getEntityIdWhereClause(staffId);
     const options: FindOptions = {
       where: {
         appointmentId: { [Op.is]: null },
+        clinicId,
         appointmentTypeId,
         date: dateWhereClause,
         staffId: staffIWhereClause,
@@ -379,11 +369,59 @@ export class AvailabilityService {
     return { [Op.between]: [lowerDateBound, upperDateBound] };
   }
 
-  getStaffIdWhereClause(staffId: FilterIdsInputDto) {
-    if (staffId && staffId.in) {
-      return { [Op.in]: staffId.in };
-    } else if (staffId && staffId.eq) {
-      return { [Op.eq]: staffId.eq };
+  getEntityIdWhereClause(entity: FilterIdsInputDto) {
+    if (entity && entity.in) {
+      return { [Op.in]: entity.in };
+    } else if (entity && entity.eq) {
+      return { [Op.eq]: entity.eq };
+    }
+    return { [Op.notIn]: [] };
+  }
+
+  async getAvailabilitiesCount(
+    identity: IIdentity,
+    payload: SearchAvailabilityDto,
+  ): Promise<AvailabilityCountForDay[]> {
+    const availabilities = await this.searchForAvailabilities(identity, payload);
+    const map: Map<string, number> = new Map();
+    availabilities.forEach((availability) => {
+      const key = availability.startDate.toISOString().match(/\d{4}-\d{2}-\d{2}/)[0];
+      const count = map.has(key) ? map.get(key) : 0;
+      map.set(key, count + 1);
+    });
+    return [...map].map(([date, count]) => ({ date, count }));
+  }
+
+  async searchForAvailabilities(identity: IIdentity, payload: SearchAvailabilityDto): Promise<CalendarEntry[]> {
+    const dateWhereClause = this.getAvailabilitySearchDateWhereClause(payload.dateRange);
+    const staffIdWhereClause = this.getEntityIdWhereClause(payload.staffId);
+    const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(payload.appointmentTypeId);
+    const options: FindOptions = {
+      where: {
+        appointmentTypeId: appointmentTypeIdWhereClause,
+        date: dateWhereClause,
+        staffId: staffIdWhereClause,
+        clinicId: identity.clinicId,
+      },
+      order: [['date', 'ASC']],
+    };
+    let result = await this.availabilityRepository.findAll(options);
+    if (payload.timeGroup) {
+      const timeGroup: TimeGroup = getTimeGroup(payload.timeGroup);
+      result = result.filter((availability) => isInTimeGroup(availability.startDate, timeGroup));
+    }
+    return result.map((availability) => this.toCalendarEntry(availability));
+  }
+
+  getAvailabilitySearchDateWhereClause(dateRange: FilterDateInputDto) {
+    // Set endTime to 23:59:59 due to sequelize limitations
+    if (dateRange.between) {
+      dateRange.between[1].setHours(23, 59, 59);
+      return { [Op.between]: dateRange.between };
+    } else if (dateRange.eq) {
+      const end = new Date(dateRange.eq.getTime());
+      end.setHours(23, 59, 59);
+      return { [Op.between]: [dateRange.eq, end] };
     }
     return { [Op.notIn]: [] };
   }

@@ -10,6 +10,8 @@ import { QueryFindAvailabilityDto } from 'modules/availability/dto/query-find-av
 import { BulkUpdateResult } from 'modules/availability/interfaces/availability-bulk-update.interface';
 import { AvailabilityEdgesInterface } from 'modules/availability/interfaces/availability-edges.interface';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
+import { SearchAvailabilityDto } from 'modules/availability/dto/search-availability-dto';
+import { CalendarEntriesCountPayloadDto } from 'common/dtos/calendar/calendar-entries-count-payload-dto';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -41,11 +43,7 @@ export class AvailabilityController {
   }
 
   @Post('/bulk')
-  bulkUpdate(
-    @Body()
-    payload: BulkUpdateAvailabilityDto,
-    @Identity() identity: IIdentity,
-  ): Promise<BulkUpdateResult> {
+  bulkUpdate(@Identity() identity: IIdentity, @Body() payload: BulkUpdateAvailabilityDto): Promise<BulkUpdateResult> {
     const { clinicId, userId } = identity;
     this.logger.debug({ clinicId, userId, payload });
     this.validator.validateBulkUpdateAvailabilityDto(payload);
@@ -62,9 +60,26 @@ export class AvailabilityController {
     @Identity() identity: IIdentity,
     @Body() payload: GetSuggestionsDto,
   ): Promise<CalendarEntriesPayloadDto> {
-    const suggestions = await this.availabilityService.getAvailabilitySuggestions(identity, payload);
-    const responseDto = new CalendarEntriesPayloadDto();
-    responseDto.entries = suggestions;
-    return responseDto;
+    const entries = await this.availabilityService.getAvailabilitySuggestions(identity, payload);
+    return { entries };
+  }
+
+  @Post('/search')
+  async searchForAvailabilities(
+    @Identity() identity: IIdentity,
+    @Body() payload: SearchAvailabilityDto,
+  ): Promise<CalendarEntriesPayloadDto> {
+    const entries = await this.availabilityService.searchForAvailabilities(identity, payload);
+    return { entries };
+  }
+
+  @Post('/count')
+  async getAvailabilitiesCount(
+    @Identity() identity: IIdentity,
+    @Body() payload: SearchAvailabilityDto,
+  ): Promise<CalendarEntriesCountPayloadDto> {
+    const data = await this.availabilityService.getAvailabilitiesCount(identity, payload);
+    const responseDto = new CalendarEntriesCountPayloadDto();
+    return { data };
   }
 }
