@@ -20,6 +20,8 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
+import { DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
+import { AppointmentTypesEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { PatientInfoService } from 'modules/patient-info';
 import { Transaction } from 'sequelize';
@@ -103,13 +105,11 @@ export class AppointmentsController {
    * @param appointmentData
    * @returns Created Appointment
    */
-  @UseInterceptors(TransactionInterceptor)
   @Post('provisional')
   async createProvisionalAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
-    @TransactionParam() transaction: Transaction,
   ): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointment/createProvisionalAppointment',
@@ -117,19 +117,15 @@ export class AppointmentsController {
       appointmentData,
     });
 
-    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    const dto = new CreateAppointmentDto();
+    dto.patientId = appointmentData.patientId;
+    dto.startDate = appointmentData.date.toISOString();
+    dto.durationMinutes = DEFAULT_EVENT_DURATION_MINS;
+    dto.appointmentTypeId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    dto.staffId = null;
 
-    const waitListStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
-    return this.appointmentsService.createProvisionalAppointment(
-      {
-        ...appointmentData,
-        appointmentStatusId: waitListStatusId, // TODO: get this id from appointmentStatusModel at the service.
-        clinicId: identity.clinicId,
-        createdBy: identity.userId,
-        provisionalDate: appointmentData.date,
-      },
-      transaction,
-    );
+    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    return this.appointmentsService.createAppointment(identity, dto);
   }
 
   /**
@@ -146,11 +142,7 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData });
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return this.appointmentsService.createNonProvisionalAppointment({
-      ...appointmentData,
-      clinicId: identity.clinicId,
-      createdBy: identity.userId,
-    });
+    return this.appointmentsService.createAppointment(identity, appointmentData);
   }
 
   /**
@@ -174,7 +166,7 @@ export class AppointmentsController {
     });
 
     const readyStatus = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.READY);
-    const typeFUBId = await this.lookupsService.getTypeByCode('FUP');
+    const typeFUBId = await this.lookupsService.getTypeByCode(AppointmentTypesEnum.FUP);
 
     this.logger.debug({
       appointmentData,

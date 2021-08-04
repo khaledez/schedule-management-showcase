@@ -1,6 +1,6 @@
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
-import { DATE, Op } from 'sequelize';
-import { BelongsTo, Column, DataType, ForeignKey, IsDate, Scopes, Table } from 'sequelize-typescript';
+import { Op } from 'sequelize';
+import { BelongsTo, Column, DataType, ForeignKey, Scopes, Table } from 'sequelize-typescript';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
 import { BaseModel, BaseModelAttributes } from '../../common/models/base.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
@@ -17,7 +17,7 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
   startDate: Date;
   endDate: Date;
   durationMinutes: number;
-  provisionalDate: Date;
+  provisionalDate?: Date;
   appointmentTypeId?: number;
   appointmentStatusId?: number;
   cancelRescheduleText?: string;
@@ -61,10 +61,6 @@ export class AppointmentsModel
   @ForeignKey(() => PatientInfoModel)
   patientId: number;
 
-  get doctorId(): number {
-    return this.staffId;
-  }
-
   @Column
   staffId: number;
 
@@ -79,20 +75,15 @@ export class AppointmentsModel
   @ForeignKey(() => AppointmentTypesLookupsModel)
   appointmentTypeId: number;
 
-  @Column({
-    type: DATE,
-  })
+  @Column(DataType.DATE)
   startDate: Date;
 
-  @Column({
-    type: DATE,
-  })
+  @Column(DataType.DATE)
   endDate: Date;
 
   @Column
   durationMinutes: number;
 
-  @IsDate
   @Column(DataType.DATE)
   provisionalDate: Date;
 

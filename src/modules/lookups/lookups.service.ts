@@ -10,8 +10,9 @@ import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
-import { AppointmentActionEnum } from 'common/enums';
-import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
+import { AppointmentActionEnum, AppointmentStatusEnum } from 'common/enums';
+import { AppointmentTypesEnum as AppointmentTypeEnum } from 'common/enums/appointment-type.enum';
+import { AppointmentVisitModeEnum } from 'common/enums/appointment-visit-mode.enum';
 import { FindOptions, Op, Transaction } from 'sequelize';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentCancelRescheduleReasonLookupModel } from './models/appointment-cancel-reschedule-reason.model';
@@ -92,7 +93,7 @@ export class LookupsService {
    * @param identity
    * example: NEW, FUP
    */
-  public findAllAppointmentTypesLookups(identity?): Promise<AppointmentTypesLookupsModel[]> {
+  public findAllAppointmentTypesLookups(identity?, transaction?: Transaction): Promise<AppointmentTypesLookupsModel[]> {
     const conditions: FindOptions<AppointmentTypesLookupsModel> = identity?.clinicId
       ? {
           where: {
@@ -100,6 +101,7 @@ export class LookupsService {
               [Op.or]: [null, identity.clinicId],
             },
           },
+          transaction,
         }
       : {};
 
@@ -110,7 +112,10 @@ export class LookupsService {
    * @param identity
    * example: READY, CHECK-IN
    */
-  public findAllAppointmentStatusLookups(identity): Promise<AppointmentStatusLookupsModel[]> {
+  public findAllAppointmentStatusLookups(
+    identity,
+    transaction?: Transaction,
+  ): Promise<AppointmentStatusLookupsModel[]> {
     const { clinicId } = identity;
     return this.appointmentStatusLookupsRepository.findAll({
       where: {
@@ -118,16 +123,21 @@ export class LookupsService {
           [Op.or]: [null, clinicId],
         },
       },
+      transaction,
     });
   }
 
-  public findAllAppointmentVisitModes({ clinicId }: IIdentity): Promise<AppointmentVisitModeLookupModel[]> {
+  public findAllAppointmentVisitModes(
+    { clinicId }: IIdentity,
+    transaction?: Transaction,
+  ): Promise<AppointmentVisitModeLookupModel[]> {
     return this.appointmentVisitModeRepository.findAll({
       where: {
         clinicId: {
           [Op.or]: [null, clinicId],
         },
       },
+      transaction,
     });
   }
 
@@ -241,8 +251,18 @@ export class LookupsService {
     return result.id;
   }
 
-  async getTypeByCode(code: string) {
+  async getTypeByCode(code: AppointmentTypeEnum): Promise<number> {
     const result = await this.appointmentTypesLookupsRepository.findOne({
+      where: {
+        code,
+      },
+      attributes: ['id'],
+    });
+    return result?.id;
+  }
+
+  async getVisitModeByCode(code: AppointmentVisitModeEnum): Promise<number> {
+    const result = await this.appointmentVisitModeRepository.findOne({
       where: {
         code,
       },
@@ -267,11 +287,15 @@ export class LookupsService {
    * @param identity
    * @param appointmentTypesIds List of the appointment ids to be validated
    */
-  public async validateAppointmentsTypes(identity: IIdentity, appointmentTypesIds: Array<number>): Promise<void> {
+  public async validateAppointmentsTypes(
+    identity: IIdentity,
+    appointmentTypesIds: Array<number>,
+    transaction?: Transaction,
+  ): Promise<void> {
     if (!appointmentTypesIds || appointmentTypesIds.length === 0) {
       return;
     }
-    const allAppointmentTypes = await this.findAllAppointmentTypesLookups(identity);
+    const allAppointmentTypes = await this.findAllAppointmentTypesLookups(identity, transaction);
     const validTypesIds = [...new Set(allAppointmentTypes.map((appointmentType) => appointmentType.id))];
     const invalidIds = appointmentTypesIds.filter((id) => !validTypesIds.includes(id));
 
@@ -283,7 +307,11 @@ export class LookupsService {
     }
   }
 
-  async validateAppointmentVisitModes(identity: IIdentity, appointmentVisitModeIds: number[]): Promise<void> {
+  async validateAppointmentVisitModes(
+    identity: IIdentity,
+    appointmentVisitModeIds: number[],
+    transaction?: Transaction,
+  ): Promise<void> {
     if (!appointmentVisitModeIds || appointmentVisitModeIds.length === 0) {
       return;
     }
@@ -294,6 +322,7 @@ export class LookupsService {
           [Op.or]: [null, identity?.clinicId],
         },
       },
+      transaction,
     });
 
     const distinctIds = [...new Set(appointmentVisitModeIds)];
@@ -341,7 +370,11 @@ export class LookupsService {
     }
   }
 
-  async validateAppointmentStatuses(identity: IIdentity, appointmentStatusIds: number[]): Promise<void> {
+  async validateAppointmentStatuses(
+    identity: IIdentity,
+    appointmentStatusIds: number[],
+    transaction?: Transaction,
+  ): Promise<void> {
     if (!appointmentStatusIds || appointmentStatusIds.length === 0) {
       return;
     }
@@ -352,6 +385,7 @@ export class LookupsService {
           [Op.or]: [null, identity?.clinicId],
         },
       },
+      transaction,
     });
 
     const distinctIds = [...new Set(appointmentStatusIds)];

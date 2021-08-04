@@ -1,7 +1,7 @@
-import { IConfirmCompleteVisitEvent } from '@dashps/monmedx-common';
+import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'common/constants';
+import { DEFAULT_EVENT_DURATION_MINS, SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'common/constants';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
 
@@ -38,7 +38,7 @@ export class AppointmentsListener {
         },
       } = payload;
 
-      const identity = { clinicId, userId };
+      const identity: IIdentity = { clinicId, userId, cognitoId: null, userInfo: null, userLang: null };
 
       await this.appointmentsService.completeAppointment(visitAppointmentId, identity, transaction);
 
@@ -60,17 +60,14 @@ export class AppointmentsListener {
         await cancelPatientAppointments();
 
         // create new provisional appointment
-        await this.appointmentsService.createProvisionalAppointment(
+        await this.appointmentsService.createAppointment(
+          identity,
           {
             patientId,
-            clinicId,
-            doctorId: staffId,
-            createdBy: userId,
-            date: new Date(provisionalDate),
-            provisionalDate: new Date(provisionalDate),
-            provisionalTypeId,
+            staffId,
+            startDate: provisionalDate,
+            durationMinutes: DEFAULT_EVENT_DURATION_MINS,
             appointmentTypeId: provisionalTypeId,
-            upcomingAppointment: true,
           },
           transaction,
         );
