@@ -289,7 +289,6 @@ export class AvailabilityService {
     }
     const referenceDate: Date = await this.pickReferenceDate(payload.referenceDate, payload.patientId);
     const suggestions: AvailabilityModel[] = await this.getSuggestions(
-      identity.clinicId,
       referenceDate,
       appointmentTypeId,
       payload.staffId,
@@ -416,11 +415,11 @@ export class AvailabilityService {
   getAvailabilitySearchDateWhereClause(dateRange: FilterDateInputDto) {
     // Set endTime to 23:59:59 due to sequelize limitations
     if (dateRange.between) {
-      dateRange.between[1].setHours(23, 59, 59);
+      dateRange.between[1].setUTCHours(23, 59, 59, 999);
       return { [Op.between]: dateRange.between };
     } else if (dateRange.eq) {
       const end = new Date(dateRange.eq.getTime());
-      end.setHours(23, 59, 59);
+      end.setUTCHours(23, 59, 59, 999);
       return { [Op.between]: [dateRange.eq, end] };
     }
     return { [Op.notIn]: [] };

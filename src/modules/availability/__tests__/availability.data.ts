@@ -7,11 +7,21 @@ import { Op } from 'sequelize';
 import { UpdateAvailabilityDto } from 'modules/availability/dto/update.dto';
 import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 
-export function getStaffIdWhereClauseTestCases() {
+export function getEntityIdWhereClauseTestCases() {
   return [
     { filter: { in: [1, 2, 3], or: null }, expected: { [Op.in]: [1, 2, 3] } },
     { filter: { eq: 1, or: null }, expected: { [Op.eq]: 1 } },
     { filter: { or: null }, expected: { [Op.notIn]: [] } },
+  ];
+}
+
+export function getAvailabilitySearchDateWhereClauseTestCases() {
+  const dateA = new Date('2021-10-24T00:00:00.000Z');
+  const dateB = new Date('2021-10-25T00:00:00.000Z');
+  return [
+    { filter: { eq: dateA }, expected: { [Op.between]: [dateA, new Date('2021-10-24T23:59:59.999Z')] } },
+    { filter: { between: [dateA, dateB] }, expected: { [Op.between]: [dateA, new Date('2021-10-25T23:59:59.999Z')] } },
+    { filter: {}, expected: { [Op.notIn]: [] } },
   ];
 }
 
@@ -89,6 +99,76 @@ export function buildGetNineAvailabilitySuggestionsTestData() {
       '2031-10-25T11:30:00.000Z',
     ],
   };
+}
+
+export function getSearchForAvailabilitiesTestCases() {
+  return [
+    {
+      filter: {
+        dateRange: {
+          between: [new Date('2030-10-25T09:30:00.000Z'), new Date('2031-12-25T09:30:00.000Z')],
+        },
+        staffId: {
+          eq: 1,
+          or: null,
+        },
+        appointmentTypeId: {
+          eq: 1,
+          or: null,
+        },
+        timeGroup: 'MORNING',
+      },
+      expectedResult: {
+        availabilitiesCount: 4,
+        dates: [
+          '2030-10-25T09:30:00.000Z',
+          '2031-08-25T08:30:00.000Z',
+          '2031-10-25T08:30:00.000Z',
+          '2031-10-25T09:30:00.000Z',
+        ],
+      },
+    },
+    {
+      filter: {
+        dateRange: {
+          between: [new Date('2030-10-25T09:30:00.000Z'), new Date('2031-12-25T09:30:00.000Z')],
+        },
+        staffId: {
+          eq: 6,
+          or: null,
+        },
+      },
+      expectedResult: {
+        availabilitiesCount: 0,
+        dates: [],
+      },
+    },
+  ];
+}
+
+export function getAvailabilitiesCountTestCases() {
+  return [
+    {
+      filter: {
+        dateRange: {
+          between: [new Date('2031-07-25T09:30:00.000Z'), new Date('2031-12-25T09:30:00.000Z')],
+        },
+        staffId: {
+          in: [1, 2],
+          or: null,
+        },
+        timeGroup: TimeGroupCode.MORNING,
+      },
+      expectedResult: {
+        daysCount: 3,
+        dates: {
+          '2031-08-25': 2,
+          '2031-10-25': 5,
+          '2031-12-25': 1,
+        },
+      },
+    },
+  ];
 }
 
 // A single availability belong to staff 9

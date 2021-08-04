@@ -13,7 +13,10 @@ import {
   buildGetZeroAvailabilitySuggestionsTestData,
   buildUpdateAvailabilityDto,
   createAvailabilityDto,
-  getStaffIdWhereClauseTestCases,
+  getAvailabilitiesCountTestCases,
+  getAvailabilitySearchDateWhereClauseTestCases,
+  getEntityIdWhereClauseTestCases,
+  getSearchForAvailabilitiesTestCases,
   getSuggestionsData,
   getSuggestionsPriorityComparatorTestCases,
   getToCalendarEntryTestData,
@@ -147,8 +150,12 @@ describe('# AvailabilityService', () => {
       await availabilityService.bulkRemove(createdAvailabilitiesIds, identity, null);
     });
 
-    test.each(getStaffIdWhereClauseTestCases())('# getStaffIdWhereClause', (testCase) => {
+    test.each(getEntityIdWhereClauseTestCases())('# getEntityIdWhereClause', (testCase) => {
       expect(availabilityService.getEntityIdWhereClause(testCase.filter)).toEqual(testCase.expected);
+    });
+
+    test.each(getAvailabilitySearchDateWhereClauseTestCases())('# getAvailabilitySearchDateWhereClause', (testCase) => {
+      expect(testCase.expected).toEqual(availabilityService.getAvailabilitySearchDateWhereClause(testCase.filter));
     });
 
     test('# getSuggestionsDateWhereClause', () => {
@@ -193,6 +200,20 @@ describe('# AvailabilityService', () => {
       result.forEach((suggestion, index) => {
         expect(new Date(test.expectedDateOrder[index])).toEqual(suggestion.startDate);
       });
+    });
+
+    test.each(getSearchForAvailabilitiesTestCases())('#searchForAvailabilities: %p', async (testCase) => {
+      const result = await availabilityService.searchForAvailabilities(identity, testCase.filter);
+      expect(testCase.expectedResult.availabilitiesCount).toEqual(result.length);
+      expect(testCase.expectedResult.dates).toEqual(result.map((entry) => entry.startDate.toISOString()));
+    });
+
+    test.each(getAvailabilitiesCountTestCases())('#getAvailabilitiesCount: %p', async (testCase) => {
+      const result = await availabilityService.getAvailabilitiesCount(identity, testCase.filter);
+      expect(testCase.expectedResult.daysCount).toEqual(result.length);
+      for (const entry of result) {
+        expect(testCase.expectedResult.dates[entry.date]).toEqual(entry.count);
+      }
     });
 
     test('# getAvailabilitySuggestions: Will get 1 suggestions', async () => {

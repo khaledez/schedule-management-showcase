@@ -1,12 +1,14 @@
 import {
   extractDayTimeInSeconds,
   getTimeGroup,
+  isInTimeGroup,
   TimeGroupCode,
   transformDayTimeToSeconds,
 } from 'common/enums/time-group';
 import { TimeGroup } from 'common/interfaces/time-group-period';
 import {
   getExtractDayTimeInSecondsTestCases,
+  getIsInTimeGroupTestCases,
   getTransformDayTimeToSecondsTestCases,
 } from 'common/enums/__tests__/enum-utils.data';
 
@@ -45,5 +47,9 @@ describe('# TimeGroup functionality test', () => {
 
   test.each(getExtractDayTimeInSecondsTestCases())('# extractDayTimeInSeconds', (testCase) => {
     expect(extractDayTimeInSeconds(new Date(testCase.date))).toEqual(testCase.expected);
+  });
+
+  test.each(getIsInTimeGroupTestCases())('# isInTimeGroup: %p', (testCase) => {
+    expect(testCase.isInGroup).toEqual(isInTimeGroup(testCase.date, testCase.timeGroup));
   });
 });
