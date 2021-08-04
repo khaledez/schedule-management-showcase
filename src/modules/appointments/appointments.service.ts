@@ -10,6 +10,7 @@ import {
 } from 'common/constants';
 import { AppointmentVisitModeEnum, ErrorCodes } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
+import { UserError } from 'common/interfaces/user-error.interface';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
@@ -157,7 +158,7 @@ export class AppointmentsService {
     identity: IIdentity,
     dto: CreateAppointmentDto,
     transaction?: Transaction,
-  ): Promise<AppointmentsModel> {
+  ): Promise<{ appointment?: AppointmentsModel; errors?: UserError[] }> {
     /* 1. Validation */
     // 1.1 Appointment type id
     if (!(dto.availabilityId || (dto.appointmentTypeId && dto.startDate && dto.durationMinutes))) {
@@ -236,7 +237,7 @@ export class AppointmentsService {
       }));
       const provisionalDate: Date = isProvisional ? startDate : provisionalAppointment.startDate;
       /* 3. Act/Execution */
-      return this.appointmentsRepository.create(
+      const createdAppointment = await this.appointmentsRepository.create(
         {
           ...dto,
           appointmentTypeId,
@@ -252,6 +253,9 @@ export class AppointmentsService {
         },
         { transaction },
       );
+      return {
+        appointment: createdAppointment,
+      };
     };
 
     if (!transaction) {

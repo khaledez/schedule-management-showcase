@@ -23,6 +23,7 @@ import {
 import { DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
 import { AppointmentTypesEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
+import { UserError } from 'common/interfaces/user-error.interface';
 import { PatientInfoService } from 'modules/patient-info';
 import { Transaction } from 'sequelize';
 import { LookupsService } from '../lookups/lookups.service';
@@ -110,7 +111,7 @@ export class AppointmentsController {
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentProvisionalBodyDto,
-  ): Promise<AppointmentsModel> {
+  ): Promise<{ appointment?: AppointmentsModel; errors?: UserError[] }> {
     this.logger.debug({
       function: 'appointment/createProvisionalAppointment',
       identity,
@@ -138,7 +139,7 @@ export class AppointmentsController {
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentDto,
-  ): Promise<AppointmentsModel> {
+  ): Promise<{ appointment?: AppointmentsModel; errors?: UserError[] }> {
     this.logger.debug({ identity, appointmentData });
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
