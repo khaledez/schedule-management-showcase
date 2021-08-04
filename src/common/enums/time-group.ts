@@ -1,4 +1,5 @@
 import { TimeGroup } from 'common/interfaces/time-group-period';
+import { HOUR_TO_SECONDS, MIN_TO_SECONDS } from 'common/constants';
 
 export enum TimeGroupCode {
   MORNING = 'MORNING',

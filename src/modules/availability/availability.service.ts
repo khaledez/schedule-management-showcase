@@ -289,6 +289,7 @@ export class AvailabilityService {
     }
     const referenceDate: Date = await this.pickReferenceDate(payload.referenceDate, payload.patientId);
     const suggestions: AvailabilityModel[] = await this.getSuggestions(
+      identity.clinicId,
       referenceDate,
       appointmentTypeId,
       payload.staffId,
