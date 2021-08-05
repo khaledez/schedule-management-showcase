@@ -1,19 +1,22 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { APPOINTMENTS_REPOSITORY, SEQUELIZE } from 'common/constants';
+import { CancelRescheduleReasonCode } from 'common/enums';
+import { getPatientHistoryTestCases, getPatientHistoryTestData } from 'modules/appointments/__tests__/appointment.data';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { ConfigurationModule } from 'modules/config/config.module';
 import { DatabaseModule } from 'modules/database/database.module';
+import { LookupsModule } from 'modules/lookups/lookups.module';
+import { LookupsService } from 'modules/lookups/lookups.service';
+import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
+import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments.model';
 import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
-import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
-import { getPatientHistoryTestCases, getPatientHistoryTestData } from 'modules/appointments/__tests__/appointment.data';
-import { Op } from 'sequelize';
 
 const identity: IIdentity = {
   clinicId: 1,
@@ -29,16 +32,18 @@ describe('Appointment service', () => {
   let sequelize: Sequelize;
   let repo: typeof AppointmentsModel;
   let availabilityService: AvailabilityService;
+  let lookupsService: LookupsService;
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
     }).compile();
 
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
     sequelize = moduleRef.get<Sequelize>(SEQUELIZE);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
     availabilityService = moduleRef.get<AvailabilityService>(AvailabilityService);
+    lookupsService = moduleRef.get<LookupsService>(LookupsService);
   });
 
   afterAll(async () => {
@@ -134,6 +139,7 @@ describe('Appointment service', () => {
       expect(res.appointmentTypeId).toBe(apptAttributes.appointmentTypeId);
       expect(res.startDate.toISOString()).toBe(apptAttributes.startDate);
       expect(res.durationMinutes).toBe(apptAttributes.durationMinutes);
+      expect(res.availabilityId).toBeDefined();
     });
 
     test('Succeed providing valid availability id and other inputs', async () => {
@@ -168,6 +174,74 @@ describe('Appointment service', () => {
       );
       expect(nonProvisionalAppointment.appointmentStatusId).toEqual(2);
       expect(nonProvisionalAppointment.startDate.toISOString()).toMatch(apptAttributes.startDate.split('.')[0]);
+    });
+  });
+
+  describe('# Cancel appointment', () => {
+    let appointmentId: number;
+    beforeEach(async () => {
+      await repo.destroy({ where: {} });
+      const appt = await apptService.createAppointment(getTestIdentity(50, 50), {
+        appointmentStatusId: 1,
+        appointmentTypeId: 3,
+        patientId: 15,
+        staffId: 10,
+        startDate: new Date().toISOString(),
+        durationMinutes: 60,
+      });
+      appointmentId = appt.id;
+    });
+
+    test('cancelReason does not exist', async () => {
+      await expect(
+        apptService.cancelAppointment(getTestIdentity(50, 50), {
+          appointmentId,
+          provisionalDate: '2091-10-10',
+          reasonText: 'Bye Bye',
+          reasonId: 10,
+          keepAvailabiltySlot: true,
+        }),
+      ).rejects.toMatchObject({
+        response: { fields: ['cancel_reschedule_reason_id', 'reasonId'], unknownIds: [10] },
+      });
+    });
+
+    test('appointment does not exist', async () => {
+      await expect(
+        apptService.cancelAppointment(getTestIdentity(50, 50), {
+          appointmentId: 9999,
+          provisionalDate: '2091-10-10',
+          reasonText: 'ByeBye',
+          keepAvailabiltySlot: true,
+          reasonId: await lookupsService.getCancelRescheduleReasonByCode(CancelRescheduleReasonCode.RELEASE),
+        }),
+      ).rejects.toMatchObject({ response: { message: 'Appointment with id = 9999 not found' } });
+    });
+
+    test('appointment canceled and availability is still active', async () => {
+      const appt = await apptService.createAppointment(getTestIdentity(50, 50), {
+        appointmentStatusId: 2,
+        appointmentTypeId: 3,
+        patientId: 15,
+        staffId: 20,
+        startDate: new Date().toISOString(),
+        durationMinutes: 15,
+      });
+      await expect(
+        apptService.cancelAppointment(getTestIdentity(50, 50), {
+          appointmentId,
+          provisionalDate: '2091-10-10',
+          reasonText: 'ByeBye',
+          keepAvailabiltySlot: true,
+          reasonId: await lookupsService.getCancelRescheduleReasonByCode(CancelRescheduleReasonCode.RELEASE),
+        }),
+      ).resolves.toBeUndefined();
+
+      await expect(availabilityService.findOne(appt.availabilityId)).resolves.toMatchObject({
+        appointmentId: null,
+        appointmentTypeId: 3,
+        clinicId: 50,
+      });
     });
   });
 });

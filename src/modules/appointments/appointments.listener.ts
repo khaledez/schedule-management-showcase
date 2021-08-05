@@ -2,6 +2,7 @@ import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { DEFAULT_EVENT_DURATION_MINS, SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'common/constants';
+import { CancelRescheduleReasonCode } from 'common/enums';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
 
@@ -44,12 +45,9 @@ export class AppointmentsListener {
 
       const cancelPatientAppointments = () => {
         // cancel all patient future appointments including provisional
-        return this.appointmentsService.cancelPatientAppointments(
+        return this.appointmentsService.cancelPatientInCompleteAppointments(
           patientId,
-          {
-            cancelRescheduleReasonRn: 'Release patient after complete visit',
-            cancelRescheduleReasonFr: 'Release patient after complete visit',
-          },
+          CancelRescheduleReasonCode.RELEASE,
           transaction,
         );
       };

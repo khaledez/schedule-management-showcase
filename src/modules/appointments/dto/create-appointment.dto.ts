@@ -15,7 +15,7 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsNumber()
   @Transform((val) => parseInt(val))
-  appointmentTypeId: number;
+  appointmentTypeId?: number;
 
   /* Defaults to IN_PERSON */
   @IsOptional()

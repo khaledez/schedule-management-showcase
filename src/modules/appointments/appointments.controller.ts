@@ -29,11 +29,13 @@ import { Transaction } from 'sequelize';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel } from './appointments.model';
 import { AppointmentsService } from './appointments.service';
+import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentAdhocDto } from './dto/create-appointment-adhoc.dto';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { QueryParamsDto } from './dto/query-params.dto';
+import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
@@ -128,7 +130,7 @@ export class AppointmentsController {
     dto.staffId = null;
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return this.appointmentsService.createAppointment(identity, dto);
+    return { appointment: await this.appointmentsService.createAppointment(identity, dto) };
   }
 
   /**
@@ -145,7 +147,17 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData });
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return this.appointmentsService.createAppointment(identity, appointmentData);
+    return { appointment: await this.appointmentsService.createAppointment(identity, appointmentData) };
+  }
+
+  @Post('reschedule')
+  async rescheduleAppointment(@Identity() identity: IIdentity, @Body() rescheduleDto: RescheduleAppointmentDto) {
+    return { appointment: await this.appointmentsService.rescheduleAppointment(identity, rescheduleDto) };
+  }
+
+  @Post('cancel')
+  async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
+    await this.appointmentsService.cancelAppointment(identity, cancelDto);
   }
 
   /**

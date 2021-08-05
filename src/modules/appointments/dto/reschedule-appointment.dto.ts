@@ -17,8 +17,7 @@ export class RescheduleAppointmentDto {
 
   @IsOptional()
   @IsISO8601({ strict: true })
-  @Type(() => Date)
-  startDate: Date;
+  startDate: string;
 
   @IsOptional()
   @IsNumber()

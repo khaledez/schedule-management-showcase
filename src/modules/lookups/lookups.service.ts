@@ -10,9 +10,9 @@ import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
-import { AppointmentActionEnum, AppointmentStatusEnum } from 'common/enums';
+import { AppointmentActionEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AppointmentTypesEnum as AppointmentTypeEnum } from 'common/enums/appointment-type.enum';
-import { AppointmentVisitModeEnum } from 'common/enums/appointment-visit-mode.enum';
 import { FindOptions, Op, Transaction } from 'sequelize';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentCancelRescheduleReasonLookupModel } from './models/appointment-cancel-reschedule-reason.model';
@@ -261,6 +261,11 @@ export class LookupsService {
     return result?.id;
   }
 
+  getCancelRescheduleReasonByCode(code: CancelRescheduleReasonCode, transaction?: Transaction): Promise<number> {
+    return this.appointmentCancelRescheduleReasonRepo
+      .findOne({ where: { code: code.toString() }, attributes: ['id'], transaction })
+      .then((model) => model?.id);
+  }
   async getVisitModeByCode(code: AppointmentVisitModeEnum): Promise<number> {
     const result = await this.appointmentVisitModeRepository.findOne({
       where: {
@@ -364,7 +369,7 @@ export class LookupsService {
       const unknownIds = distinctIds.filter((id) => !returnedIds.includes(id));
       throw new BadRequestException({
         message: `unknown cancel reschedule reason ID`,
-        fields: ['cancel_reschedule_reason_id'],
+        fields: ['cancel_reschedule_reason_id', 'reasonId'],
         unknownIds,
       });
     }

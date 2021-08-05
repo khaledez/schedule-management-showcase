@@ -129,6 +129,6 @@ describe('LookupsService', () => {
   ])('appointmentCancelRescheduleReason validate not found ids %p', async ({ input, unknownIds }) => {
     await expect(
       lookupsService.validateAppointmentCancelRescheduleReason(getTestIdentity(50, 50), input),
-    ).rejects.toMatchObject({ response: { fields: ['cancel_reschedule_reason_id'], unknownIds } });
+    ).rejects.toMatchObject({ response: { fields: ['cancel_reschedule_reason_id', 'reasonId'], unknownIds } });
   });
 });
