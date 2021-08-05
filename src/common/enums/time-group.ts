@@ -1,5 +1,5 @@
-import { TimeGroup } from 'common/interfaces/time-group-period';
 import { HOUR_TO_SECONDS, MIN_TO_SECONDS } from 'common/constants';
+import { TimeGroup } from 'common/interfaces/time-group-period';
 
 export enum TimeGroupCode {
   MORNING = 'MORNING',
@@ -7,6 +7,7 @@ export enum TimeGroupCode {
   EVENING = 'EVENING',
 }
 
+// TODO fetch these from Lookup table
 const timeGroups = {
   [TimeGroupCode.MORNING]: { start: '08:00:00', end: '11:00:00' },
   [TimeGroupCode.AFTERNOON]: { start: '11:00:00', end: '15:00:00' },

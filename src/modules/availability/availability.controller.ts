@@ -1,5 +1,6 @@
 import { Identity, IIdentity } from '@dashps/monmedx-common';
 import { Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { CalendarEntriesCountPayloadDto } from 'common/dtos/calendar/calendar-entries-count-payload-dto';
 import { CalendarEntriesPayloadDto } from 'common/dtos/calendar/calendar-entries-payload-dto';
 import { split } from 'lodash';
 import { AvailabilityService } from 'modules/availability/availability.service';
@@ -7,11 +8,10 @@ import { AvailabilityValidator } from 'modules/availability/availability.validat
 import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 import { GetSuggestionsDto } from 'modules/availability/dto/GetSuggestionsDto';
 import { QueryFindAvailabilityDto } from 'modules/availability/dto/query-find-availability.dto';
+import { SearchAvailabilityDto } from 'modules/availability/dto/search-availability-dto';
 import { BulkUpdateResult } from 'modules/availability/interfaces/availability-bulk-update.interface';
 import { AvailabilityEdgesInterface } from 'modules/availability/interfaces/availability-edges.interface';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
-import { SearchAvailabilityDto } from 'modules/availability/dto/search-availability-dto';
-import { CalendarEntriesCountPayloadDto } from 'common/dtos/calendar/calendar-entries-count-payload-dto';
 
 @Controller('availability')
 export class AvailabilityController {
@@ -79,7 +79,6 @@ export class AvailabilityController {
     @Body() payload: SearchAvailabilityDto,
   ): Promise<CalendarEntriesCountPayloadDto> {
     const data = await this.availabilityService.getAvailabilitiesCount(identity, payload);
-    const responseDto = new CalendarEntriesCountPayloadDto();
     return { data };
   }
 }

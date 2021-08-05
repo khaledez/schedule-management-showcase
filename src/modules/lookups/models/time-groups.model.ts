@@ -1,7 +1,8 @@
-import { Table, Column } from 'sequelize-typescript';
-import { LookupsModel, LookupsModelAttributes } from '../../../common/models/lookup.model';
+import { Column, Table } from 'sequelize-typescript';
+import { LookupWithCodeAttributes } from '.';
+import { LookupsModel } from '../../../common/models/lookup.model';
 
-export interface TimeGroupsLookupsAttributes extends LookupsModelAttributes {
+export interface TimeGroupsLookupsAttributes extends LookupWithCodeAttributes {
   startTime: string;
   endTime: string;
 }
@@ -10,6 +11,9 @@ export class TimeGroupsLookupsModel
   extends LookupsModel<TimeGroupsLookupsAttributes>
   implements TimeGroupsLookupsAttributes
 {
+  @Column
+  code: string;
+
   @Column
   startTime: string;
 
