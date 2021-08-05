@@ -2,7 +2,7 @@
 import { ConfigService } from '@nestjs/config';
 import { LookupsModel } from 'common/models';
 import { AppointmentsModel } from 'modules/appointments/appointments.model';
-import { AvailabilityTemplateSlotModel } from 'modules/availability-template/model/availability-template-slot.model ';
+import { AvailabilityTemplateSlotModel } from 'modules/availability-template/model/availability-template-slot.model';
 import { AvailabilityTemplateModel } from 'modules/availability-template/model/availability-template.model';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';

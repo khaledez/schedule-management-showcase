@@ -6,7 +6,7 @@ import { Op, WhereOptions } from 'sequelize';
 import { AvailabilitySlotDto } from './dto/availability-template-slot.dto';
 import { AvailabilityTemplateDto } from './dto/availability-template.dto';
 import { AvailabilityTemplateResult } from './interfaces/availability-template.interface';
-import { AvailabilityTemplateSlotModel } from './model/availability-template-slot.model ';
+import { AvailabilityTemplateSlotModel } from './model/availability-template-slot.model';
 import { AvailabilityTemplateModel } from './model/availability-template.model';
 
 @Injectable()

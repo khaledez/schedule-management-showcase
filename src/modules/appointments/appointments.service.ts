@@ -10,7 +10,7 @@ import {
   PAGING_OFFSET_DEFAULT,
   SCHEDULE_MGMT_TOPIC,
 } from 'common/constants';
-import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode, ErrorCodes } from 'common/enums';
+import { AppointmentStatusEnum, AppointmentVisitModeEnum, ErrorCodes } from 'common/enums';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
@@ -573,11 +573,16 @@ export class AppointmentsService {
 
   rescheduleAppointment(identity: IIdentity, dto: RescheduleAppointmentDto): Promise<AppointmentsModelAttributes> {
     return this.appointmentsRepository.sequelize.transaction(
+      // eslint-disable-next-line complexity
       async (transaction): Promise<AppointmentsModelAttributes> => {
+        // 0. validate
+        await this.lookupsService.validateAppointmentCancelRescheduleReason(identity, [dto.rescheduleReason]);
+
         // 1. fetch appointment
         const appointment = await this.appointmentsRepository.findOne({
           transaction,
           where: { id: dto.appointmentId, clinicId: identity.clinicId },
+          include: { model: AvailabilityModel, required: true },
         });
         if (!appointment) {
           throw new NotFoundException({
@@ -588,11 +593,64 @@ export class AppointmentsService {
         }
 
         // 2. check if we need to change the doctor permanently
-        if (appointment.staffId !== dto.staffId && dto.staffChangedPermanent) {
+        if ((appointment.staffId !== dto.staffId && dto.staffChangedPermanent) || dto.removeFutureAppointments) {
           // cancel all future appointments with the current doctor
+          const reasonLookup = await this.lookupsService.getCancelRescheduleReasonById(dto.rescheduleReason);
+          await this.cancelPatientInCompleteAppointments(appointment.patientId, reasonLookup.code, transaction);
         }
 
-        return null;
+        // 3. availability slot
+        const startDate = dto.startDate ? DateTime.fromISO(dto.startDate) : null;
+        const endDate = startDate
+          ? startDate.plus({ minutes: dto.durationMinutes || DEFAULT_EVENT_DURATION_MINS })
+          : null;
+        if (dto.keepAvailabilitySlot) {
+          // freeup the avaialbility slot
+          appointment.availabilityId = null;
+          appointment.availability.appointmentId = null;
+          appointment.availability.updatedBy = identity.userId;
+          appointment.availability.updatedAt = new Date();
+          await appointment.availability.save({ transaction });
+        } else if (startDate) {
+          appointment.availability.startDate = startDate.toJSDate();
+          appointment.availability.endDate = endDate.toJSDate();
+          appointment.availability.durationMinutes = dto.durationMinutes;
+          appointment.availability.updatedBy = identity.userId;
+          appointment.availability.updatedAt = new Date();
+          await appointment.availability.save({ transaction });
+        }
+
+        // 4. update appointment
+        if (startDate) {
+          appointment.startDate = startDate.toJSDate();
+          appointment.endDate = endDate.toJSDate();
+          appointment.durationMinutes = dto.durationMinutes;
+        }
+        if (dto.staffId) {
+          appointment.staffId = dto.staffId;
+        }
+        appointment.cancelRescheduleText = dto.rescheduleText;
+        appointment.cancelRescheduleReasonId = dto.rescheduleReason;
+        appointment.appointmentStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.SCHEDULE);
+        appointment.updatedAt = new Date();
+        appointment.updatedBy = identity.userId;
+
+        // 5. provisional appointment
+        if (dto.provisionalDate) {
+          const provisionalAppt = await this.getPatientProvisionalAppointment(appointment.patientId, transaction);
+          if (provisionalAppt && provisionalAppt?.id !== appointment.id) {
+            // This check to make sure we're not rescheduling the provisional appointment
+            const provDate = DateTime.fromISO(dto.provisionalDate).toJSDate();
+            appointment.provisionalDate = provDate;
+            provisionalAppt.startDate = provDate;
+            provisionalAppt.endDate = provDate;
+            provisionalAppt.durationMinutes = 0;
+            provisionalAppt.updatedBy = identity.userId;
+            provisionalAppt.updatedAt = new Date();
+          }
+        }
+
+        return appointment.save({ transaction });
       },
     );
   }
@@ -622,11 +680,7 @@ export class AppointmentsService {
    * @param patientId
    * @param transaction
    */
-  cancelPatientInCompleteAppointments(
-    patientId: number,
-    cancelReason: CancelRescheduleReasonCode,
-    transaction?: Transaction,
-  ) {
+  cancelPatientInCompleteAppointments(patientId: number, cancelReason: string, transaction?: Transaction) {
     const cancelActionWithTransaction = async (transaction: Transaction) => {
       const [canceledStatusId, completeStatusId, cancelReasonId] = await Promise.all([
         this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.CANCELED),

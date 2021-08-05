@@ -10,7 +10,7 @@ import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
-import { AppointmentActionEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentActionEnum, AppointmentVisitModeEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AppointmentTypesEnum as AppointmentTypeEnum } from 'common/enums/appointment-type.enum';
 import { FindOptions, Op, Transaction } from 'sequelize';
@@ -261,11 +261,19 @@ export class LookupsService {
     return result?.id;
   }
 
-  getCancelRescheduleReasonByCode(code: CancelRescheduleReasonCode, transaction?: Transaction): Promise<number> {
+  getCancelRescheduleReasonByCode(code: string, transaction?: Transaction): Promise<number> {
     return this.appointmentCancelRescheduleReasonRepo
       .findOne({ where: { code: code.toString() }, attributes: ['id'], transaction })
       .then((model) => model?.id);
   }
+
+  getCancelRescheduleReasonById(
+    id: number,
+    transaction?: Transaction,
+  ): Promise<AppointmentCancelRescheduleReasonLookupModel> {
+    return this.appointmentCancelRescheduleReasonRepo.findByPk(id, { transaction, plain: true });
+  }
+
   async getVisitModeByCode(code: AppointmentVisitModeEnum): Promise<number> {
     const result = await this.appointmentVisitModeRepository.findOne({
       where: {

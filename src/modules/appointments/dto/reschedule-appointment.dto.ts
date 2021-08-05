@@ -5,24 +5,30 @@ export class RescheduleAppointmentDto {
   @IsNumber()
   @Type(() => Number)
   appointmentId: number;
+
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  staffId: number;
+  staffId?: number;
 
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
-  staffChangedPermanent: boolean;
+  staffChangedPermanent?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  removeFutureAppointments?: boolean;
 
   @IsOptional()
   @IsISO8601({ strict: true })
-  startDate: string;
+  startDate?: string;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  durationMinutes: number;
+  durationMinutes?: number;
 
   @IsNumber()
   @Type(() => Number)
@@ -30,15 +36,14 @@ export class RescheduleAppointmentDto {
 
   @IsOptional()
   @IsString()
-  rescheduleText: string;
+  rescheduleText?: string;
 
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
-  keepAvailabilitySlot: boolean;
+  keepAvailabilitySlot?: boolean;
 
   @IsOptional()
   @IsISO8601()
-  @Type(() => Date)
-  provisionalDate: Date;
+  provisionalDate?: string;
 }

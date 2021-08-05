@@ -7,8 +7,7 @@ import { AvailabilityModel } from '../../availability/models/availability.model'
 @Table({ tableName: 'AppointmentTypesLookups', underscored: true })
 export class AppointmentTypesLookupsModel
   extends LookupsModel<LookupWithCodeAttributes>
-  implements LookupWithCodeAttributes
-{
+  implements LookupWithCodeAttributes {
   @Column
   code: string;
 

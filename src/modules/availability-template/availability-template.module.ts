@@ -4,7 +4,7 @@ import { DatabaseModule } from 'modules/database/database.module';
 import { LookupsModule } from 'modules/lookups/lookups.module';
 import { AvailabilityTemplateController } from './availability-template.controller';
 import { AvailabilityTemplateService } from './availability-template.service';
-import { AvailabilityTemplateSlotModel } from './model/availability-template-slot.model ';
+import { AvailabilityTemplateSlotModel } from './model/availability-template-slot.model';
 import { AvailabilityTemplateModel } from './model/availability-template.model';
 
 const repoProviders = [

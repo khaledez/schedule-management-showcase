@@ -6,8 +6,7 @@ import { IsFutureDateTime } from 'common/decorators/IsFutureDateTime';
 
 export class CreateAvailabilityDto
   implements
-    Omit<AvailabilityModelAttributes, keyof BaseModelAttributes | 'id' | 'startTime' | 'endDate' | 'startDate'>
-{
+    Omit<AvailabilityModelAttributes, keyof BaseModelAttributes | 'id' | 'startTime' | 'endDate' | 'startDate'> {
   @IsNumber()
   @Transform((val) => parseInt(val))
   staffId: number;

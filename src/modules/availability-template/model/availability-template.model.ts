@@ -1,12 +1,11 @@
 import { Column, HasMany, Model, Table } from 'sequelize-typescript';
 import { AvailabilityTemplateAttributes } from '../interfaces/availability-template.interface';
-import { AvailabilityTemplateSlotModel } from './availability-template-slot.model ';
+import { AvailabilityTemplateSlotModel } from './availability-template-slot.model';
 
 @Table({ tableName: 'AvailabilityTemplate', underscored: true, paranoid: false })
 export class AvailabilityTemplateModel
   extends Model<AvailabilityTemplateAttributes>
-  implements AvailabilityTemplateAttributes
-{
+  implements AvailabilityTemplateAttributes {
   @Column
   name: string;
 
