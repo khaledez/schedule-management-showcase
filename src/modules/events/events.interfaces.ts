@@ -22,7 +22,7 @@ export interface EventUpdateRequest {
   staffId: number;
 }
 
-export type EventCreateRequest = Omit<EventUpdateRequest, 'id'>;
+export type EventCreateRequest = Omit<EventUpdateRequest, 'id'> & { availabilityId?: number; appointmentId?: number };
 
 export type EventDeleteResponse = ResultWithErrors;
 

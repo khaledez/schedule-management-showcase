@@ -253,6 +253,17 @@ export class AppointmentsService {
         },
         { transaction },
       );
+      // Corresponding event
+      await this.eventsService.create(
+        identity,
+        {
+          ...dto,
+          startDate: new Date(dto.startDate),
+          availabilityId,
+          appointmentId: createdAppointment.id,
+        },
+        transaction,
+      );
       return {
         appointment: createdAppointment,
       };

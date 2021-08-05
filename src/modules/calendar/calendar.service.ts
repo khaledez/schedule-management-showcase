@@ -99,7 +99,9 @@ function processDateCondition(
   }
 
   if (filter.eq) {
-    return { [columnName]: { [Op.eq]: DateTime.fromJSDate(filter.eq).toSQLDate() } };
+    const startOfDay = DateTime.fromJSDate(filter.eq).toSQLDate();
+    const endOfDay = `${startOfDay} 23:59:59`;
+    return { [columnName]: { [Op.between]: [startOfDay, endOfDay] } };
   }
 
   if (filter.between) {
