@@ -34,3 +34,6 @@ export const APPOINTMENT_CHECKIN_STATUS_EVENT = 'appointment_checkin';
 export const SCHEDULE_MGMT_TOPIC = 'schedule-management';
 export const VISIT_MGMT_TOPIC = 'visit-management';
 export const PATIENT_MGMT_TOPIC = 'patient-management';
+
+export const PAGING_LIMIT_DEFAULT = 10;
+export const PAGING_OFFSET_DEFAULT = 0;

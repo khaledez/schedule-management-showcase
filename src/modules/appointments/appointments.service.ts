@@ -2,10 +2,12 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
+  PAGING_LIMIT_DEFAULT,
+  PAGING_OFFSET_DEFAULT,
   SCHEDULE_MGMT_TOPIC,
 } from 'common/constants';
 import { AppointmentVisitModeEnum, ErrorCodes } from 'common/enums';
@@ -30,9 +32,11 @@ import { QueryParamsDto } from './dto/query-params.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
-import { sequelizeSortMapper } from './utils/sequelize-sort.mapper';
+import { getQueryGenericSortMapper, sequelizeSortMapper } from './utils/sequelize-sort.mapper';
+import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
+
 export interface AssociationFieldsSortCriteria {
   [key: string]: {
     relation?: string;
@@ -47,9 +51,12 @@ interface AvailabilityBasicInfo {
   durationMinutes?: number;
   appointmentTypeId?: number;
 }
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
+
+  static readonly DATE_COLUMN = 'start_date';
 
   constructor(
     @Inject(APPOINTMENTS_REPOSITORY)
@@ -73,7 +80,7 @@ export class AppointmentsService {
       column: 'code',
     },
     DATE: {
-      column: 'start_date',
+      column: AppointmentsService.DATE_COLUMN,
     },
   };
 
@@ -116,21 +123,7 @@ export class AppointmentsService {
 
       const { rows: appointments, count } = await this.appointmentsRepository.scope('active').findAndCountAll(options);
 
-      const appointmentsStatusIds: number[] = [];
-      const appointmentsAsPlain = appointments.map((e) => {
-        appointmentsStatusIds.push(e.status.id);
-        return e.get({ plain: true });
-      });
-
-      const actions = await this.lookupsService.findAppointmentsActions(appointmentsStatusIds);
-
-      const searchResult = appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
-        ...appt,
-        previousAppointment: appt.previousAppointmentId,
-        primaryAction: actions[i]?.nextAction ? actions[i].nextAction : [],
-        secondaryActions: actions[i]?.secondaryActions ? actions[i].secondaryActions : [],
-        provisionalAppointment: !appt.availabilityId,
-      }));
+      const searchResult = await this.buildAppointmentConnectionResponse(appointments);
 
       return [searchResult, count];
     } catch (error) {
@@ -144,6 +137,63 @@ export class AppointmentsService {
         error: error.message,
       });
     }
+  }
+
+  async getPatientAppointmentHistory(
+    identity: IIdentity,
+    pagingFilter: PagingInfoInterface,
+    payload: GetPatientAppointmentHistoryDto,
+  ): Promise<any> {
+    const { limit, offset } = pagingFilter || { limit: PAGING_LIMIT_DEFAULT, offset: PAGING_OFFSET_DEFAULT };
+    const order = getQueryGenericSortMapper(payload.sort, this.associationFieldsSortNames);
+    this.logger.log(order);
+    try {
+      const options: FindOptions = {
+        include: [
+          {
+            all: true,
+          },
+        ],
+        where: {
+          patientId: payload.patientId,
+          clinicId: identity.clinicId,
+        },
+        order,
+        limit,
+        offset,
+      };
+      const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
+      const searchResult = await this.buildAppointmentConnectionResponse(appointments);
+      return [searchResult, count];
+    } catch (error) {
+      this.logger.error({
+        function: 'service/appt/findall catch error',
+        error: error.message,
+      });
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'Failed to find the appointments',
+        error: error.message,
+      });
+    }
+  }
+
+  private async buildAppointmentConnectionResponse(appointments) {
+    const appointmentsStatusIds: number[] = [];
+    const appointmentsAsPlain = appointments.map((e) => {
+      appointmentsStatusIds.push(e.status.id);
+      return e.get({ plain: true });
+    });
+
+    const actions = await this.lookupsService.findAppointmentsActions(appointmentsStatusIds);
+
+    return appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
+      ...appt,
+      previousAppointment: appt.previousAppointmentId,
+      primaryAction: actions[i]?.nextAction ? actions[i].nextAction : [],
+      secondaryActions: actions[i]?.secondaryActions ? actions[i].secondaryActions : [],
+      provisionalAppointment: !appt.availabilityId,
+    }));
   }
 
   /**

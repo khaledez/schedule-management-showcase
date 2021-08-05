@@ -6,11 +6,14 @@ import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { ConfigurationModule } from 'modules/config/config.module';
 import { DatabaseModule } from 'modules/database/database.module';
 import { Sequelize } from 'sequelize-typescript';
-import { AppointmentsModel } from '../appointments.model';
+import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments.model';
 import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
+import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { getPatientHistoryTestCases, getPatientHistoryTestData } from 'modules/appointments/__tests__/appointment.data';
+import { Op } from 'sequelize';
 
 const identity: IIdentity = {
   clinicId: 1,
@@ -166,5 +169,47 @@ describe('Appointment service', () => {
       expect(nonProvisionalAppointment.appointmentStatusId).toEqual(2);
       expect(nonProvisionalAppointment.startDate.toISOString()).toMatch(apptAttributes.startDate.split('.')[0]);
     });
+  });
+});
+
+describe('Patient appointment history tests', () => {
+  const identity = getTestIdentity(174, 174);
+  let appointmentsService: AppointmentsService;
+  let moduleRef: TestingModule;
+  let repo: typeof AppointmentsModel;
+  let createdAppointmentsIds = [];
+
+  beforeAll(async () => {
+    moduleRef = await Test.createTestingModule({
+      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+    }).compile();
+    appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
+    repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
+    const creationAttributes: AppointmentsModelAttributes[] = getPatientHistoryTestData(identity);
+    const createdAppointments = await repo.bulkCreate(creationAttributes);
+    createdAppointmentsIds = createdAppointments.map((appointment) => appointment.id);
+  });
+
+  afterAll(async () => {
+    await repo.destroy({
+      where: {
+        id: {
+          [Op.in]: createdAppointmentsIds,
+        },
+      },
+    });
+    await moduleRef.close();
+  });
+
+  test.each(getPatientHistoryTestCases())('# getPatientAppointmentHistory: %p', async (testCase) => {
+    const [appointments, count] = await appointmentsService.getPatientAppointmentHistory(
+      identity,
+      testCase.pagingFilter,
+      testCase.payload,
+    );
+    expect(count).toEqual(testCase.expectedResult.count);
+    expect(appointments.map((appointment) => appointment.startDate.toISOString())).toEqual(
+      testCase.expectedResult.datesOrder,
+    );
   });
 });

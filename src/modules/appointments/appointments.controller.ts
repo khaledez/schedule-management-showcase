@@ -36,10 +36,12 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { QueryParamsDto } from './dto/query-params.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
 
 @Controller('appointments')
 export class AppointmentsController {
   private readonly logger = new Logger(AppointmentsController.name);
+
   constructor(
     private readonly appointmentsService: AppointmentsService,
     private readonly lookupsService: LookupsService,
@@ -186,5 +188,19 @@ export class AppointmentsController {
       },
       transaction,
     );
+  }
+
+  @Post('forPatient')
+  @UseInterceptors(PaginationInterceptor)
+  async getPatientAppointmentHistory(
+    @Identity() identity: IIdentity,
+    @PagingInfo() pagingFilter: PagingInfoInterface,
+    @Body() payload: GetPatientAppointmentHistoryDto,
+  ): Promise<unknown> {
+    const [data, count] = await this.appointmentsService.getPatientAppointmentHistory(identity, pagingFilter, payload);
+    return {
+      data,
+      count,
+    };
   }
 }

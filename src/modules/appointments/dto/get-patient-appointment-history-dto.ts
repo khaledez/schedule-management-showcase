@@ -1,25 +1,21 @@
+import { IsNumber, IsOptional, IsPositive, ValidateNested } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { IsNumber, IsOptional, ValidateNested } from 'class-validator';
-import { AppointmentFilterDto } from 'modules/appointments/dto/appointment-filter.dto';
 import { AppointmentSortDto } from 'modules/appointments/dto/appointment-sort-dto';
 
-export class QueryParamsDto {
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => AppointmentFilterDto)
-  filter?: AppointmentFilterDto;
+export class GetPatientAppointmentHistoryDto {
+  @IsPositive()
+  @Transform((value) => Number(value))
+  @IsNumber()
+  patientId: number;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => AppointmentSortDto)
-  sort?: AppointmentSortDto[];
-
-  @IsOptional()
+  @IsPositive()
   @Transform((value) => Number(value))
   @IsNumber()
   first?: number;
 
   @IsOptional()
+  @IsPositive()
   @Transform((value) => Number(value))
   @IsNumber()
   last?: number;
@@ -33,4 +29,9 @@ export class QueryParamsDto {
   @Transform((value) => Number(value))
   @IsNumber()
   before?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AppointmentSortDto)
+  sort?: AppointmentSortDto[];
 }

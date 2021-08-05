@@ -1,8 +1,11 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { ErrorCodes } from 'common/enums/error-code.enum';
-import { AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
+import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
 import { QueryParamsDto } from 'modules/appointments/dto/query-params.dto';
+import { AppointmentSortDto, Key } from 'modules/appointments/dto/appointment-sort-dto';
+import { Order } from 'common/enums';
 
+// TODO: Need to rethink this. If multiple sort keys passed in query, it will sort using the first one
 // eslint-disable-next-line complexity
 export function sequelizeSortMapper(
   logger: Logger,
@@ -14,14 +17,14 @@ export function sequelizeSortMapper(
     const sort = query && query.sort && query.sort[0];
     // to get the last elements i need to reverse sort and git the limit
     let defaultOrder = [
-      ['start_date', 'DESC'],
+      [AppointmentsService.DATE_COLUMN, 'DESC'],
       ['availability', 'start_time', 'DESC'],
       ['id', 'DESC'],
     ];
     // reverse sort
     if (shouldReverseSort) {
       defaultOrder = [
-        ['start_date', 'ASC'],
+        [AppointmentsService.DATE_COLUMN, 'ASC'],
         ['availability', 'start_time', 'ASC'],
         ['id', 'ASC'],
       ];
@@ -69,3 +72,41 @@ const reverseSort = (sort: string, reverse: boolean) => {
   }
   return defaultSort;
 };
+
+// TODO: Functionality here is a simplified version of the function @see {sequelizeSortMapper}.
+//  Rethink the entire file.
+// eslint-disable-next-line complexity
+export function getQueryGenericSortMapper(
+  sortDtos: AppointmentSortDto[],
+  associationFields: AssociationFieldsSortCriteria,
+) {
+  let sortKeys: AppointmentSortDto[] = [
+    { key: Key.DATE, order: Order.DESC },
+    { key: Key.ID, order: Order.DESC },
+  ];
+  if (Array.isArray(sortDtos) && sortDtos.length !== 0) {
+    sortKeys = sortDtos;
+  }
+  try {
+    const order = [];
+    for (const sortKey of sortKeys) {
+      let orderOption = [sortKey.key, sortKey.order];
+      if (associationFields[sortKey.key]) {
+        const { relation, column } = associationFields[sortKey.key];
+        if (relation) {
+          orderOption = [relation, column, sortKey.order];
+        } else {
+          orderOption = [column, sortKey.order];
+        }
+      }
+      order.push(orderOption);
+    }
+    return order;
+  } catch (error) {
+    throw new InternalServerErrorException({
+      code: ErrorCodes.INTERNAL_SERVER_ERROR,
+      message: 'Failed to create sort mapper',
+      error,
+    });
+  }
+}
