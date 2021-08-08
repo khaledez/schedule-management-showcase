@@ -135,12 +135,171 @@ export function getPatientHistoryTestData(identity: IIdentity): AppointmentsMode
   ];
 }
 
+export function getPatientAppointmentsTestData(identity: IIdentity): AppointmentsModelAttributes[] {
+  return [
+    createAppointment(
+      // 0
+      identity,
+      143,
+      1,
+      new Date('2032-05-25T08:00:00.000Z'),
+      new Date('2032-05-25T08:30:00.000Z'),
+      true,
+    ),
+    createAppointment(
+      // 1
+      identity,
+      143,
+      1,
+      new Date('2032-05-26T08:00:00.000Z'),
+      new Date('2032-05-25T08:30:00.000Z'),
+      false,
+    ),
+    createAppointment(
+      // 2
+      identity,
+      143,
+      1,
+      new Date('2032-05-27T08:00:00.000Z'),
+      new Date('2032-05-25T08:30:00.000Z'),
+      false,
+    ),
+    createAppointment(
+      // 3
+      identity,
+      170,
+      1,
+      new Date('2032-05-25T08:00:00.000Z'),
+      new Date('2032-05-25T08:30:00.000Z'),
+      false,
+    ),
+    createAppointment(
+      // 4
+      identity,
+      170,
+      1,
+      new Date('2032-05-26T08:00:00.000Z'),
+      new Date('2032-05-25T08:30:00.000Z'),
+      false,
+    ),
+    createAppointment(
+      // 5
+      identity,
+      170,
+      1,
+      new Date('2032-05-27T08:00:00.000Z'),
+      new Date('2032-05-25T08:30:00.000Z'),
+      true,
+    ),
+    createAppointment(
+      // 6
+      identity,
+      197,
+      1,
+      new Date('2012-05-25T08:00:00.000Z'),
+      new Date('2012-05-25T08:30:00.000Z'),
+      true,
+    ),
+    createAppointment(
+      // 7
+      identity,
+      197,
+      1,
+      new Date('2032-05-26T08:00:00.000Z'),
+      new Date('2032-05-25T08:30:00.000Z'),
+      false,
+    ),
+  ];
+}
+
+export function getPatientUpcomingAppointmentTestCases() {
+  return [
+    {
+      patientId: 143,
+      date: new Date('2032-05-25T08:00:00.000Z'),
+    },
+    {
+      patientId: 170,
+      date: new Date('2032-05-27T08:00:00.000Z'),
+    },
+    {
+      patientId: 197,
+      date: new Date('2012-05-25T08:00:00.000Z'),
+    },
+    {
+      patientId: 230,
+      date: undefined,
+    },
+  ];
+}
+
+export function getPatientNextAppointmentTestCases() {
+  return [
+    {
+      patientId: 143,
+      appointmentId: 0,
+      date: new Date('2032-05-26T08:00:00.000Z'),
+    },
+    {
+      patientId: 170,
+      appointmentId: 5,
+      date: undefined,
+    },
+    {
+      patientId: 197,
+      appointmentId: 6,
+      date: new Date('2032-05-26T08:00:00.000Z'),
+    },
+  ];
+}
+
+export function getAppointmentByPatientIdTestCases() {
+  return [
+    {
+      patientId: 143,
+      query: null,
+      date: new Date('2032-05-25T08:00:00.000Z'),
+    },
+    {
+      patientId: 170,
+      query: null,
+      date: new Date('2032-05-27T08:00:00.000Z'),
+    },
+    {
+      patientId: 197,
+      query: null,
+      date: new Date('2012-05-25T08:00:00.000Z'),
+    },
+    {
+      patientId: 230,
+      query: null,
+      date: undefined,
+    },
+    {
+      patientId: 143,
+      query: { after: 0 },
+      date: new Date('2032-05-26T08:00:00.000Z'),
+    },
+    {
+      patientId: 170,
+      query: { after: 5 },
+      date: undefined,
+    },
+    {
+      patientId: 197,
+      query: { after: 6 },
+      date: new Date('2032-05-26T08:00:00.000Z'),
+    },
+  ];
+}
+
 function createAppointment(
   identity: IIdentity,
   patientId: number,
   staffId: number,
   startDate: Date,
   endDate: Date,
+  upcomingAppointment?: boolean,
 ): AppointmentsModelAttributes {
   return {
     durationMinutes: 30,
@@ -153,5 +312,6 @@ function createAppointment(
     staffId,
     startDate,
     endDate,
+    upcomingAppointment,
   };
 }

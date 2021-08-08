@@ -2,7 +2,14 @@ import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { APPOINTMENTS_REPOSITORY, SEQUELIZE } from 'common/constants';
 import { CancelRescheduleReasonCode } from 'common/enums';
-import { getPatientHistoryTestCases, getPatientHistoryTestData } from 'modules/appointments/__tests__/appointment.data';
+import {
+  getAppointmentByPatientIdTestCases,
+  getPatientAppointmentsTestData,
+  getPatientHistoryTestCases,
+  getPatientHistoryTestData,
+  getPatientNextAppointmentTestCases,
+  getPatientUpcomingAppointmentTestCases,
+} from 'modules/appointments/__tests__/appointment.data';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { ConfigurationModule } from 'modules/config/config.module';
@@ -285,5 +292,57 @@ describe('Patient appointment history tests', () => {
     expect(appointments.map((appointment) => appointment.startDate.toISOString())).toEqual(
       testCase.expectedResult.datesOrder,
     );
+  });
+});
+
+describe('Patient upcoming and next appointments tests', () => {
+  const identity = getTestIdentity(295, 295);
+  let appointmentsService: AppointmentsService;
+  let moduleRef: TestingModule;
+  let repo: typeof AppointmentsModel;
+  let createdAppointmentsIds = [];
+
+  beforeAll(async () => {
+    moduleRef = await Test.createTestingModule({
+      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+    }).compile();
+    appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
+    repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
+    const creationAttributes: AppointmentsModelAttributes[] = getPatientAppointmentsTestData(identity);
+    const createdAppointments = await repo.bulkCreate(creationAttributes);
+    createdAppointmentsIds = createdAppointments.map((appointment) => appointment.id);
+  });
+
+  afterAll(async () => {
+    await repo.destroy({
+      where: {
+        id: {
+          [Op.in]: createdAppointmentsIds,
+        },
+      },
+    });
+    await moduleRef.close();
+  });
+
+  test.each(getAppointmentByPatientIdTestCases())('#getAppointmentByPatientId: %p', async (testCase) => {
+    if (testCase.query) {
+      testCase.query.after = createdAppointmentsIds[testCase.query.after];
+    }
+    const result = await appointmentsService.getAppointmentByPatientId(identity, testCase.patientId, testCase.query);
+    expect(result?.startDate).toEqual(testCase.date);
+  });
+
+  test.each(getPatientUpcomingAppointmentTestCases())('#getPatientUpcomingAppointment: %p', async (testCase) => {
+    const result = await appointmentsService.getPatientUpcomingAppointment(identity, testCase.patientId);
+    expect(result?.startDate).toEqual(testCase.date);
+  });
+
+  test.each(getPatientNextAppointmentTestCases())('#getPatientNextAppointment: %p', async (testCase) => {
+    const result = await appointmentsService.getPatientNextAppointment(
+      identity,
+      testCase.patientId,
+      createdAppointmentsIds[testCase.appointmentId],
+    );
+    expect(result?.startDate).toEqual(testCase.date);
   });
 });

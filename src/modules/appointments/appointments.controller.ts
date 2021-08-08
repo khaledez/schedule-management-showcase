@@ -39,6 +39,7 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
+import { GetPatientNextAppointment } from 'modules/appointments/dto/get-patient-next-appointment';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -95,12 +96,37 @@ export class AppointmentsController {
     return this.appointmentsService.updateAppointment(identity, id, updateAppointmentDto);
   }
 
+  /**
+   * @deprecated use {getPatientUpcomingAppointment} & {GetPatientNextAppointment} instead
+   */
   @Get('patient-upcoming/:patientId')
   getAppointmentByPatientId(
+    @Identity() identity: IIdentity,
     @Param('patientId', ParseIntPipe) patientId: number,
     @Query() query: UpComingAppointmentQueryDto,
   ) {
-    return this.appointmentsService.findAppointmentByPatientId(patientId, query);
+    return this.appointmentsService.getAppointmentByPatientId(identity, patientId, query);
+  }
+
+  /**
+   * Returns patient upcoming appointment which is the appointment with {@link AppointmentsModelAttributes.upcomingAppointment} == True
+   * @param identity
+   * @param patientId
+   */
+  @Get('upcoming-appointment/:patientId')
+  getPatientUpcomingAppointment(@Identity() identity: IIdentity, @Param('patientId', ParseIntPipe) patientId: number) {
+    return this.appointmentsService.getPatientUpcomingAppointment(identity, patientId);
+  }
+
+  /**
+   * Returns the patient next appointment with id > {@link GetPatientNextAppointment.appointmentId}
+   * @param identity
+   * @param query continas patientId & appointmentId
+   * @constructor
+   */
+  @Get('patient-next-appointment')
+  GetPatientNextAppointment(@Identity() identity: IIdentity, @Query() query: GetPatientNextAppointment) {
+    return this.appointmentsService.getPatientNextAppointment(identity, query.patientId, query.appointmentId);
   }
 
   /**

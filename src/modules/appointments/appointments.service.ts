@@ -2,8 +2,8 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
   PAGING_LIMIT_DEFAULT,
@@ -31,10 +31,10 @@ import { CreateGlobalAppointmentDto } from './dto/global-appointment-create.dto'
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
-import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
 import { getQueryGenericSortMapper, sequelizeSortMapper } from './utils/sequelize-sort.mapper';
+import { UpComingAppointmentQueryDto } from 'modules/appointments/dto/upcoming-appointment-query.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -954,28 +954,39 @@ export class AppointmentsService {
     }
   };
 
-  findAppointmentByPatientId(id: number, queryData: UpComingAppointmentQueryDto): Promise<AppointmentsModelAttributes> {
-    const query: any = {
-      filter: {
-        patientId: {
-          eq: id,
+  getAppointmentByPatientId(
+    identity: IIdentity,
+    patientId: number,
+    query: UpComingAppointmentQueryDto,
+  ): Promise<AppointmentsModelAttributes> {
+    if (query?.after) {
+      return this.getPatientNextAppointment(identity, patientId, query.after);
+    }
+    return this.getPatientUpcomingAppointment(identity, patientId);
+  }
+
+  getPatientUpcomingAppointment(identity: IIdentity, id: number) {
+    const options: FindOptions = {
+      where: {
+        patientId: id,
+        clinicId: identity.clinicId,
+        upcomingAppointment: true,
+      },
+    };
+    return this.appointmentsRepository.findOne(options);
+  }
+
+  getPatientNextAppointment(identity: IIdentity, patientId: number, appointmentId: number) {
+    const options: FindOptions = {
+      where: {
+        patientId: patientId,
+        clinicId: identity.clinicId,
+        id: {
+          [Op.gt]: appointmentId,
         },
       },
     };
-    this.logger.debug({
-      title: 'upcoming appointment query',
-      queryData,
-    });
-    if (queryData.after) {
-      query.filter.date = {
-        gt: new Date(),
-      };
-      query.filter.upcomingAppointment = {
-        in: [true, false],
-      };
-    }
-
-    return this.appointmentsRepository.findOne(query);
+    return this.appointmentsRepository.findOne(options);
   }
 
   async getAppointmentsByPeriods(clinicId: number, query: QueryAppointmentsByPeriodsDto): Promise<any> {

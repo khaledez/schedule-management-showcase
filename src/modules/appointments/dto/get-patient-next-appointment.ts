@@ -1,10 +1,11 @@
 import { Transform } from 'class-transformer';
 import { IsNumber, IsOptional } from 'class-validator';
 
-// this dto after modify the dto.
-export class UpComingAppointmentQueryDto {
-  @IsOptional()
+export class GetPatientNextAppointment {
   @Transform((value) => Number(value))
   @IsNumber()
-  after: number;
+  appointmentId: number;
+  @Transform((value) => Number(value))
+  @IsNumber()
+  patientId: number;
 }
