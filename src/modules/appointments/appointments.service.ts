@@ -2,8 +2,8 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
   PAGING_LIMIT_DEFAULT,
@@ -14,6 +14,7 @@ import { AppointmentStatusEnum, AppointmentVisitModeEnum, ErrorCodes } from 'com
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
+import { UpComingAppointmentQueryDto } from 'modules/appointments/dto/upcoming-appointment-query.dto';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
@@ -34,7 +35,6 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
 import { getQueryGenericSortMapper, sequelizeSortMapper } from './utils/sequelize-sort.mapper';
-import { UpComingAppointmentQueryDto } from 'modules/appointments/dto/upcoming-appointment-query.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -229,6 +229,7 @@ export class AppointmentsService {
     this.logger.debug({ message: 'creating an appointment', dto });
     // This flow is seperated in a function because most of it
     // requires a database transaction
+    // eslint-disable-next-line complexity
     const validateInputThenArrangeAttributesAndCommit = async (transaction: Transaction) => {
       // 1.2 Appointment, Status, Visit Mode
       await this.validateLookupIds(identity, dto, transaction);
@@ -305,17 +306,20 @@ export class AppointmentsService {
         },
         { transaction },
       );
-      // Corresponding event
-      await this.eventsService.create(
-        identity,
-        {
-          ...dto,
-          startDate: new Date(dto.startDate),
-          availabilityId,
-          appointmentId: createdAppointment.id,
-        },
-        transaction,
-      );
+
+      if (!isProvisional) {
+        // Corresponding event only non-provisional appointments
+        await this.eventsService.create(
+          identity,
+          {
+            ...dto,
+            startDate: new Date(dto.startDate),
+            availabilityId,
+            appointmentId: createdAppointment.id,
+          },
+          transaction,
+        );
+      }
       return createdAppointment;
     };
 

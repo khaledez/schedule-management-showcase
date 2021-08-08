@@ -24,6 +24,8 @@ import { DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
 import { AppointmentTypesEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { UserError } from 'common/interfaces/user-error.interface';
+import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
+import { GetPatientNextAppointment } from 'modules/appointments/dto/get-patient-next-appointment';
 import { PatientInfoService } from 'modules/patient-info';
 import { Transaction } from 'sequelize';
 import { LookupsService } from '../lookups/lookups.service';
@@ -38,8 +40,6 @@ import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
-import { GetPatientNextAppointment } from 'modules/appointments/dto/get-patient-next-appointment';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -153,7 +153,6 @@ export class AppointmentsController {
     dto.startDate = appointmentData.date.toISOString();
     dto.durationMinutes = DEFAULT_EVENT_DURATION_MINS;
     dto.appointmentTypeId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
-    dto.staffId = null;
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
     return { appointment: await this.appointmentsService.createAppointment(identity, dto) };
