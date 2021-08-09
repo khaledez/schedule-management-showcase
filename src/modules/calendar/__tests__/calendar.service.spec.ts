@@ -92,14 +92,10 @@ describe('Calendar service', () => {
     });
   });
 
-  test('Should return 2 events and appointment, on provisional appointment creation', async () => {
+  test('Provisional appointments do not create an event instance', async () => {
     await eventService.create(identity, {
       staffId: 100,
       startDate: new Date('2021-09-01'),
-    });
-    await eventService.create(identity, {
-      staffId: 100,
-      startDate: new Date('2021-09-02'),
     });
     await apptService.createAppointment(identity, {
       staffId: 100,
@@ -122,19 +118,21 @@ describe('Calendar service', () => {
         ne: null,
       },
     });
-    expect(allEvents.entries).toHaveLength(3);
+    expect(allEvents.entries).toHaveLength(1);
   });
 
   test('Should return 2 events, an appointment and its corresponding availability, on non-provisional appointment creation', async () => {
+    // Event (Counts #1)
     await eventService.create(identity, {
       staffId: 100,
       startDate: new Date('2021-09-01'),
     });
+    // 2. Event (Counts #2)
     await eventService.create(identity, {
       staffId: 100,
       startDate: new Date('2021-09-02'),
     });
-    // Provisional
+    // Provisional (Does not count in event)
     await apptService.createAppointment(identity, {
       staffId: 100,
       patientId: 1,
@@ -143,6 +141,7 @@ describe('Calendar service', () => {
       startDate: '2021-09-10',
     });
     // Non-Provisional
+    // (Counts as availability #3) and (Appointment #4)
     await apptService.createAppointment(identity, {
       staffId: 100,
       patientId: 1,
@@ -165,9 +164,9 @@ describe('Calendar service', () => {
         ne: null,
       },
     });
-    expect(allEvents.entries).toHaveLength(5);
+    expect(allEvents.entries).toHaveLength(4);
     const entryTypes = allEvents.entries.map((entry) => entry.entryType);
-    const expectedAppointmentEntries = ['AVAILABILITY', 'APPOINTMENT', 'APPOINTMENT', 'EVENT', 'EVENT'];
+    const expectedAppointmentEntries = ['AVAILABILITY', 'APPOINTMENT', 'EVENT', 'EVENT'];
     expect(entryTypes.sort()).toEqual(expectedAppointmentEntries.sort());
   });
 });

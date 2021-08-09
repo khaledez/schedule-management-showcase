@@ -21,11 +21,13 @@ import {
 import { ErrorCodes } from 'common/enums';
 import { CalendarType } from 'common/enums/calendar-type';
 import { getTimeGroup, isInTimeGroup } from 'common/enums/time-group';
+import { AvailabilityCountForDay } from 'common/interfaces/availability-count-for-day';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { TimeGroup } from 'common/interfaces/time-group-period';
 import { DateTime } from 'luxon';
 import { AppointmentsService } from 'modules/appointments/appointments.service';
 import { GetSuggestionsDto } from 'modules/availability/dto/GetSuggestionsDto';
+import { SearchAvailabilityDto } from 'modules/availability/dto/search-availability-dto';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import sequelize, { FindOptions, Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
@@ -40,8 +42,6 @@ import { BulkUpdateResult } from './interfaces/availability-bulk-update.interfac
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityModel } from './models/availability.model';
-import { SearchAvailabilityDto } from 'modules/availability/dto/search-availability-dto';
-import { AvailabilityCountForDay } from 'common/interfaces/availability-count-for-day';
 
 @Injectable()
 export class AvailabilityService {
@@ -441,6 +441,25 @@ export class AvailabilityService {
       updatedAt: availability.updatedAt,
       durationMinutes: availability.durationMinutes,
     };
+  }
+
+  async attachAppointmentToAvailability(
+    availabilityId: number,
+    appointmentId: number,
+    transaction?: Transaction,
+  ): Promise<void> {
+    if (!availabilityId) {
+      return;
+    }
+    await this.availabilityRepository.update(
+      { appointmentId },
+      {
+        where: {
+          id: availabilityId,
+        },
+        transaction,
+      },
+    );
   }
 }
 

@@ -306,7 +306,11 @@ export class AppointmentsService {
         },
         { transaction },
       );
-
+      await this.availabilityService.attachAppointmentToAvailability(
+        availabilityId,
+        createdAppointment.id,
+        transaction,
+      );
       if (!isProvisional) {
         // Corresponding event only non-provisional appointments
         await this.eventsService.create(
