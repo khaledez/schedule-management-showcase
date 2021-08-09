@@ -1005,7 +1005,7 @@ export class AppointmentsService {
         [Op.ne]: null,
       },
       clinicId,
-      date: {
+      startDate: {
         [Op.between]: [query.fromDate, query.toDate],
       },
     };
@@ -1013,8 +1013,8 @@ export class AppointmentsService {
       where.doctorId = { [Op.in]: query.doctorIds };
     }
     const result = await this.appointmentsRepository.scope('active').count({
-      attributes: ['date'],
-      group: ['date'],
+      attributes: ['start_date'],
+      group: ['start_date'],
       include: [
         {
           model: AppointmentStatusLookupsModel,
