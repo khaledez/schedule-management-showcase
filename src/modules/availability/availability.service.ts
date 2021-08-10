@@ -439,6 +439,7 @@ export class AvailabilityService {
       createdAt: availability.createdAt,
       updatedBy: availability.updatedBy,
       updatedAt: availability.updatedAt,
+      appointmentTypeId: availability.appointmentTypeId,
       durationMinutes: availability.durationMinutes,
     };
   }

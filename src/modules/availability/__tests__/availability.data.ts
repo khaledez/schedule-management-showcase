@@ -258,6 +258,7 @@ export function getToCalendarEntryTestData(): { input: AvailabilityModelAttribut
       createdAt: new Date('2030-10-25T09:30:00.004Z'),
       updatedBy: 6,
       updatedAt: new Date('2030-10-25T09:30:00.005Z'),
+      appointmentTypeId: 1
     },
   };
 }
