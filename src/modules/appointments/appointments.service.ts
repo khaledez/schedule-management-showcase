@@ -317,7 +317,7 @@ export class AppointmentsService {
           identity,
           {
             ...dto,
-            startDate: new Date(dto.startDate),
+            startDate: startDate,
             availabilityId,
             appointmentId: createdAppointment.id,
           },
