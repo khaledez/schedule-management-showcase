@@ -681,6 +681,7 @@ export class AppointmentsService {
         updatedBy: identity.userId,
         visitId,
         visitSummaryDocumentId: documentId,
+        upcomingAppointment: false,
       },
       {
         where: {
