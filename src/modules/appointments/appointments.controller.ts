@@ -155,7 +155,7 @@ export class AppointmentsController {
     dto.appointmentTypeId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return { appointment: await this.appointmentsService.createAppointment(identity, dto) };
+    return { appointment: await this.appointmentsService.createAppointment(identity, dto, true) };
   }
 
   /**
@@ -172,7 +172,7 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData });
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return { appointment: await this.appointmentsService.createAppointment(identity, appointmentData) };
+    return { appointment: await this.appointmentsService.createAppointment(identity, appointmentData, false) };
   }
 
   @Post('reschedule')

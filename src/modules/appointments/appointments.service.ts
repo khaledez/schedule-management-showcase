@@ -208,6 +208,7 @@ export class AppointmentsService {
   createAppointment(
     identity: IIdentity,
     dto: CreateAppointmentDto,
+    upcomingAppointment: boolean,
     transaction?: Transaction,
   ): Promise<AppointmentsModel> {
     /* 1. Validation */
@@ -303,6 +304,7 @@ export class AppointmentsService {
           appointmentVisitModeId,
           appointmentStatusId,
           availabilityId,
+          upcomingAppointment,
         },
         { transaction },
       );
@@ -1100,5 +1102,6 @@ function mapCreateGlobalDtoToAttributes(
     provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
     staffId: dto.doctorId,
     availabilityId: dto.availabilityId,
+    upcomingAppointment: true,
   };
 }

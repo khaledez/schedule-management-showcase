@@ -2,9 +2,10 @@ import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { DEFAULT_EVENT_DURATION_MINS, SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'common/constants';
-import { CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentStatusEnum, CancelRescheduleReasonCode } from 'common/enums';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
+import { LookupsService } from 'modules/lookups/lookups.service';
 
 @Injectable()
 export class AppointmentsListener {
@@ -14,6 +15,7 @@ export class AppointmentsListener {
     @Inject(SEQUELIZE)
     private readonly sequelizeInstance: Sequelize,
     private readonly appointmentsService: AppointmentsService,
+    private readonly lookupsService: LookupsService,
   ) {}
 
   @OnEvent(VISIT_COMPLETE_EVENT_NAME, { async: true })
@@ -32,7 +34,7 @@ export class AppointmentsListener {
         userId,
         data: {
           patient: { id: patientId },
-          upcomingAppointment: { id: upcomingAppointmentId, typeId: provisionalTypeId, date: provisionalDate, release },
+          upcomingAppointment: { typeId: provisionalTypeId, date: provisionalDate, release },
           visit: {
             id: visitId,
             documentId: documentId,
@@ -51,43 +53,31 @@ export class AppointmentsListener {
         transaction,
       );
 
-      const cancelPatientAppointments = () => {
-        // cancel all patient future appointments including provisional
-        return this.appointmentsService.cancelPatientInCompleteAppointments(
+      // cancel all patient future appointments including provisional
+      await this.appointmentsService.cancelPatientInCompleteAppointments(
+        patientId,
+        CancelRescheduleReasonCode.RELEASE,
+        transaction,
+      );
+
+      const startDateInTheDistantPast = '1988-04-20T00:00:00.000Z';
+      const startDate = release ? startDateInTheDistantPast : provisionalDate;
+
+      // create new provisional appointment
+      const appointmentStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+      await this.appointmentsService.createAppointment(
+        identity,
+        {
           patientId,
-          CancelRescheduleReasonCode.RELEASE,
-          transaction,
-        );
-      };
-
-      if (release) {
-        await cancelPatientAppointments();
-      } else if (provisionalTypeId && provisionalDate) {
-        await cancelPatientAppointments();
-
-        // create new provisional appointment
-        await this.appointmentsService.createAppointment(
-          identity,
-          {
-            patientId,
-            staffId,
-            startDate: provisionalDate,
-            durationMinutes: DEFAULT_EVENT_DURATION_MINS,
-            appointmentTypeId: provisionalTypeId,
-          },
-          transaction,
-        );
-      }
-
-      if (upcomingAppointmentId) {
-        // TODO this logic need to be reviewed when we finally refactor this shitty service
-        // update to upcoming appointment
-        await this.appointmentsService.patchAppointment(
-          upcomingAppointmentId,
-          { upcomingAppointment: true },
-          transaction,
-        );
-      }
+          staffId,
+          startDate,
+          durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+          appointmentTypeId: provisionalTypeId,
+          appointmentStatusId,
+        },
+        true,
+        transaction,
+      );
 
       transaction.commit();
     } catch (error) {
