@@ -27,6 +27,8 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
   canceledAt?: Date;
   appointmentVisitModeId?: number;
   complaintsNotes?: string;
+  visitId?: number;
+  visitSummaryDocumentId?: string;
 }
 
 // note that the id will auto added by sequelize.
@@ -114,6 +116,12 @@ export class AppointmentsModel
 
   @Column
   complaintsNotes: string;
+
+  @Column
+  visitId?: number;
+
+  @Column
+  visitSummaryDocumentId: string;
 
   @BelongsTo(() => PatientInfoModel, 'patientId')
   patient: PatientInfoModel;

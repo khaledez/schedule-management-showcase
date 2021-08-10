@@ -32,6 +32,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.config.ts",
     "test:db:migrate": "NODE_ENV=test npm run db:migrate",
+    "test:db:undo": "NODE_ENV=test npm run db:migrate:undo",
     "test:db:drop": "NODE_ENV=test npm run db:drop",
     "test:db:create": "NODE_ENV=test npm run db:create",
     "migration:generate": "npx sequelize-cli migration:generate --name ${1}",
@@ -40,7 +41,7 @@
   "dependencies": {
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
-    "@dashps/monmedx-common": "^3.4.7",
+    "@dashps/monmedx-common": "^3.5.8",
     "@nestjs/common": "^7.0.1",
     "@nestjs/config": "^0.6.1",
     "@nestjs/core": "^7.0.1",

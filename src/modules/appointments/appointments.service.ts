@@ -663,7 +663,13 @@ export class AppointmentsService {
     );
   }
 
-  async completeAppointment(appointmentId: number, identity, transaction: Transaction) {
+  async completeAppointment(
+    appointmentId: number,
+    visitId: number,
+    documentId: string,
+    identity,
+    transaction: Transaction,
+  ) {
     const completeStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.COMPLETE);
     this.logger.debug({
       function: 'completeAppointment',
@@ -673,6 +679,8 @@ export class AppointmentsService {
       {
         appointmentStatusId: completeStatusId,
         updatedBy: identity.userId,
+        visitId,
+        visitSummaryDocumentId: documentId,
       },
       {
         where: {
