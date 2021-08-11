@@ -66,7 +66,7 @@ export class AppointmentsListener {
 
       // create new provisional appointment
       const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
-      await this.appointmentsService.createAppointment(
+      await this.appointmentsService.createAppointmentAfterVisitFlow(
         identity,
         {
           patientId,
@@ -76,7 +76,6 @@ export class AppointmentsListener {
           appointmentTypeId: provisionalTypeId,
           appointmentStatusId,
         },
-        true,
         transaction,
       );
 

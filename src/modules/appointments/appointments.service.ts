@@ -276,7 +276,7 @@ export class AppointmentsService {
         appointmentStatusId,
         appointmentVisitModeId,
       } = await Promise.all([
-        this.getAvailbilityOrCreateOne(identity, { ...dto }, transaction),
+        this.getAvailabilityOrCreateOne(identity, { ...dto }, transaction),
         this.getAppointmentVisitModeId(dto),
         this.getAppointmentStatusId(identity, dto),
       ]).then(([availabilityInfo, appointmentVisitModeId, appointmentStatusId]) => ({
@@ -316,6 +316,49 @@ export class AppointmentsService {
     return validateInputThenArrangeAttributesAndCommit(transaction);
   }
 
+  async createAppointmentAfterVisitFlow(identity: IIdentity, dto: CreateAppointmentDto, transaction?: Transaction) {
+    const {
+      availabilityId,
+      startDate,
+      endDate,
+      durationMinutes,
+      appointmentTypeId,
+      appointmentStatusId,
+      appointmentVisitModeId,
+    } = await Promise.all([
+      this.getAvailabilityOrCreateOne(identity, { ...dto }, transaction),
+      this.getAppointmentVisitModeId(dto),
+      this.getAppointmentStatusId(identity, dto),
+    ]).then(([availabilityInfo, appointmentVisitModeId, appointmentStatusId]) => ({
+      availabilityId: availabilityInfo.availabilityId,
+      startDate: availabilityInfo.startDate,
+      endDate: availabilityInfo.endDate,
+      durationMinutes: availabilityInfo.durationMinutes,
+      appointmentTypeId: availabilityInfo.appointmentTypeId,
+      appointmentVisitModeId,
+      appointmentStatusId,
+    }));
+    /* 3. Act/Execution */
+    const createdAppointment = await this.appointmentsRepository.create(
+      {
+        ...dto,
+        appointmentTypeId,
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
+        provisionalDate: startDate,
+        startDate,
+        endDate,
+        durationMinutes,
+        appointmentVisitModeId,
+        appointmentStatusId,
+        availabilityId,
+        upcomingAppointment: true,
+      },
+      { transaction },
+    );
+    return createdAppointment;
+  }
+
   /**
    * Checks if to-be created appointment is provisional
    * @returns True if status id corresponds to WAIT_LIST
@@ -335,7 +378,7 @@ export class AppointmentsService {
    * @param identity Used to create an availability if needed
    * @param transaction ^^
    */
-  private async getAvailbilityOrCreateOne(
+  private async getAvailabilityOrCreateOne(
     identity: IIdentity,
     data: AvailabilityBasicInfo,
     transaction: Transaction,
