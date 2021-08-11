@@ -16,6 +16,9 @@ import {
   appointmentVisitModeLookupData,
 } from 'modules/lookups/__tests__/lookups.data';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { ConfigurationModule } from 'modules/config/config.module';
+import { DatabaseModule } from 'modules/database/database.module';
+import { LookupsModule } from 'modules/lookups/lookups.module';
 
 describe('LookupsService', () => {
   let lookupsService: LookupsService;
@@ -32,8 +35,7 @@ describe('LookupsService', () => {
         findAll: jest.fn(({ where }) => {
           if (where?.id) {
             if (Array.isArray(where.id)) {
-              const r = entry.data.filter((val) => where.id.includes(val.id));
-              return r;
+              return entry.data.filter((val) => where.id.includes(val.id));
             }
             return entry.data.filter((val) => val.id === where.id);
           }
@@ -130,5 +132,32 @@ describe('LookupsService', () => {
     await expect(
       lookupsService.validateAppointmentCancelRescheduleReason(getTestIdentity(50, 50), input),
     ).rejects.toMatchObject({ response: { fields: ['cancel_reschedule_reason_id', 'reasonId'], unknownIds } });
+  });
+});
+
+describe('LookupsService with sequelize', () => {
+  let lookupsService: LookupsService;
+  let module: TestingModule;
+
+  beforeAll(async () => {
+    module = await Test.createTestingModule({
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule],
+      providers: [LookupsService, ...lookupsProviders],
+    }).compile();
+    lookupsService = await module.get<LookupsService>(LookupsService);
+  });
+
+  afterAll(async () => {
+    await module.close();
+  });
+
+  test('# getProvisionalAppointmentStatusId: will return result', async () => {
+    const result = await lookupsService.getProvisionalAppointmentStatusId(getTestIdentity(136, 136));
+    expect(result).toBeDefined();
+  });
+
+  test('# getNewAppointmentTypeId: will return result', async () => {
+    const result = await lookupsService.getFUBAppointmentTypeId(getTestIdentity(155, 155));
+    expect(result).toBeDefined();
   });
 });

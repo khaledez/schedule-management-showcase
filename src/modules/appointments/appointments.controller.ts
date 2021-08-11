@@ -21,7 +21,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
-import { AppointmentTypesEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { UserError } from 'common/interfaces/user-error.interface';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
@@ -206,7 +205,7 @@ export class AppointmentsController {
     });
 
     const readyStatus = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
-    const typeFUBId = await this.lookupsService.getTypeByCode(AppointmentTypesEnum.FUP);
+    const typeFUBId = await this.lookupsService.getFUBAppointmentTypeId(identity);
 
     this.logger.debug({
       appointmentData,

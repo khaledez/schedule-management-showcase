@@ -254,10 +254,20 @@ export class LookupsService {
     return result.id;
   }
 
-  async getTypeByCode(code: AppointmentTypeEnum): Promise<number> {
+  async getTypeByCode({ clinicId }: IIdentity | null, code: AppointmentTypeEnum): Promise<number> {
+    if (!Object.keys(AppointmentTypeEnum).includes(code)) {
+      throw new BadRequestException({
+        fields: [],
+        code: 'NOT_FOUND',
+        message: 'This type does not exits!',
+      });
+    }
     const result = await this.appointmentTypesLookupsRepository.findOne({
       where: {
         code,
+        clinicId: {
+          [Op.or]: [null, clinicId],
+        },
       },
       attributes: ['id'],
     });
@@ -419,5 +429,9 @@ export class LookupsService {
 
   getProvisionalAppointmentStatusId(identity: IIdentity): Promise<number> {
     return this.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
+  }
+
+  getFUBAppointmentTypeId(identity: IIdentity): Promise<number> {
+    return this.getTypeByCode(identity, AppointmentTypeEnum.FUP);
   }
 }

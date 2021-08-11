@@ -66,6 +66,10 @@ export class AppointmentsListener {
 
       // create new provisional appointment
       const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
+      const appointmentTypeId = release
+        ? await this.lookupsService.getFUBAppointmentTypeId(identity)
+        : provisionalTypeId;
+
       await this.appointmentsService.createAppointmentAfterVisitFlow(
         identity,
         {
@@ -73,7 +77,7 @@ export class AppointmentsListener {
           staffId,
           startDate,
           durationMinutes: DEFAULT_EVENT_DURATION_MINS,
-          appointmentTypeId: provisionalTypeId,
+          appointmentTypeId,
           appointmentStatusId,
         },
         transaction,
