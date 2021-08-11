@@ -40,7 +40,6 @@ export interface CalendarSearchResult extends ResultWithErrors {
 export interface CalendarSearchInput {
   entryType?: FilterStringInputDto;
   dateRange?: FilterDateInputDto;
-  timezoneId?: string; // TODO support it or remove it
   staffId?: FilterIdsInputDto;
   availabilityFilter?: FilterAvailabilityInputDto;
 }

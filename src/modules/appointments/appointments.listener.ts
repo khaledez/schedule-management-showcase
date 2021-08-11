@@ -2,10 +2,10 @@ import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { DEFAULT_EVENT_DURATION_MINS, SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'common/constants';
-import { AppointmentStatusEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { CancelRescheduleReasonCode } from 'common/enums';
+import { LookupsService } from 'modules/lookups/lookups.service';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
-import { LookupsService } from 'modules/lookups/lookups.service';
 
 @Injectable()
 export class AppointmentsListener {
@@ -46,15 +46,16 @@ export class AppointmentsListener {
       const identity: IIdentity = { clinicId, userId, cognitoId: null, userInfo: null, userLang: null };
 
       await this.appointmentsService.completeAppointment(
+        identity,
         visitAppointmentId,
         visitId,
         documentId,
-        identity,
         transaction,
       );
 
       // cancel all patient future appointments including provisional
       await this.appointmentsService.cancelPatientInCompleteAppointments(
+        identity,
         patientId,
         CancelRescheduleReasonCode.RELEASE,
         transaction,
@@ -64,7 +65,7 @@ export class AppointmentsListener {
       const startDate = release ? startDateInTheDistantPast : provisionalDate;
 
       // create new provisional appointment
-      const appointmentStatusId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+      const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
       await this.appointmentsService.createAppointment(
         identity,
         {

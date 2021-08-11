@@ -1,4 +1,5 @@
 import { BaseModel } from 'common/models/base.model';
+import { EventModel } from 'modules/events/models';
 import { BelongsTo, Column, DefaultScope, ForeignKey, HasOne, IsDate, Scopes, Table } from 'sequelize-typescript';
 import { AppointmentsModel } from '../../appointments/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
@@ -28,19 +29,15 @@ export class AvailabilityModel
   staffId: number;
 
   @Column
-  @ForeignKey(() => AppointmentsModel)
-  appointmentId: number;
-
-  @Column
   @ForeignKey(() => AppointmentTypesLookupsModel)
   appointmentTypeId: number;
+
+  @Column
+  isOccupied: boolean;
 
   @IsDate
   @Column({ field: 'date' })
   startDate: Date;
-
-  @Column
-  startTime: string;
 
   @IsDate
   @Column
@@ -50,7 +47,10 @@ export class AvailabilityModel
   durationMinutes: number;
 
   @HasOne(() => AppointmentsModel)
-  appointment: AppointmentsModel;
+  appointment?: AppointmentsModel;
+
+  @HasOne(() => EventModel, 'availabilityId')
+  event?: EventModel;
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
   type: AppointmentTypesLookupsModel;

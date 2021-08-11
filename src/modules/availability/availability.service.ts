@@ -33,7 +33,6 @@ import sequelize, { FindOptions, Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Transaction } from 'sequelize/types';
 import { EventsService } from '../events/events.service';
-import { EventModel, EventModelAttributes } from '../events/models';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { BulkUpdateAvailabilityDto } from './dto/add-or-update-availability-body.dto';
 import { CreateAvailabilityDto } from './dto/create.dto';
@@ -100,18 +99,6 @@ export class AvailabilityService {
     return availability;
   }
 
-  async findNotBookedAvailability(availabilityId: number): Promise<AvailabilityModel> {
-    const availability = await this.availabilityRepository.findOne({
-      where: {
-        id: availabilityId,
-        appointmentId: {
-          [Op.eq]: null,
-        },
-      },
-    });
-    return availability;
-  }
-
   async doesExist(id: number): Promise<boolean> {
     const availability = await this.availabilityRepository.findByPk(id);
     return availability !== null;
@@ -124,7 +111,7 @@ export class AvailabilityService {
    */
   async bulkRemove(ids: Array<number>, identity: IIdentity, transaction: Transaction): Promise<Array<number>> {
     try {
-      const availPromise = this.availabilityRepository.update(
+      await this.availabilityRepository.update(
         {
           deletedBy: identity.userId,
           deletedAt: new Date(),
@@ -138,11 +125,6 @@ export class AvailabilityService {
           transaction,
         },
       );
-
-      // TODO use Model.destroy to remove events
-      const eventPromise = this.eventsService.bulkRemoveByAvailability(identity, ids, transaction);
-
-      await Promise.all([availPromise, eventPromise]);
 
       return ids;
     } catch (error) {
@@ -159,67 +141,63 @@ export class AvailabilityService {
     identity: IIdentity,
     transaction: Transaction,
   ): Promise<AvailabilityModelAttributes[]> {
-    const { availabilityUpdates, eventUpdates, ids } = update
-      .map((dto): [AvailabilityModelAttributes, EventModelAttributes, number] => {
-        const baseAttr = {
-          updatedBy: identity.userId,
-          clinicId: identity.clinicId,
-          ...dto,
-        };
-
-        const avModel = timeInfoFromDtoToModel(baseAttr, dto.startDate, dto.durationMinutes);
-
-        return [avModel, availabilityToEventModel(avModel), avModel.id];
-      })
-      .map(([availability, event, avId]): [Promise<AvailabilityModel[]>, Promise<EventModel[]>, number] => {
+    const { availabilityUpdates, ids } = update
+      .map((dto): [AvailabilityModelAttributes, number] => [mapCreateDtoToModelAttributes(identity, dto), dto.id])
+      .map(([availability, avId]): [Promise<AvailabilityModel[]>, number] => {
         // here we're not using bulkCreate as it will fail in MySQL if some required info are missing (staffId, createdBy)
+        // even though bulkCreate uses UPSERT query
         return [
           AvailabilityModel.update(availability, { transaction, where: { id: availability.id } }).then((r) => r[1]),
-          EventModel.update(event, { where: { availabilityId: availability.id }, transaction }).then((r) => r[1]),
           avId,
         ];
       })
       .reduce(
-        (acc, [availability, event, avId]) => {
+        (acc, [availability, avId]) => {
           acc.availabilityUpdates.push(availability);
-          acc.eventUpdates.push(event);
           acc.ids.push(avId);
           return acc;
         },
-        { availabilityUpdates: [], eventUpdates: [], ids: [] } as UpdatePair,
+        { availabilityUpdates: [], ids: [] } as UpdatePair,
       );
-    await eventUpdates;
     await Promise.all(availabilityUpdates);
 
     return AvailabilityModel.findAll({ transaction, raw: true, where: { id: { [Op.in]: ids } } });
   }
 
-  async bulkCreate(
+  bulkCreate(
     create: Array<CreateAvailabilityDto>,
     identity: IIdentity,
     transaction: Transaction,
   ): Promise<AvailabilityModelAttributes[]> {
-    const createInput = create.map((dto) => {
-      const avAttr = {
-        clinicId: identity.clinicId,
-        createdBy: identity.userId,
-        ...dto,
-      };
+    const createInput = create.map((dto) => mapCreateDtoToModelAttributes(identity, dto));
 
-      const avModel = timeInfoFromDtoToModel(avAttr, dto.startDate, dto.durationMinutes);
-
-      return availabilityToEventModel(avModel);
-    });
-
-    const createExec: Promise<EventModel[]> =
+    const createExec: Promise<AvailabilityModel[]> =
       createInput.length > 0
-        ? EventModel.bulkCreate(createInput, {
+        ? AvailabilityModel.bulkCreate(createInput, {
             transaction,
-            include: { model: AvailabilityModel, as: 'availability' },
           })
         : Promise.resolve([]);
 
-    return (await createExec).map((ev) => ev.get({ plain: true }).availability);
+    return createExec.then((e) => e.map((m) => m.get({ plain: true })));
+  }
+
+  createSingleAvailability(
+    identity: IIdentity,
+    dto: CreateAvailabilityDto,
+    transaction?: Transaction,
+  ): Promise<AvailabilityModelAttributes> {
+    const createInput = mapCreateDtoToModelAttributes(identity, dto);
+
+    const procedureInTx = async (transaction: Transaction) => {
+      await this.lookupsService.validateAppointmentsTypes(identity, [dto.appointmentTypeId]);
+
+      return this.availabilityRepository.create(createInput, { transaction });
+    };
+
+    if (transaction) {
+      return procedureInTx(transaction);
+    }
+    return this.availabilityRepository.sequelize.transaction(procedureInTx);
   }
 
   findByIds(ids: number[]): Promise<AvailabilityModel[]> {
@@ -292,7 +270,7 @@ export class AvailabilityService {
         code: BAD_REQUEST,
       });
     }
-    const referenceDate: Date = await this.pickReferenceDate(payload.referenceDate, payload.patientId);
+    const referenceDate: Date = await this.pickReferenceDate(identity, payload.referenceDate, payload.patientId);
     const suggestions: AvailabilityModel[] = await this.getSuggestions(
       identity.clinicId,
       referenceDate,
@@ -323,11 +301,11 @@ export class AvailabilityService {
     };
   }
 
-  async pickReferenceDate(explicitDate: string, patientId: number): Promise<Date> {
+  async pickReferenceDate(identity: IIdentity, explicitDate: string, patientId: number): Promise<Date> {
     if (explicitDate) {
       return new Date(explicitDate);
     }
-    const appointment = await this.appointmentsService.getPatientProvisionalAppointment(patientId);
+    const appointment = await this.appointmentsService.getPatientProvisionalAppointment(identity, patientId);
     if (appointment) {
       return appointment.provisionalDate;
     }
@@ -344,7 +322,7 @@ export class AvailabilityService {
     const staffIWhereClause = this.getEntityIdWhereClause(staffId);
     const options: FindOptions = {
       where: {
-        appointmentId: { [Op.is]: null },
+        isOccupied: false,
         clinicId,
         appointmentTypeId,
         date: dateWhereClause,
@@ -403,6 +381,7 @@ export class AvailabilityService {
     const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(payload.appointmentTypeId);
     const options: FindOptions = {
       where: {
+        isOccupied: false,
         appointmentTypeId: appointmentTypeIdWhereClause,
         date: dateWhereClause,
         staffId: staffIdWhereClause,
@@ -448,63 +427,20 @@ export class AvailabilityService {
       durationMinutes: availability.durationMinutes,
     };
   }
-
-  async attachAppointmentToAvailability(
-    availabilityId: number,
-    appointmentId: number,
-    transaction?: Transaction,
-  ): Promise<void> {
-    if (!availabilityId) {
-      return;
-    }
-    await this.availabilityRepository.update(
-      { appointmentId },
-      {
-        where: {
-          id: availabilityId,
-        },
-        transaction,
-      },
-    );
-  }
 }
 
 interface UpdatePair {
   availabilityUpdates: Array<Promise<AvailabilityModel[]>>;
-  eventUpdates: Array<Promise<EventModel[]>>;
   ids: Array<number>;
 }
 
-function timeInfoFromDtoToModel(
-  avModel: {
-    staffId: number;
-    durationMinutes: number;
-    appointmentTypeId: number;
-  },
-  startDate: string,
-  durationMinutes: number,
-): AvailabilityModelAttributes {
-  const isoDate = DateTime.fromISO(startDate);
-  // TODO check if we don't have the timezone in the date
+function mapCreateDtoToModelAttributes(identity: IIdentity, dto: CreateAvailabilityDto): AvailabilityModelAttributes {
+  const isoDate = DateTime.fromISO(dto.startDate);
   return {
-    ...avModel,
+    ...dto,
+    clinicId: identity.clinicId,
+    createdBy: identity.userId,
     startDate: isoDate.toJSDate(),
-    startTime: isoDate.toSQLTime({ includeZone: false, includeOffset: false }),
-    endDate: isoDate.plus({ minutes: durationMinutes }).toJSDate(),
-  };
-}
-
-function availabilityToEventModel(avModel: AvailabilityModelAttributes): EventModelAttributes {
-  return {
-    availability: avModel,
-    durationMinutes: avModel.durationMinutes,
-    startDate: avModel.startDate,
-    startTime: avModel.startTime,
-    endDate: avModel.endDate,
-    availabilityId: avModel.id,
-    staffId: avModel.staffId,
-    clinicId: avModel.clinicId,
-    createdBy: avModel.createdBy,
-    updatedBy: avModel.updatedBy,
+    endDate: isoDate.plus({ minutes: dto.durationMinutes }).toJSDate(),
   };
 }

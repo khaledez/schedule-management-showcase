@@ -234,7 +234,7 @@ export class LookupsService {
     }
   }
 
-  public async getStatusIdByCode(code: AppointmentStatusEnum): Promise<number> {
+  public async getStatusIdByCode({ clinicId }: IIdentity | null, code: AppointmentStatusEnum): Promise<number> {
     if (!Object.keys(AppointmentStatusEnum).includes(code)) {
       throw new BadRequestException({
         fields: [],
@@ -245,6 +245,9 @@ export class LookupsService {
     const result = await this.appointmentStatusLookupsRepository.findOne({
       where: {
         code,
+        clinicId: {
+          [Op.or]: [null, clinicId],
+        },
       },
       attributes: ['id'],
     });
@@ -412,5 +415,9 @@ export class LookupsService {
         unknownIds,
       });
     }
+  }
+
+  getProvisionalAppointmentStatusId(identity: IIdentity): Promise<number> {
+    return this.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
   }
 }

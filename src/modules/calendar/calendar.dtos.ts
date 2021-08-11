@@ -1,7 +1,7 @@
 import { FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsObject, IsOptional, ValidateNested } from 'class-validator';
-import { FilterDateInputDto, FilterAvailabilityInputDto } from '../../common/dtos';
+import { IsObject, IsOptional, ValidateNested } from 'class-validator';
+import { FilterAvailabilityInputDto, FilterDateInputDto } from '../../common/dtos';
 import { CalendarSearchInput } from './calendar.interface';
 
 export class CalendarSearchDto implements CalendarSearchInput {
@@ -16,7 +16,7 @@ export class CalendarSearchDto implements CalendarSearchInput {
   @IsOptional()
   timezoneId: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @Type(() => FilterIdsInputDto)
   staffId: FilterIdsInputDto;
 

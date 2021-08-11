@@ -1,8 +1,8 @@
 import { Transform } from 'class-transformer';
-import { IsNumber, IsString, IsISO8601, IsPositive } from 'class-validator';
+import { IsISO8601, IsNumber, IsPositive, IsString } from 'class-validator';
+import { IsFutureDateTime } from 'common/decorators/IsFutureDateTime';
 import { BaseModelAttributes } from 'common/models';
 import { AvailabilityModelAttributes } from '../models/availability.interfaces';
-import { IsFutureDateTime } from 'common/decorators/IsFutureDateTime';
 
 export class CreateAvailabilityDto
   implements
@@ -24,4 +24,9 @@ export class CreateAvailabilityDto
   @IsNumber()
   @Transform((val) => parseInt(val))
   appointmentTypeId: number;
+
+  /**
+   * used in internal calls only
+   */
+  isOccupied?: boolean;
 }

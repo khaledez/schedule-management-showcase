@@ -152,7 +152,7 @@ export class AppointmentsController {
     dto.patientId = appointmentData.patientId;
     dto.startDate = appointmentData.date.toISOString();
     dto.durationMinutes = DEFAULT_EVENT_DURATION_MINS;
-    dto.appointmentTypeId = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.WAIT_LIST);
+    dto.appointmentTypeId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
     return { appointment: await this.appointmentsService.createAppointment(identity, dto, true) };
@@ -205,7 +205,7 @@ export class AppointmentsController {
       appointmentData,
     });
 
-    const readyStatus = await this.lookupsService.getStatusIdByCode(AppointmentStatusEnum.READY);
+    const readyStatus = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
     const typeFUBId = await this.lookupsService.getTypeByCode(AppointmentTypesEnum.FUP);
 
     this.logger.debug({

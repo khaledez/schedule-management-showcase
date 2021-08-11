@@ -239,7 +239,6 @@ export function getToCalendarEntryTestData(): { input: AvailabilityModelAttribut
       endDate: new Date('2030-10-25T09:30:00.002Z'),
       durationMinutes: 4,
       appointmentTypeId: 1,
-      startTime: '2030-10-25T09:30:00.003Z',
       createdBy: 5,
       createdAt: new Date('2030-10-25T09:30:00.004Z'),
       updatedBy: 6,
@@ -426,10 +425,8 @@ export function buildUpdateAvailabilityDto(
 function buildSuggestionForComparatorTest(staffId: number, date: string): AvailabilityModelAttributes {
   return {
     staffId: staffId,
-    appointmentId: null,
     appointmentTypeId: null,
     startDate: new Date(date),
-    startTime: null,
     endDate: null,
     durationMinutes: null,
   };

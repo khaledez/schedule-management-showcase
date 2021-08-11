@@ -1,11 +1,13 @@
 import { FilterDateInputDto, FilterIdsInputDto, IIdentity } from '@dashps/monmedx-common';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
+import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
+import { LookupsService } from 'modules/lookups/lookups.service';
 import { Includeable, Op, WhereAttributeHash, WhereOptions } from 'sequelize';
 import { BAD_REQUEST } from '../../common/constants';
 import { AppointmentsModel } from '../appointments/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
-import { EventModel, EventModelAttributes } from '../events/models';
+import { EventModel } from '../events/models';
 import {
   CalendarAppointment,
   CalendarAvailability,
@@ -18,57 +20,81 @@ const ALL = 'ALL';
 
 @Injectable()
 export class CalendarService {
+  constructor(private readonly lookupService: LookupsService) {}
+
   // eslint-disable-next-line complexity
   async search(identity: IIdentity, query: CalendarSearchInput): Promise<CalendarSearchResult> {
     const queryType = query.entryType?.eq ? query.entryType?.eq : ALL;
 
-    // TODO think of a way to use timezoneId
-    let eventConditions: WhereOptions<EventModel> = {
+    let availabilityConditions: WhereOptions<AvailabilityModel> = {
       clinicId: { [Op.eq]: identity.clinicId },
       deletedBy: { [Op.is]: null },
     };
 
     if (query.staffId) {
-      eventConditions = { ...eventConditions, ...processIdCondition('staffId', 'staffId', query.staffId) };
+      availabilityConditions = {
+        ...availabilityConditions,
+        ...processIdCondition('staffId', 'staffId', query.staffId),
+      };
     }
 
     if (query.dateRange) {
-      eventConditions = { ...eventConditions, ...processDateCondition('date', 'dateRange', query.dateRange) };
+      availabilityConditions = {
+        ...availabilityConditions,
+        ...processDateCondition('date', 'dateRange', query.dateRange),
+      };
     }
 
     const toInclude: Includeable[] = [];
-    if (queryType === 'AVAILABILITY' || queryType === ALL) {
+    if (queryType === 'EVENT' || queryType === ALL) {
       toInclude.push({
-        model: AvailabilityModel,
-        required: queryType === 'AVAILABILITY',
-        where: availabilityFilters(query),
+        model: EventModel,
+        required: queryType === 'EVENT',
       });
     }
 
     if (queryType === 'APPOINTMENT' || queryType === ALL) {
-      toInclude.push({ model: AppointmentsModel, required: queryType === 'APPOINTMENT' });
+      toInclude.push({
+        model: AppointmentsModel,
+        required: queryType === 'APPOINTMENT',
+      });
+    }
+
+    if (queryType === 'AVAILABILITY') {
+      availabilityConditions = { ...availabilityConditions, ...availabilityFilters(query) };
+      if (query.availabilityFilter?.withAppointment) {
+        toInclude.push({ model: AppointmentsModel, required: true });
+      }
     }
 
     // execute now
-    const result = await EventModel.findAll({ where: eventConditions, include: toInclude });
+    const result = await AvailabilityModel.findAll({ where: availabilityConditions, include: toInclude });
 
+    const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
     const entries = result
       .map((el) => el.get({ plain: true }))
+      .filter((model) => {
+        // filter out provisional appointments.. I couldn't find a type-safe way to do it in the query
+        if (model.appointment) {
+          return model.appointment.appointmentStatusId !== provisionalStatusId;
+        }
+        return true;
+      })
       .map((model) => {
         switch (queryType) {
           case 'AVAILABILITY':
-            return eventToAvailability(model);
+            return availabilityAsCalendarEvent(model);
           case 'EVENT':
-            return eventToCalendarEvent(model);
+            return availabilityToEvent(model);
           case 'APPOINTMENT':
-            return eventToAppointment(model);
+            return availabilityToAppointment(model);
           default:
             if (model.appointment) {
-              return eventToAppointment(model);
-            } else if (model.availability) {
-              return eventToAvailability(model);
+              return availabilityToAppointment(model);
+            } else if (model.event) {
+              return availabilityToEvent(model);
             }
-            return eventToCalendarEvent(model);
+            return availabilityAsCalendarEvent(model);
         }
       });
 
@@ -180,28 +206,18 @@ function availabilityFilters(query: CalendarSearchInput): WhereOptions<Availabil
     };
   }
 
-  if (query.availabilityFilter?.withAppointment) {
-    availConditions = {
-      ...availConditions,
-      appointmentId: {
-        [Op.not]: null,
-      },
-    };
-  }
-
   return availConditions;
 }
 
-function eventToAvailability(model: EventModelAttributes): CalendarAvailability {
+function availabilityAsCalendarEvent(model: AvailabilityModelAttributes): CalendarAvailability {
   return {
-    ...model.availability,
+    ...model,
     entryType: 'AVAILABILITY',
-    startDate: model.startDate,
     __typename: 'CalendarAvailability',
   } as CalendarAvailability;
 }
 
-function eventToAppointment(model: EventModelAttributes): CalendarAppointment {
+function availabilityToAppointment(model: AvailabilityModelAttributes): CalendarAppointment {
   const appt = model.appointment;
   return {
     entryType: 'APPOINTMENT',
@@ -214,12 +230,13 @@ function eventToAppointment(model: EventModelAttributes): CalendarAppointment {
     endDate: appt.endDate,
     staffId: appt.staffId,
     availabilityId: appt.availabilityId,
+    ...model.appointment,
   } as CalendarAppointment;
 }
 
-function eventToCalendarEvent(model: EventModelAttributes): CalendarEvent {
+function availabilityToEvent(model: AvailabilityModelAttributes): CalendarEvent {
   return {
-    ...model,
+    ...model.event,
     entryType: 'EVENT',
     __typename: 'CalendarEvent',
     startDate: model.startDate,

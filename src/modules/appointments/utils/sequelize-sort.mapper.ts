@@ -1,9 +1,9 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common';
+import { Order } from 'common/enums';
 import { ErrorCodes } from 'common/enums/error-code.enum';
 import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
-import { QueryParamsDto } from 'modules/appointments/dto/query-params.dto';
 import { AppointmentSortDto, Key } from 'modules/appointments/dto/appointment-sort-dto';
-import { Order } from 'common/enums';
+import { QueryParamsDto } from 'modules/appointments/dto/query-params.dto';
 
 // TODO: Need to rethink this. If multiple sort keys passed in query, it will sort using the first one
 // eslint-disable-next-line complexity
@@ -18,14 +18,12 @@ export function sequelizeSortMapper(
     // to get the last elements i need to reverse sort and git the limit
     let defaultOrder = [
       [AppointmentsService.DATE_COLUMN, 'DESC'],
-      ['availability', 'start_time', 'DESC'],
       ['id', 'DESC'],
     ];
     // reverse sort
     if (shouldReverseSort) {
       defaultOrder = [
         [AppointmentsService.DATE_COLUMN, 'ASC'],
-        ['availability', 'start_time', 'ASC'],
         ['id', 'ASC'],
       ];
     }

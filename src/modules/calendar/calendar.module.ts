@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { LookupsModule } from 'modules/lookups/lookups.module';
 import { EVENTS_REPOSITORY } from '../../common/constants';
 import { DatabaseModule } from '../database/database.module';
 import { EventsModule } from '../events/events.module';
@@ -14,7 +15,7 @@ const repoProviders = [
 ];
 
 @Module({
-  imports: [DatabaseModule, EventsModule],
+  imports: [DatabaseModule, EventsModule, LookupsModule],
   controllers: [CalendarController],
   providers: [CalendarService, ...repoProviders],
   exports: [CalendarService],

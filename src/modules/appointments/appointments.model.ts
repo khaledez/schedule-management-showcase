@@ -99,7 +99,7 @@ export class AppointmentsModel
   @ForeignKey(() => AppointmentActionsLookupsModel)
   cancelRescheduleReasonId: number;
 
-  @BelongsTo(() => AvailabilityModel)
+  @BelongsTo(() => AvailabilityModel, 'availabilityId')
   availability: AvailabilityModel;
 
   @Column

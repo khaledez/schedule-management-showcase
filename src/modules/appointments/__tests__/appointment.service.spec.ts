@@ -1,7 +1,8 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { APPOINTMENTS_REPOSITORY, SEQUELIZE } from 'common/constants';
-import { CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { DateTime } from 'luxon';
 import {
   getAppointmentByPatientIdTestCases,
   getPatientAppointmentsTestData,
@@ -39,7 +40,6 @@ describe('Appointment service', () => {
   let sequelize: Sequelize;
   let repo: typeof AppointmentsModel;
   let availabilityService: AvailabilityService;
-  let lookupsService: LookupsService;
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
@@ -50,7 +50,6 @@ describe('Appointment service', () => {
     sequelize = moduleRef.get<Sequelize>(SEQUELIZE);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
     availabilityService = moduleRef.get<AvailabilityService>(AvailabilityService);
-    lookupsService = moduleRef.get<LookupsService>(LookupsService);
   });
 
   afterAll(async () => {
@@ -93,7 +92,7 @@ describe('Appointment service', () => {
       delete apptAttributes.startDate;
       delete apptAttributes.durationMinutes;
       try {
-        await apptService.createAppointment(identity, apptAttributes);
+        await apptService.createAppointment(identity, apptAttributes, true);
       } catch (err) {
         expect(err.message).toMatch(
           "You didn't provide availbilityId you must provide: startDate, durationMinutes and appointmentTypeId",
@@ -105,7 +104,7 @@ describe('Appointment service', () => {
     test('Fails providing no availabilityId with startDate & durationDuration but no appointmentTypeId', async (done) => {
       delete apptAttributes.appointmentTypeId;
       try {
-        await apptService.createAppointment(identity, apptAttributes);
+        await apptService.createAppointment(identity, apptAttributes, true);
       } catch (err) {
         expect(err.message).toMatch(
           "You didn't provide availbilityId you must provide: startDate, durationMinutes and appointmentTypeId",
@@ -116,10 +115,10 @@ describe('Appointment service', () => {
 
     test('Fails if creating a provisional appointment while the patient has an existent one', async (done) => {
       // Create patient with provisional
-      await expect(apptService.createAppointment(identity, apptAttributes)).resolves.toBeDefined();
+      await expect(apptService.createAppointment(identity, apptAttributes, true)).resolves.toBeDefined();
       // Create provisional again w/ same patient
       try {
-        await apptService.createAppointment(identity, apptAttributes);
+        await apptService.createAppointment(identity, apptAttributes, true);
       } catch (err) {
         expect(err.message).toMatch('Patient already has a provisional appointment');
       }
@@ -130,18 +129,18 @@ describe('Appointment service', () => {
       delete apptAttributes.startDate;
       delete apptAttributes.durationMinutes;
       apptAttributes.availabilityId = 3579;
-      const action = apptService.createAppointment(identity, apptAttributes);
+      const action = apptService.createAppointment(identity, apptAttributes, true);
       await expect(action).rejects.toThrow('This availability does not exits!');
     });
 
     test('Fails provided invalid status id', async () => {
       apptAttributes.appointmentStatusId = 3579;
-      const action = apptService.createAppointment(identity, apptAttributes);
+      const action = apptService.createAppointment(identity, apptAttributes, true);
       await expect(action).rejects.toThrow('unknown appointment status ID');
     });
 
     test('Succeeds providing valid startDate, durationMinutes, appointmentTypeId', async () => {
-      const action = apptService.createAppointment(identity, apptAttributes);
+      const action = apptService.createAppointment(identity, apptAttributes, true);
       const res = await action;
       expect(res.appointmentTypeId).toBe(apptAttributes.appointmentTypeId);
       expect(res.startDate.toISOString()).toBe(apptAttributes.startDate);
@@ -164,7 +163,7 @@ describe('Appointment service', () => {
       await tempTransaction.commit();
       // Assign newly created availabilty to appointment attributes
       apptAttributes.availabilityId = createdAvailability.id;
-      const res = await apptService.createAppointment(identity, apptAttributes);
+      const res = await apptService.createAppointment(identity, apptAttributes, true);
       expect(res).toBeDefined();
       expect(res.staffId).toBe(apptAttributes.staffId);
       expect(res.durationMinutes).toEqual(createdAvailability.durationMinutes);
@@ -172,10 +171,10 @@ describe('Appointment service', () => {
 
     test('Succeeds in creating non-provisional appointment if an existing provisional appointment exists for same patient', async () => {
       delete apptAttributes.appointmentStatusId; // Defaults to provisional if not status id not provided
-      const provisionalAppointment = await apptService.createAppointment(identity, apptAttributes);
+      const provisionalAppointment = await apptService.createAppointment(identity, apptAttributes, true);
       apptAttributes.startDate = new Date('2100-01-01').toISOString();
       apptAttributes.appointmentStatusId = 2;
-      const nonProvisionalAppointment = await apptService.createAppointment(identity, apptAttributes);
+      const nonProvisionalAppointment = await apptService.createAppointment(identity, apptAttributes, true);
       expect(nonProvisionalAppointment.provisionalDate.toISOString()).toMatch(
         provisionalAppointment.startDate.toISOString().split('.')[0],
       );
@@ -183,76 +182,104 @@ describe('Appointment service', () => {
       expect(nonProvisionalAppointment.startDate.toISOString()).toMatch(apptAttributes.startDate.split('.')[0]);
       // Get created availability
       const availability = await availabilityService.findOne(nonProvisionalAppointment.availabilityId);
-      expect(availability.appointmentId).toBe(nonProvisionalAppointment.id);
+      expect(availability).toBeDefined();
     });
   });
+});
 
-  describe('# Cancel appointment', () => {
-    let appointmentId: number;
-    beforeEach(async () => {
-      await repo.destroy({ where: {} });
-      const appt = await apptService.createAppointment(getTestIdentity(50, 50), {
+describe('# Cancel appointment', () => {
+  const identity = getTestIdentity(174, 174);
+  let apptService: AppointmentsService;
+  let moduleRef: TestingModule;
+  let repo: typeof AppointmentsModel;
+  let lookupsService: LookupsService;
+  let availabilityService: AvailabilityService;
+
+  beforeAll(async () => {
+    moduleRef = await Test.createTestingModule({
+      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+    }).compile();
+    apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
+    repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
+    availabilityService = moduleRef.get<AvailabilityService>(AvailabilityService);
+    lookupsService = moduleRef.get<LookupsService>(LookupsService);
+  });
+
+  afterAll(async () => {
+    await moduleRef.close();
+  });
+  async function createAppointment(): Promise<AppointmentsModel> {
+    await repo.destroy({ where: {} });
+    return apptService.createAppointment(
+      identity,
+      {
         appointmentStatusId: 1,
         appointmentTypeId: 3,
         patientId: 15,
         staffId: 10,
         startDate: new Date().toISOString(),
         durationMinutes: 60,
-      });
-      appointmentId = appt.id;
+      },
+      true,
+    );
+  }
+
+  test('cancelReason does not exist', async () => {
+    const appt = await createAppointment();
+    await expect(
+      apptService.cancelAppointment(identity, {
+        appointmentId: appt.id,
+        provisionalDate: '2091-10-10',
+        reasonText: 'Bye Bye',
+        reasonId: 10,
+        keepAvailabiltySlot: true,
+      }),
+    ).rejects.toMatchObject({
+      response: { fields: ['cancel_reschedule_reason_id', 'reasonId'], unknownIds: [10] },
     });
+  });
 
-    test('cancelReason does not exist', async () => {
-      await expect(
-        apptService.cancelAppointment(getTestIdentity(50, 50), {
-          appointmentId,
-          provisionalDate: '2091-10-10',
-          reasonText: 'Bye Bye',
-          reasonId: 10,
-          keepAvailabiltySlot: true,
-        }),
-      ).rejects.toMatchObject({
-        response: { fields: ['cancel_reschedule_reason_id', 'reasonId'], unknownIds: [10] },
-      });
+  test('appointment does not exist', async () => {
+    await expect(
+      apptService.cancelAppointment(identity, {
+        appointmentId: 9999,
+        provisionalDate: '2091-10-10',
+        reasonText: 'ByeBye',
+        keepAvailabiltySlot: true,
+        reasonId: await lookupsService.getCancelRescheduleReasonByCode(CancelRescheduleReasonCode.RELEASE),
+      }),
+    ).rejects.toMatchObject({ response: { message: 'Appointment with id = 9999 not found' } });
+  });
+
+  test('appointment canceled and availability is still active', async () => {
+    await createAppointment();
+    const appt = await apptService.createAppointment(
+      getTestIdentity(50, 50),
+      {
+        appointmentStatusId: 2,
+        appointmentTypeId: 3,
+        patientId: 15,
+        staffId: 20,
+        startDate: new Date().toISOString(),
+        durationMinutes: 15,
+      },
+      true,
+    );
+    await expect(
+      apptService.cancelAppointment(getTestIdentity(50, 50), {
+        appointmentId: appt.id,
+        provisionalDate: '2091-10-10',
+        reasonText: 'ByeBye',
+        keepAvailabiltySlot: true,
+        reasonId: await lookupsService.getCancelRescheduleReasonByCode(CancelRescheduleReasonCode.RELEASE),
+      }),
+    ).resolves.toBeUndefined();
+
+    await expect(availabilityService.findOne(appt.availabilityId)).resolves.toMatchObject({
+      isOccupied: false,
+      appointmentTypeId: 3,
+      clinicId: 50,
     });
-
-    test('appointment does not exist', async () => {
-      await expect(
-        apptService.cancelAppointment(getTestIdentity(50, 50), {
-          appointmentId: 9999,
-          provisionalDate: '2091-10-10',
-          reasonText: 'ByeBye',
-          keepAvailabiltySlot: true,
-          reasonId: await lookupsService.getCancelRescheduleReasonByCode(CancelRescheduleReasonCode.RELEASE),
-        }),
-      ).rejects.toMatchObject({ response: { message: 'Appointment with id = 9999 not found' } });
-    });
-
-    // test('appointment canceled and availability is still active', async () => {
-    //   const appt = await apptService.createAppointment(getTestIdentity(50, 50), {
-    //     appointmentStatusId: 2,
-    //     appointmentTypeId: 3,
-    //     patientId: 15,
-    //     staffId: 20,
-    //     startDate: new Date().toISOString(),
-    //     durationMinutes: 15,
-    //   });
-    //   await expect(
-    //     apptService.cancelAppointment(getTestIdentity(50, 50), {
-    //       appointmentId,
-    //       provisionalDate: '2091-10-10',
-    //       reasonText: 'ByeBye',
-    //       keepAvailabiltySlot: true,
-    //       reasonId: await lookupsService.getCancelRescheduleReasonByCode(CancelRescheduleReasonCode.RELEASE),
-    //     }),
-    //   ).resolves.toBeUndefined();
-
-    //   await expect(availabilityService.findOne(appt.availabilityId)).resolves.toMatchObject({
-    //     appointmentId: null,
-    //     appointmentTypeId: 3,
-    //     clinicId: 50,
-    //   });
-    // });
   });
 });
 
@@ -295,6 +322,107 @@ describe('Patient appointment history tests', () => {
     expect(appointments.map((appointment) => appointment.startDate.toISOString())).toEqual(
       testCase.expectedResult.datesOrder,
     );
+  });
+});
+
+describe('# reschedule appointment', () => {
+  const identity = getTestIdentity(205, 205);
+  let apptService: AppointmentsService;
+  let moduleRef: TestingModule;
+  let repo: typeof AppointmentsModel;
+  let lookupsService: LookupsService;
+
+  beforeAll(async () => {
+    moduleRef = await Test.createTestingModule({
+      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+    }).compile();
+    apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
+    repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
+    lookupsService = moduleRef.get<LookupsService>(LookupsService);
+  });
+
+  afterAll(async () => {
+    await moduleRef.close();
+  });
+
+  async function createProvisionalAppt(): Promise<AppointmentsModel> {
+    await repo.destroy({ where: { clinicId: identity.clinicId } });
+    return apptService.createAppointment(
+      identity,
+      {
+        appointmentStatusId: 1,
+        appointmentTypeId: 3,
+        patientId: 981,
+        staffId: 110,
+        startDate: new Date().toISOString(),
+        durationMinutes: 60,
+      },
+      true,
+    );
+  }
+
+  // test('reschedule provisional appointment should throw an exception', async () => {
+  //   // Given ..
+  //   const appt = await createProvisionalAppt();
+  //   // When ..
+  //   const newDate = DateTime.now().plus({ days: 60 }).toISODate();
+  //   await expect(
+  //     apptService.rescheduleAppointment(identity, {
+  //       appointmentId: appt.id,
+  //       rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode('DOCTOR_CHANGE'),
+  //       staffId: 20,
+  //       provisionalDate: newDate,
+  //     }),
+  //   ).resolves.toMatchObject({
+  //     staffId: 20,
+  //     durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+  //   });
+  // });
+
+  test('reschedule an actual appointment with a new provisonal date should cancel the current one, create a new appt and provisionsl', async () => {
+    // Given ..
+    const provisionalAppt = await createProvisionalAppt();
+    const appt = await apptService.createAppointment(
+      identity,
+      {
+        patientId: provisionalAppt.patientId,
+        staffId: provisionalAppt.staffId,
+        appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM2),
+        appointmentTypeId: provisionalAppt.appointmentTypeId,
+        appointmentVisitModeId: await lookupsService.getVisitModeByCode(AppointmentVisitModeEnum.IN_PERSON),
+        durationMinutes: 30,
+        startDate: DateTime.now().plus({ days: 14 }).toISO(),
+      },
+      true,
+    );
+
+    // When ..
+    const rescheduled = await apptService.rescheduleAppointment(identity, {
+      appointmentId: appt.id,
+      rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode('NO_SHOW_UP'),
+      rescheduleText: 'Missed the appointment',
+      durationMinutes: appt.durationMinutes,
+      startDate: DateTime.now().plus({ days: 30 }).toISODate(),
+    });
+
+    // Then ..
+    const canceledAppt = await apptService.findOne(appt.id);
+    const canceledProvisional = await apptService.findOne(provisionalAppt.id);
+
+    expect(rescheduled.id).not.toEqual(appt.id);
+    expect(canceledAppt).toMatchObject({
+      status: {
+        code: AppointmentStatusEnum.CANCELED,
+      },
+      availability: {
+        isOccupied: true,
+      },
+    });
+    expect(canceledProvisional).toMatchObject({
+      status: {
+        code: AppointmentStatusEnum.WAIT_LIST,
+      },
+    });
   });
 });
 

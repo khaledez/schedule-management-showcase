@@ -176,9 +176,9 @@ describe('Calendar service', () => {
         ne: null,
       },
     });
-    expect(allEvents.entries).toHaveLength(4);
+    expect(allEvents.entries).toHaveLength(3);
     const entryTypes = allEvents.entries.map((entry) => entry.entryType);
-    const expectedAppointmentEntries = ['AVAILABILITY', 'APPOINTMENT', 'EVENT', 'EVENT'];
+    const expectedAppointmentEntries = ['APPOINTMENT', 'EVENT', 'EVENT'];
     expect(entryTypes.sort()).toEqual(expectedAppointmentEntries.sort());
   });
 });

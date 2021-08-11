@@ -91,7 +91,7 @@ describe('# AvailabilityService', () => {
       const updatedDuration = 20;
       const updatedTypeId = 2;
 
-      const identity = getTestIdentity(82, 82);
+      const identity = getTestIdentity(90, 90);
       const payload = new BulkUpdateAvailabilityDto();
 
       payload.create = [createAvailabilityDto(initialStaffId, initialDate, initialDuration, initialTypeId)];
