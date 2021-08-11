@@ -191,7 +191,7 @@ export class AvailabilityService {
     await eventUpdates;
     await Promise.all(availabilityUpdates);
 
-    return AvailabilityModel.findAll({ transaction, plain: true, where: { id: { [Op.in]: ids } } });
+    return AvailabilityModel.findAll({ transaction, raw: true, where: { id: { [Op.in]: ids } } });
   }
 
   async bulkCreate(
@@ -219,7 +219,7 @@ export class AvailabilityService {
           })
         : Promise.resolve([]);
 
-    return (await createExec).map((ev) => ev.availability);
+    return (await createExec).map((ev) => ev.get({ plain: true }).availability);
   }
 
   findByIds(ids: number[]): Promise<AvailabilityModel[]> {
@@ -238,7 +238,7 @@ export class AvailabilityService {
         this.logger.debug(payload);
 
         // update
-        const updatedP: Promise<AvailabilityModelAttributes[]> = payload.update
+        const updatedP: Promise<AvailabilityModelAttributes[] | AvailabilityModelAttributes> = payload.update
           ? this.bulkUpdate(payload.update, identity, transaction)
           : Promise.resolve([]);
 
@@ -248,13 +248,18 @@ export class AvailabilityService {
           : Promise.resolve([]);
 
         // remove
-        if (payload.remove?.length) {
-          await this.bulkRemove(payload.remove, identity, transaction);
+        if (payload.delete?.length) {
+          await this.bulkRemove(payload.delete, identity, transaction);
         }
 
         const [updated, created] = await Promise.all([updatedP, createdP]);
 
-        return { created, updated: Array.isArray(updated) ? updated : [updated] };
+        return {
+          created: created.map((e) => ({ ...e, entryType: 'AVAILABILITY' })),
+          updated: Array.isArray(updated)
+            ? updated.map((e) => ({ ...e, entryType: 'AVAILABILITY' }))
+            : [{ ...updated, entryType: 'AVAILABILITY' }],
+        };
       });
     } catch (error) {
       this.logger.error(error);

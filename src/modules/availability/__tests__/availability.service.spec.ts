@@ -1,12 +1,16 @@
+import { BadRequestException, forwardRef, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  APPOINTMENT_PROXIMITY_DAYS,
+  APPOINTMENT_SUGGESTIONS_RETURN_LIMIT,
+  BAD_REQUEST,
+  DAY_TO_MILLI_SECOND,
+} from 'common/constants';
+import { AppointmentsModule } from 'modules/appointments/appointments.module';
 import { AvailabilityController } from 'modules/availability/availability.controller';
-import { AvailabilityService } from 'modules/availability/availability.service';
 import { availabilityProviders } from 'modules/availability/availability.provider';
-import { DatabaseModule } from 'modules/database/database.module';
-import { EventsModule } from 'modules/events/events.module';
-import { LookupsModule } from 'modules/lookups/lookups.module';
-import { ConfigurationModule } from 'modules/config/config.module';
-import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { AvailabilityService } from 'modules/availability/availability.service';
+import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 import {
   buildGetNineAvailabilitySuggestionsTestData,
   buildGetOneAvailabilitySuggestionsTestData,
@@ -23,16 +27,12 @@ import {
   validateAppointmentTypesIdsInvalidTestCase,
   validateAppointmentTypesIdsValidTestData,
 } from 'modules/availability/__tests__/availability.data';
-import { BadRequestException, forwardRef, NotFoundException } from '@nestjs/common';
-import { AppointmentsModule } from 'modules/appointments/appointments.module';
-import {
-  APPOINTMENT_PROXIMITY_DAYS,
-  APPOINTMENT_SUGGESTIONS_RETURN_LIMIT,
-  BAD_REQUEST,
-  DAY_TO_MILLI_SECOND,
-} from 'common/constants';
+import { ConfigurationModule } from 'modules/config/config.module';
+import { DatabaseModule } from 'modules/database/database.module';
+import { EventsModule } from 'modules/events/events.module';
+import { LookupsModule } from 'modules/lookups/lookups.module';
 import { Op } from 'sequelize';
-import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
+import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 
 describe('# AvailabilityService', () => {
   let module: TestingModule;
@@ -116,18 +116,18 @@ describe('# AvailabilityService', () => {
       expect(updatedStaffId).toEqual(updateResult.updated[0].staffId);
       expect(updatedDuration).toEqual(updateResult.updated[0].durationMinutes);
 
-      payload.remove = [updateResult.updated[0].id, updateResult.created[0].id];
+      payload.delete = [updateResult.updated[0].id, updateResult.created[0].id];
       payload.create = null;
       payload.update = null;
       await availabilityService.bulkAction(identity, payload);
       try {
-        await availabilityService.findOne(payload.remove[0]);
+        await availabilityService.findOne(payload.delete[0]);
       } catch (err) {
         expect(err).toBeInstanceOf(NotFoundException);
         expect(err.response).toHaveProperty('message', 'This availability does not exits!');
       }
       try {
-        await availabilityService.findOne(payload.remove[1]);
+        await availabilityService.findOne(payload.delete[1]);
       } catch (err) {
         expect(err).toBeInstanceOf(NotFoundException);
         expect(err.response).toHaveProperty('message', 'This availability does not exits!');

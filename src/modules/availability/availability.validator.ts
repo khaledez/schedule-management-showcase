@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
+import { BAD_REQUEST } from 'common/constants';
+import { ErrorCodes } from 'common/enums';
 import { ValidatorBase } from 'common/validation/validator-base';
 import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
-import { ErrorCodes } from 'common/enums';
+import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { UpdateAvailabilityDto } from 'modules/availability/dto/update.dto';
-import { BAD_REQUEST } from 'common/constants';
 
 @Injectable()
 export class AvailabilityValidator extends ValidatorBase {
@@ -12,7 +12,7 @@ export class AvailabilityValidator extends ValidatorBase {
    * Validates availability bulk actions
    */
   validateBulkUpdateAvailabilityDto(payload: BulkUpdateAvailabilityDto) {
-    const { create, remove, update } = payload;
+    const { create, delete: remove, update } = payload;
     if (!create.length && !remove.length && !update.length) {
       throw new BadRequestException({
         code: ErrorCodes.INVALID_INPUT,

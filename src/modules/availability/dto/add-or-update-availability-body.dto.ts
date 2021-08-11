@@ -1,7 +1,7 @@
-import { CreateAvailabilityDto } from './create.dto';
-import { IsArray, ArrayUnique, IsOptional, ValidateNested } from 'class-validator';
-import { UpdateAvailabilityDto } from './update.dto';
 import { Type } from 'class-transformer';
+import { ArrayUnique, IsArray, IsOptional, ValidateNested } from 'class-validator';
+import { CreateAvailabilityDto } from './create.dto';
+import { UpdateAvailabilityDto } from './update.dto';
 
 export class BulkUpdateAvailabilityDto {
   @IsArray()
@@ -20,5 +20,5 @@ export class BulkUpdateAvailabilityDto {
   @ArrayUnique()
   @IsOptional()
   @Type(() => Number)
-  remove: Array<number> = [];
+  delete: Array<number> = [];
 }

@@ -35,6 +35,7 @@
     "test:db:undo": "NODE_ENV=test npm run db:migrate:undo",
     "test:db:drop": "NODE_ENV=test npm run db:drop",
     "test:db:create": "NODE_ENV=test npm run db:create",
+    "test:db:reset": "npm run test:db:drop && npm run test:db:create && npm run test:db:migrate",
     "migration:generate": "npx sequelize-cli migration:generate --name ${1}",
     "seed:generate": "npx sequelize-cli seed:generate --name ${1}"
   },

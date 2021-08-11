@@ -1,11 +1,11 @@
 import { CalendarType } from 'common/enums/calendar-type';
 import { getTimeGroup, TimeGroupCode } from 'common/enums/time-group';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
+import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
+import { UpdateAvailabilityDto } from 'modules/availability/dto/update.dto';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { Op } from 'sequelize';
-import { UpdateAvailabilityDto } from 'modules/availability/dto/update.dto';
-import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-update-availability-body.dto';
 
 export function getEntityIdWhereClauseTestCases() {
   return [
@@ -258,7 +258,7 @@ export function getToCalendarEntryTestData(): { input: AvailabilityModelAttribut
       createdAt: new Date('2030-10-25T09:30:00.004Z'),
       updatedBy: 6,
       updatedAt: new Date('2030-10-25T09:30:00.005Z'),
-      appointmentTypeId: 1
+      appointmentTypeId: 1,
     },
   };
 }
@@ -343,7 +343,7 @@ export function assertNoSharedIdsInvalidInputTestData() {
 
 export function validateBulkUpdateAvailabilityDtoValidTestData() {
   return {
-    remove: [1, 2],
+    delete: [1, 2],
     update: [buildUpdateAvailabilityDto(3, 1, 1, 1, ''), buildUpdateAvailabilityDto(4, 1, 1, 1, '')],
     create: [
       createAvailabilityDto(1, '2025-07-25T07:43:40.084Z', 15, 1),
@@ -357,17 +357,17 @@ export function validateAppointmentTypesIdsValidTestData(): BulkUpdateAvailabili
     {
       update: null,
       create: null,
-      remove: null,
+      delete: null,
     },
     {
       update: [],
       create: [],
-      remove: null,
+      delete: null,
     },
     {
       update: [buildUpdateAvailabilityDto(3, 1, 1, 1, ''), buildUpdateAvailabilityDto(4, 1, 1, 1, '')],
       create: null,
-      remove: null,
+      delete: null,
     },
     {
       update: [],
@@ -375,7 +375,7 @@ export function validateAppointmentTypesIdsValidTestData(): BulkUpdateAvailabili
         createAvailabilityDto(1, '2025-07-25T07:43:40.084Z', 15, 1),
         createAvailabilityDto(1, '2025-08-25T08:43:40.084Z', 15, 1),
       ],
-      remove: null,
+      delete: null,
     },
     {
       update: [buildUpdateAvailabilityDto(3, 1, 1, 1, ''), buildUpdateAvailabilityDto(4, 1, 1, 1, '')],
@@ -383,7 +383,7 @@ export function validateAppointmentTypesIdsValidTestData(): BulkUpdateAvailabili
         createAvailabilityDto(1, '2025-07-25T07:43:40.084Z', 15, 1),
         createAvailabilityDto(1, '2025-08-25T08:43:40.084Z', 15, 1),
       ],
-      remove: null,
+      delete: null,
     },
   ];
 }
@@ -401,7 +401,7 @@ export function validateAppointmentTypesIdsInvalidTestCase() {
         createAvailabilityDto(1, '2025-08-26T08:43:40.084Z', 15, 6),
         createAvailabilityDto(1, '2025-08-27T08:43:40.084Z', 15, 5),
       ],
-      remove: null,
+      delete: null,
     },
     expectedErrorMessage: "The appointment types doesn't exist: [6,5,4]",
   };
