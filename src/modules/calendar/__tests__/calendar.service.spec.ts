@@ -97,13 +97,17 @@ describe('Calendar service', () => {
       staffId: 100,
       startDate: new Date('2021-09-01'),
     });
-    await apptService.createAppointment(identity, {
-      staffId: 100,
-      patientId: 1,
-      appointmentTypeId: 1,
-      durationMinutes: 120,
-      startDate: '2021-09-03',
-    });
+    await apptService.createAppointment(
+      identity,
+      {
+        staffId: 100,
+        patientId: 1,
+        appointmentTypeId: 1,
+        durationMinutes: 120,
+        startDate: '2021-09-03',
+      },
+      false,
+    );
     const allEvents = await calendarService.search(identity, {
       staffId: {
         eq: 100,
@@ -133,23 +137,31 @@ describe('Calendar service', () => {
       startDate: new Date('2021-09-02'),
     });
     // Provisional (Does not count in event)
-    await apptService.createAppointment(identity, {
-      staffId: 100,
-      patientId: 1,
-      appointmentTypeId: 1,
-      durationMinutes: 120,
-      startDate: '2021-09-10',
-    });
+    await apptService.createAppointment(
+      identity,
+      {
+        staffId: 100,
+        patientId: 1,
+        appointmentTypeId: 1,
+        durationMinutes: 120,
+        startDate: '2021-09-10',
+      },
+      false,
+    );
     // Non-Provisional
     // (Counts as availability #3) and (Appointment #4)
-    await apptService.createAppointment(identity, {
-      staffId: 100,
-      patientId: 1,
-      appointmentTypeId: 1,
-      appointmentStatusId: 2,
-      durationMinutes: 120,
-      startDate: '2021-09-03',
-    });
+    await apptService.createAppointment(
+      identity,
+      {
+        staffId: 100,
+        patientId: 1,
+        appointmentTypeId: 1,
+        appointmentStatusId: 2,
+        durationMinutes: 120,
+        startDate: '2021-09-03',
+      },
+      false,
+    );
     const allEvents = await calendarService.search(identity, {
       staffId: {
         eq: 100,

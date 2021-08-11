@@ -465,7 +465,7 @@ export class AppointmentsService {
   }
 
   async findOne(id: number): Promise<any> {
-    const appointment = await this.appointmentsRepository.scope('getOne').findByPk(id, {
+    const appointment = await this.appointmentsRepository.scope('active').findByPk(id, {
       include: [
         {
           all: true,
