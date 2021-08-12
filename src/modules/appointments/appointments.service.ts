@@ -138,7 +138,7 @@ export class AppointmentsService {
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall catch error',
-        error: error.message,
+        error,
       });
       throw new BadRequestException({
         code: ErrorCodes.INTERNAL_SERVER_ERROR,

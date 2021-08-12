@@ -185,7 +185,8 @@ export class LookupsService {
       const nextActions = {
         WAIT_LIST: ['SCHEDULE'],
         SCHEDULE: ['CONFIRM'],
-        CONFIRM: ['CHECK_IN'],
+        CONFIRM1: ['CONFIRM2'],
+        CONFIRM2: ['CHECK_IN'],
         CHECK_IN: ['READY'],
         READY: ['COMPLETE'],
         COMPLETE: [],
@@ -210,7 +211,8 @@ export class LookupsService {
       const secondaryAppointmentActions = {
         WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
         SCHEDULE: ['CANCEL', 'CHANGE_DATE', 'CHANGE_APPT_TYPE', 'RESCHEDULE_APPT'],
-        CONFIRM: ['CANCEL', 'CHANGE_APPT_TYPE'],
+        CONFIRM1: ['CANCEL', 'CHANGE_APPT_TYPE'],
+        CONFIRM2: ['CANCEL', 'CHANGE_APPT_TYPE'],
         CHECK_IN: ['CANCEL'],
         READY: ['CANCEL'],
         COMPLETE: [],
