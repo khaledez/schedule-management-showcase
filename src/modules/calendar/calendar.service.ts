@@ -1,5 +1,5 @@
-import { FilterDateInputDto, FilterIdsInputDto, IIdentity } from '@dashps/monmedx-common';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto, IIdentity } from '@dashps/monmedx-common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
@@ -16,15 +16,20 @@ import {
   CalendarSearchResult,
 } from './calendar.interface';
 
-const ALL = 'ALL';
-
 @Injectable()
 export class CalendarService {
+  private readonly logger = new Logger(CalendarService.name);
+
   constructor(private readonly lookupService: LookupsService) {}
 
   // eslint-disable-next-line complexity
   async search(identity: IIdentity, query: CalendarSearchInput): Promise<CalendarSearchResult> {
-    const queryType = query.entryType?.eq ? query.entryType?.eq : ALL;
+    this.logger.debug({
+      method: 'CalenderService/search',
+      query,
+    });
+
+    const queryType = new EntryType(query.entryType);
 
     let availabilityConditions: WhereOptions<AvailabilityModel> = {
       clinicId: { [Op.eq]: identity.clinicId },
@@ -46,21 +51,21 @@ export class CalendarService {
     }
 
     const toInclude: Includeable[] = [];
-    if (queryType === 'EVENT' || queryType === ALL) {
+    if (queryType.hasType('EVENT')) {
       toInclude.push({
         model: EventModel,
-        required: queryType === 'EVENT',
+        required: queryType.isRequired('EVENT'),
       });
     }
 
-    if (queryType === 'APPOINTMENT' || queryType === ALL) {
+    if (queryType.hasType('APPOINTMENT')) {
       toInclude.push({
         model: AppointmentsModel,
-        required: queryType === 'APPOINTMENT',
+        required: queryType.isRequired('APPOINTMENT'),
       });
     }
 
-    if (queryType === 'AVAILABILITY') {
+    if (queryType.hasType('AVAILABILITY')) {
       availabilityConditions = { ...availabilityConditions, ...availabilityFilters(query) };
       if (query.availabilityFilter?.withAppointment) {
         toInclude.push({ model: AppointmentsModel, required: true });
@@ -81,21 +86,22 @@ export class CalendarService {
         return true;
       })
       .map((model) => {
-        switch (queryType) {
-          case 'AVAILABILITY':
-            return availabilityAsCalendarEvent(model);
-          case 'EVENT':
-            return availabilityToEvent(model);
-          case 'APPOINTMENT':
-            return availabilityToAppointment(model);
-          default:
-            if (model.appointment) {
-              return availabilityToAppointment(model);
-            } else if (model.event) {
-              return availabilityToEvent(model);
-            }
-            return availabilityAsCalendarEvent(model);
+        if (queryType.isRequired('AVAILABILITY')) {
+          return availabilityAsCalendarEvent(model);
         }
+        if (queryType.isRequired('APPOINTMENT')) {
+          return availabilityToAppointment(model);
+        }
+        if (queryType.isRequired('EVENT')) {
+          return availabilityToEvent(model);
+        }
+
+        if (model.appointment) {
+          return availabilityToAppointment(model);
+        } else if (model.event) {
+          return availabilityToEvent(model);
+        }
+        return availabilityAsCalendarEvent(model);
       });
 
     return { entries };
@@ -241,4 +247,27 @@ function availabilityToEvent(model: AvailabilityModelAttributes): CalendarEvent 
     __typename: 'CalendarEvent',
     startDate: model.startDate,
   } as CalendarEvent;
+}
+
+class EntryType {
+  private entryTypes: string[];
+  private all = false;
+  constructor(entryTypeQuery: FilterStringInputDto) {
+    if (entryTypeQuery?.eq) {
+      this.entryTypes = [entryTypeQuery?.eq];
+    } else if (entryTypeQuery?.in) {
+      this.entryTypes = entryTypeQuery?.in;
+    } else {
+      this.entryTypes = [];
+      this.all = true;
+    }
+  }
+
+  hasType(entryName: string): boolean {
+    return this.all || this.entryTypes.includes(entryName);
+  }
+
+  isRequired(entryName: string): boolean {
+    return this.entryTypes.includes(entryName);
+  }
 }
