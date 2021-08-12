@@ -1,6 +1,6 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { APPOINTMENTS_REPOSITORY, SEQUELIZE } from 'common/constants';
+import { APPOINTMENTS_REPOSITORY, DEFAULT_APPOINTMENT_THRESHOLD_DAYS, SEQUELIZE } from 'common/constants';
 import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
 import { DateTime } from 'luxon';
 import {
@@ -27,7 +27,7 @@ import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
 
 const identity: IIdentity = {
-  clinicId: 1,
+  clinicId: Math.floor(Math.random() * 1000),
   userId: 2,
   cognitoId: null,
   userLang: 'en',
@@ -40,6 +40,7 @@ describe('Appointment service', () => {
   let sequelize: Sequelize;
   let repo: typeof AppointmentsModel;
   let availabilityService: AvailabilityService;
+  let lookupsService: LookupsService;
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
@@ -47,18 +48,28 @@ describe('Appointment service', () => {
     }).compile();
 
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
+    lookupsService = moduleRef.get<LookupsService>(LookupsService);
     sequelize = moduleRef.get<Sequelize>(SEQUELIZE);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
     availabilityService = moduleRef.get<AvailabilityService>(AvailabilityService);
   });
 
   afterAll(async () => {
+    await sequelize.query('SET FOREIGN_KEY_CHECKS=0;');
+    await sequelize.query(`DELETE FROM Events WHERE clinic_id = ${identity.clinicId}`);
+    await sequelize.query(`DELETE FROM Appointments WHERE clinic_id = ${identity.clinicId}`);
+    await sequelize.query(`DELETE FROM Availability WHERE clinic_id = ${identity.clinicId}`);
+    await sequelize.query('SET FOREIGN_KEY_CHECKS=1;');
     await sequelize.close();
     await moduleRef.close();
   });
 
   beforeEach(async () => {
-    await repo.destroy({ where: {} });
+    await sequelize.query('SET FOREIGN_KEY_CHECKS=0;');
+    await sequelize.query(`DELETE FROM Events WHERE clinic_id = ${identity.clinicId}`);
+    await sequelize.query(`DELETE FROM Appointments WHERE clinic_id = ${identity.clinicId}`);
+    await sequelize.query(`DELETE FROM Availability WHERE clinic_id = ${identity.clinicId}`);
+    await sequelize.query('SET FOREIGN_KEY_CHECKS=1;');
   });
   test('should be defined', () => {
     expect(apptService).toBeDefined();
@@ -185,6 +196,116 @@ describe('Appointment service', () => {
       expect(availability).toBeDefined();
     });
   });
+
+  describe('Notifications', () => {
+    let apptAttributes: CreateAppointmentDto;
+    let scopeIdentity: IIdentity;
+    beforeEach(() => {
+      apptAttributes = {
+        appointmentStatusId: 1,
+        appointmentTypeId: 1,
+        patientId: 15,
+        staffId: 20,
+        startDate: new Date().toISOString(),
+        durationMinutes: 60,
+      };
+      scopeIdentity = { ...identity };
+    });
+    test('Returns missed appointments', async () => {
+      // 1. Arrange
+      const confirm1 = await lookupsService.getStatusIdByCode(scopeIdentity, AppointmentStatusEnum.CONFIRM1);
+      const confirm2 = await lookupsService.getStatusIdByCode(scopeIdentity, AppointmentStatusEnum.CONFIRM2);
+      const checkIn = await lookupsService.getStatusIdByCode(scopeIdentity, AppointmentStatusEnum.CHECK_IN);
+
+      // Create 2 confirmed non-provisional appointments in the past (Simulating missed)
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 333, confirm1, -1);
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 555, confirm2, -1);
+      // Those are just for double-checking functionality
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 777, confirm1, 0);
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 999, checkIn, -1);
+
+      // 2. Act
+      const missedAppts = await apptService.getAllYesterdayMissedAppointments();
+
+      // 3. Assert
+      expect(missedAppts).toHaveLength(2);
+    });
+
+    test('Returns unconfirmed non-provisional appointments within a threshold', async () => {
+      // 1. Arrange
+      const UnconfirmedStatuses = await Promise.all([
+        lookupsService.getStatusIdByCode(scopeIdentity, AppointmentStatusEnum.SCHEDULE),
+        lookupsService.getStatusIdByCode(scopeIdentity, AppointmentStatusEnum.CONFIRM1),
+        lookupsService.getStatusIdByCode(scopeIdentity, AppointmentStatusEnum.CONFIRM2),
+      ]).then((data) => [...data]);
+
+      // Create 4 non-provisional appointment in recent time with check_in status
+      const randomUnconfirmedStatus = () => UnconfirmedStatuses[Math.floor(Math.random() * UnconfirmedStatuses.length)];
+      // Patient #1 (ID: 333, Today)
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 333, randomUnconfirmedStatus(), 0);
+      // Patient #2 (ID: 555, Tomorrow)
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 555, randomUnconfirmedStatus(), 1);
+      // Patient #3 (ID: 777, In 2 Days)
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 777, randomUnconfirmedStatus(), 2);
+      // Patient #4 (ID: 999, In 3 Days)
+      await createProvisionalAppointmentWithNonProvisionalAfterXDays(scopeIdentity, 999, randomUnconfirmedStatus(), 5);
+
+      // 2. Act
+      const unconfirmedAppts = await apptService.getAllUnconfirmedAppointmentInXDays(
+        DEFAULT_APPOINTMENT_THRESHOLD_DAYS,
+      );
+
+      // 3. Assert
+      // We expect 3 of these to be notified as the threshold is 3 days (including today)
+      expect(unconfirmedAppts).toHaveLength(3);
+    });
+
+    test('Returns due provisional appointments with no scheduled appointments', async () => {
+      // 1. Arrange
+      // Provisional appointment #1 (Today)
+      apptAttributes.patientId = 333;
+      await apptService.createAppointment(scopeIdentity, apptAttributes, false);
+      // Provisional appointment #2 (Due)
+      apptAttributes.patientId = 555;
+      apptAttributes.startDate = DateTime.now().minus({ days: 1 }).toISO();
+      await apptService.createAppointment(scopeIdentity, apptAttributes, false);
+      // Provisional appointment #3 (Due)
+      apptAttributes.patientId = 777;
+      apptAttributes.startDate = DateTime.now().minus({ days: 1 }).toISO();
+      await apptService.createAppointment(scopeIdentity, apptAttributes, false);
+
+      // 2. Act
+      const dueProvisionalAppts = await apptService.getAllDueProvisionalAppointments();
+
+      // 3. Assert
+      expect(dueProvisionalAppts).toHaveLength(2);
+    });
+  });
+
+  const createProvisionalAppointmentWithNonProvisionalAfterXDays = async (
+    identity: IIdentity,
+    patientId: number,
+    statusId: number,
+    x: number,
+  ) => {
+    const waitList = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
+    // Attributes
+    const apptAttributes: CreateAppointmentDto = {
+      appointmentTypeId: 1,
+      appointmentStatusId: waitList,
+      patientId: 15,
+      staffId: 20,
+      startDate: new Date().toISOString(),
+      durationMinutes: 60,
+    };
+    // Create Provisional
+    apptAttributes.patientId = patientId;
+    await apptService.createAppointment(identity, apptAttributes, false);
+    // Non-Provisional
+    apptAttributes.appointmentStatusId = statusId;
+    apptAttributes.startDate = DateTime.now().plus({ days: x }).toISO(); // Tomorrow
+    await apptService.createAppointment(identity, apptAttributes, false);
+  };
 });
 
 describe('# Cancel appointment', () => {

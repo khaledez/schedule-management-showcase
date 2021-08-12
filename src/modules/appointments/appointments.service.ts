@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
-import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
@@ -21,7 +29,7 @@ import { AvailabilityModel } from 'modules/availability/models/availability.mode
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import moment from 'moment';
-import { CreateOptions, FindOptions, Op, Transaction, UpdateOptions } from 'sequelize';
+import { CreateOptions, FindOptions, Op, QueryTypes, Transaction, UpdateOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
@@ -33,6 +41,7 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
 import { getQueryGenericSortMapper, sequelizeSortMapper } from './utils/sequelize-sort.mapper';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1104,6 +1113,115 @@ export class AppointmentsService {
         fields: ['availability_id'],
         code: 'NOT_FOUND',
         message: 'The availability does not exits!',
+      });
+    }
+  }
+
+  async getAllDueProvisionalAppointments(): Promise<AppointmentsModel[]> {
+    const yesterday = DateTime.now().minus({ days: 1 }).startOf('day');
+    const [startDate, endDate] = getInclusiveSQLDateCondition(yesterday);
+    const waitListStatusId = await this.lookupsService.getStatusIdByCode(
+      { clinicId: null } as IIdentity,
+      AppointmentStatusEnum.WAIT_LIST,
+    );
+    const sqlQuery = `
+      SELECT 
+        A.id,
+        A.staff_id AS staffId,
+        A.clinic_id AS clinicId,
+        A.patient_id AS patientId,
+        A.start_date AS startDate,
+        A.appointment_status_id AS appointmentStatusId,
+        COUNT(*) count
+      FROM Appointments A, Appointments B
+      WHERE (A.start_date BETWEEN :startDate AND :endDate)
+      AND A.patient_id = B.patient_id
+      AND A.appointment_status_id = :waitListStatusId
+      GROUP BY
+        id,
+        staffId,
+        clinicId,
+        patientId,
+        startDate,
+        appointmentStatusId
+      HAVING
+        count = 1
+    `;
+    try {
+      return this.appointmentsRepository.sequelize.query<AppointmentsModel>(sqlQuery, {
+        replacements: {
+          startDate,
+          endDate,
+          waitListStatusId,
+        },
+        type: QueryTypes.SELECT,
+      });
+    } catch (error) {
+      this.logger.error({
+        function: 'getAllDueProvisionalAppointments',
+        error,
+      });
+      throw new InternalServerErrorException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        error,
+      });
+    }
+  }
+
+  getAllUnconfirmedAppointmentInXDays(appointmentThresholdDays: number): Promise<AppointmentsModel[]> {
+    const today = DateTime.now();
+    const inXDays = DateTime.now().plus({ days: appointmentThresholdDays });
+    try {
+      return this.appointmentsRepository.findAll({
+        include: {
+          model: AppointmentStatusLookupsModel,
+          where: {
+            code: {
+              [Op.in]: [AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM1, AppointmentStatusEnum.CONFIRM2],
+            },
+          },
+        },
+        where: {
+          startDate: {
+            [Op.between]: getInclusiveSQLDateCondition(today, inXDays),
+          },
+        },
+      });
+    } catch (error) {
+      this.logger.error({
+        function: 'getAllUnconfirmedAppointmentInXDays',
+        days: appointmentThresholdDays,
+        error,
+      });
+      throw new InternalServerErrorException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        error,
+      });
+    }
+  }
+
+  getAllYesterdayMissedAppointments(): Promise<AppointmentsModel[]> {
+    const yesterday = DateTime.now().minus({ days: 1 }).startOf('day');
+    try {
+      return this.appointmentsRepository.findAll({
+        include: {
+          model: AppointmentStatusLookupsModel,
+          where: { code: { [Op.in]: [AppointmentStatusEnum.CONFIRM1, AppointmentStatusEnum.CONFIRM2] } },
+        },
+        where: {
+          startDate: {
+            [Op.between]: getInclusiveSQLDateCondition(yesterday),
+          },
+        },
+      });
+    } catch (error) {
+      this.logger.error({
+        function: 'getAllYesterdayMissedAppointments',
+        error,
+      });
+      throw new InternalServerErrorException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        error,
       });
     }
   }

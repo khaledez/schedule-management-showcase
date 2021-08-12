@@ -53,6 +53,14 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
       deletedBy: null,
     },
   },
+  provisional: {
+    include: [AppointmentStatusLookupsModel],
+    where: {
+      '$status.code$': {
+        [Op.eq]: AppointmentStatusEnum.WAIT_LIST,
+      },
+    },
+  },
 }))
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel
