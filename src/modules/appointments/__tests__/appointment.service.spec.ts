@@ -38,7 +38,6 @@ describe('Appointment service', () => {
   let apptService: AppointmentsService;
   let moduleRef: TestingModule;
   let sequelize: Sequelize;
-  let repo: typeof AppointmentsModel;
   let availabilityService: AvailabilityService;
   let lookupsService: LookupsService;
 
@@ -50,7 +49,6 @@ describe('Appointment service', () => {
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
     lookupsService = moduleRef.get<LookupsService>(LookupsService);
     sequelize = moduleRef.get<Sequelize>(SEQUELIZE);
-    repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
     availabilityService = moduleRef.get<AvailabilityService>(AvailabilityService);
   });
 

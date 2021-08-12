@@ -3,6 +3,9 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
+import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
+import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
+import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { Includeable, Op, WhereAttributeHash, WhereOptions } from 'sequelize';
 import { BAD_REQUEST } from '../../common/constants';
 import { AppointmentsModel } from '../appointments/appointments.model';
@@ -62,13 +65,19 @@ export class CalendarService {
       toInclude.push({
         model: AppointmentsModel,
         required: queryType.isRequired('APPOINTMENT'),
+        include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
       });
     }
 
     if (queryType.hasType('AVAILABILITY')) {
+      toInclude.push(AppointmentTypesLookupsModel);
       availabilityConditions = { ...availabilityConditions, ...availabilityFilters(query) };
-      if (query.availabilityFilter?.withAppointment) {
-        toInclude.push({ model: AppointmentsModel, required: true });
+      if (query.availabilityFilter?.withAppointment && !queryType.hasType('APPOINTMENT')) {
+        toInclude.push({
+          model: AppointmentsModel,
+          required: true,
+          include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
+        });
       }
     }
 
