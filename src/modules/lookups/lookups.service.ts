@@ -184,7 +184,7 @@ export class LookupsService {
 
       const nextActions = {
         WAIT_LIST: ['SCHEDULE'],
-        SCHEDULE: ['CONFIRM'],
+        SCHEDULE: ['CONFIRM1'],
         CONFIRM1: ['CONFIRM2'],
         CONFIRM2: ['CHECK_IN'],
         CHECK_IN: ['READY'],
