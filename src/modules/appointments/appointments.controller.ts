@@ -4,6 +4,8 @@ import {
   PaginationInterceptor,
   PagingInfo,
   PagingInfoInterface,
+  PermissionCode,
+  Permissions,
   TransactionInterceptor,
   TransactionParam,
 } from '@dashps/monmedx-common';
@@ -52,6 +54,7 @@ export class AppointmentsController {
 
   // search using post method
   @Post('search')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   @UseInterceptors(PaginationInterceptor)
   async search(
     @Identity() identity: IIdentity,
@@ -73,6 +76,7 @@ export class AppointmentsController {
 
   // get total appointment for each day for a specific period
   @Get('appointments-days')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   async getAppointmentsByPeriods(@Identity() identity: IIdentity, @Query() query: QueryAppointmentsByPeriodsDto) {
     this.logger.log({ query });
     this.logger.log({ identity });
@@ -82,11 +86,13 @@ export class AppointmentsController {
   }
 
   @Get(':id')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.findOne(id);
   }
 
   @Patch(':id')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   updateOneAppointment(
     @Identity() identity: IIdentity,
     @Param('id', ParseIntPipe) id: number,
@@ -99,6 +105,7 @@ export class AppointmentsController {
    * @deprecated use {getPatientUpcomingAppointment} & {GetPatientNextAppointment} instead
    */
   @Get('patient-upcoming/:patientId')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   getAppointmentByPatientId(
     @Identity() identity: IIdentity,
     @Param('patientId', ParseIntPipe) patientId: number,
@@ -113,6 +120,7 @@ export class AppointmentsController {
    * @param patientId
    */
   @Get('upcoming-appointment/:patientId')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   getPatientUpcomingAppointment(@Identity() identity: IIdentity, @Param('patientId', ParseIntPipe) patientId: number) {
     return this.appointmentsService.getPatientUpcomingAppointment(identity, patientId);
   }
@@ -124,6 +132,7 @@ export class AppointmentsController {
    * @constructor
    */
   @Get('patient-next-appointment')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   GetPatientNextAppointment(@Identity() identity: IIdentity, @Query() query: GetPatientNextAppointment) {
     return this.appointmentsService.getPatientNextAppointment(identity, query.patientId, query.appointmentId);
   }
@@ -136,6 +145,7 @@ export class AppointmentsController {
    * @returns Created Appointment
    */
   @Post('provisional')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createProvisionalAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
@@ -163,6 +173,7 @@ export class AppointmentsController {
    * @param appointmentData
    */
   @Post()
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
@@ -175,11 +186,13 @@ export class AppointmentsController {
   }
 
   @Post('reschedule')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async rescheduleAppointment(@Identity() identity: IIdentity, @Body() rescheduleDto: RescheduleAppointmentDto) {
     return { appointment: await this.appointmentsService.rescheduleAppointment(identity, rescheduleDto) };
   }
 
   @Post('cancel')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
     await this.appointmentsService.cancelAppointment(identity, cancelDto);
   }
@@ -193,6 +206,7 @@ export class AppointmentsController {
    */
   @UseInterceptors(TransactionInterceptor)
   @Post('adhoc')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createAdHoc(
     @Identity() identity: IIdentity,
     @Body() appointmentData: CreateAppointmentAdhocDto,
@@ -227,6 +241,7 @@ export class AppointmentsController {
   }
 
   @Post('forPatient')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   @UseInterceptors(PaginationInterceptor)
   async getPatientAppointmentHistory(
     @Identity() identity: IIdentity,

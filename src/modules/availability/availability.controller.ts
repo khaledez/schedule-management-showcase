@@ -1,4 +1,4 @@
-import { Identity, IIdentity } from '@dashps/monmedx-common';
+import { Identity, IIdentity, Permissions, PermissionCode } from '@dashps/monmedx-common';
 import { Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { CalendarEntriesCountPayloadDto } from 'common/dtos/calendar/calendar-entries-count-payload-dto';
 import { CalendarEntriesPayloadDto } from 'common/dtos/calendar/calendar-entries-payload-dto';
@@ -23,6 +23,7 @@ export class AvailabilityController {
   ) {}
 
   @Get()
+  @Permissions(PermissionCode.AVAILABILITY_READ)
   findAll(
     @Identity() identity: IIdentity,
     @Query() query?: QueryFindAvailabilityDto,
@@ -38,11 +39,13 @@ export class AvailabilityController {
   }
 
   @Get(':id')
+  @Permissions(PermissionCode.AVAILABILITY_READ)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.availabilityService.findOne(id);
   }
 
   @Post('/bulk')
+  @Permissions(PermissionCode.AVAILABILITY_WRITE)
   bulkUpdate(@Identity() identity: IIdentity, @Body() payload: BulkUpdateAvailabilityDto): Promise<BulkUpdateResult> {
     const { clinicId, userId } = identity;
     this.logger.debug({ clinicId, userId, payload });
@@ -56,6 +59,7 @@ export class AvailabilityController {
    * @param payload
    */
   @Post('/suggestions')
+  @Permissions(PermissionCode.AVAILABILITY_READ)
   async getAvailabilitySuggestions(
     @Identity() identity: IIdentity,
     @Body() payload: GetSuggestionsDto,
@@ -65,6 +69,7 @@ export class AvailabilityController {
   }
 
   @Post('/search')
+  @Permissions(PermissionCode.AVAILABILITY_READ)
   async searchForAvailabilities(
     @Identity() identity: IIdentity,
     @Body() payload: SearchAvailabilityDto,
@@ -74,6 +79,7 @@ export class AvailabilityController {
   }
 
   @Post('/count')
+  @Permissions(PermissionCode.AVAILABILITY_READ)
   async getAvailabilitiesCount(
     @Identity() identity: IIdentity,
     @Body() payload: SearchAvailabilityDto,
