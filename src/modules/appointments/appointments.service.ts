@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
+import { FilterDateInputDto, IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import {
   BadRequestException,
   forwardRef,
@@ -45,6 +45,7 @@ import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
 import { getQueryGenericSortMapper, sequelizeSortMapper } from './utils/sequelize-sort.mapper';
+import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -94,6 +95,8 @@ export class AppointmentsService {
     },
   };
 
+  // TODO refactor this as well
+  // eslint-disable-next-line complexity
   async searchWithPatientInfo(
     identity: IIdentity,
     queryParams: QueryParamsDto,
@@ -102,36 +105,46 @@ export class AppointmentsService {
     const { limit, offset } = pagingFilter || { limit: 15, offset: 0 };
 
     // custom filter by appointmentCategory
-    const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(queryParams, this.logger);
+    // const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(queryParams, this.logger);
 
     // common data-filters
-    const sequelizeFilter = sequelizeFilterMapper(
-      this.logger,
-      queryParams,
-      this.associationFieldsFilterNames,
-      filterByAppointmentCategory,
+    // const sequelizeFilter = sequelizeFilterMapper(
+    //   this.logger,
+    //   queryParams,
+    //   this.associationFieldsFilterNames,
+    //   filterByAppointmentCategory,
+    // );
+    // const sequelizeSort = sequelizeSortMapper(this.logger, queryParams, this.associationFieldsSortNames, false);
+
+    const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
+    //TODO: Make 'or' field optional in the filter
+    const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null });
+    const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(
+      queryParams.filter?.appointmentTypeId || { or: null },
     );
-    const sequelizeSort = sequelizeSortMapper(this.logger, queryParams, this.associationFieldsSortNames, false);
+    const appointmentStatusIdWhereClause = this.getAppointmentStatusIdWhereClause(
+      queryParams.filter?.appointmentStatusId || { or: null },
+    );
+
     try {
       const options: FindOptions = {
-        // benchmark: true,
-        // logging: true,
         include: [
           {
             all: true,
           },
         ],
         where: {
-          upcomingAppointment: true,
-          ...sequelizeFilter,
+          appointmentTypeId: appointmentTypeIdWhereClause,
+          appointmentStatusId: appointmentStatusIdWhereClause,
+          startDate: startDateWhereClause,
+          staffId: staffIdWhereClause,
           clinicId: identity.clinicId,
         },
-        order: sequelizeSort,
+        order: [['startDate', 'ASC']],
         limit,
         offset,
       };
-
-      const { rows: appointments, count } = await this.appointmentsRepository.scope('active').findAndCountAll(options);
+      const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
 
       const searchResult = await this.buildAppointmentConnectionResponse(appointments);
 
@@ -147,6 +160,39 @@ export class AppointmentsService {
         error: error.message,
       });
     }
+  }
+
+  // TODO: refactor filters mappers to a proper util class
+  getEntityIdWhereClause(entity: FilterIdsInputDto) {
+    if (entity && entity.in) {
+      return { [Op.in]: entity.in };
+    } else if (entity && entity.eq) {
+      return { [Op.eq]: entity.eq };
+    }
+    return { [Op.notIn]: [] };
+  }
+
+  getAppointmentStatusIdWhereClause(entity: FilterIdsInputDto) {
+    if (entity && entity.in) {
+      return { [Op.in]: entity.in };
+    } else if (entity && entity.eq) {
+      return { [Op.eq]: entity.eq };
+    }
+    // TODO This is as bad as it can gets, refactor
+    return { [Op.notIn]: [6, 7] };
+  }
+
+  getStartDateWhereClause(dateRange: FilterDateInputDto) {
+    // Set endTime to 23:59:59 due to sequelize limitations
+    if (dateRange.between) {
+      dateRange.between[1].setUTCHours(23, 59, 59, 999);
+      return { [Op.between]: dateRange.between };
+    } else if (dateRange.eq) {
+      const end = new Date(dateRange.eq.getTime());
+      end.setUTCHours(23, 59, 59, 999);
+      return { [Op.between]: [dateRange.eq, end] };
+    }
+    return { [Op.notIn]: [] };
   }
 
   async getPatientAppointmentHistory(
