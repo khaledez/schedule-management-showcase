@@ -504,7 +504,7 @@ export class AppointmentsService {
       appointmentVisitModeId,
       appointmentStatusId,
     }));
-    /* 3. Act/Execution */
+    await this.cancelAllAppointments(identity, dto.patientId, transaction);
     const createdAppointment = await this.appointmentsRepository.create(
       {
         ...dto,
