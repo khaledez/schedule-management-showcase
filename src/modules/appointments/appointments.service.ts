@@ -19,7 +19,7 @@ import {
   PAGING_OFFSET_DEFAULT,
   SCHEDULE_MGMT_TOPIC,
 } from 'common/constants';
-import { AppointmentStatusEnum, AppointmentVisitModeEnum, ErrorCodes } from 'common/enums';
+import { AppointmentStatusEnum, AppointmentVisitModeEnum, ErrorCodes, Order } from 'common/enums';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
@@ -139,8 +139,9 @@ export class AppointmentsService {
           startDate: startDateWhereClause,
           staffId: staffIdWhereClause,
           clinicId: identity.clinicId,
+          deletedBy: null,
         },
-        order: [['startDate', 'ASC']],
+        order: [[AppointmentsService.DATE_COLUMN, Order.ASC]],
         limit,
         offset,
       };
