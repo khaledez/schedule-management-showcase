@@ -433,6 +433,10 @@ export class LookupsService {
     return this.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
   }
 
+  getReadyAppointmentStatusId(identity: IIdentity): Promise<number> {
+    return this.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+  }
+
   getFUBAppointmentTypeId(identity: IIdentity): Promise<number> {
     return this.getTypeByCode(identity, AppointmentTypeEnum.FUP);
   }

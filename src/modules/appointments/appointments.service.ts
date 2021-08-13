@@ -10,10 +10,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
+  MIN_TO_MILLI_SECONDS,
   PAGING_LIMIT_DEFAULT,
   PAGING_OFFSET_DEFAULT,
   SCHEDULE_MGMT_TOPIC,
@@ -210,6 +211,7 @@ export class AppointmentsService {
    * references to an availability slot (created if non-existent)
    * @param dto
    * @param identity
+   * @param upcomingAppointment
    * @param transaction Passed incase we need to create an availability
    * @returns
    */
@@ -223,7 +225,7 @@ export class AppointmentsService {
     // 1.1 Appointment type id
     if (!(dto.availabilityId || (dto.appointmentTypeId && dto.startDate && dto.durationMinutes))) {
       const errorMessage =
-        "You didn't provide availbilityId you must provide: startDate, durationMinutes and appointmentTypeId";
+        "You didn't provide availabilityId you must provide: startDate, durationMinutes and appointmentTypeId";
       this.logger.error({
         function: 'service/appointment/createAppointment',
         message: errorMessage,
@@ -240,6 +242,10 @@ export class AppointmentsService {
     // requires a database transaction
     // eslint-disable-next-line complexity
     const validateInputThenArrangeAttributesAndCommit = async (transaction: Transaction) => {
+      // TODO: refactor the entire create appointment flow
+      if (dto.availabilityId) {
+        return this.createAppointmentWithAvailability(identity, dto, transaction);
+      }
       // 1.2 Appointment, Status, Visit Mode
       await this.validateLookupIds(identity, dto, transaction);
       // 1.3 Is provisional and patient has provisional
@@ -299,6 +305,7 @@ export class AppointmentsService {
       }));
       const provisionalDate: Date = isProvisional ? startDate : provisionalAppointment.startDate;
       /* 3. Act/Execution */
+      await this.cancelAllAppointments(identity, dto.patientId, transaction);
       const createdAppointment = await this.appointmentsRepository.create(
         {
           ...dto,
@@ -323,6 +330,108 @@ export class AppointmentsService {
       return this.appointmentsRepository.sequelize.transaction(validateInputThenArrangeAttributesAndCommit);
     }
     return validateInputThenArrangeAttributesAndCommit(transaction);
+  }
+
+  // eslint-disable-next-line complexity
+  async createAppointmentWithAvailability(
+    identity: IIdentity,
+    dto: CreateAppointmentDto,
+    transaction?: Transaction,
+  ): Promise<AppointmentsModel> {
+    if (!dto.availabilityId) {
+      const errorMessage = 'You must provide availabilityId';
+      this.logger.error({
+        function: 'service/appointment/createAppointmentWithAvailability',
+        message: errorMessage,
+      });
+      throw new BadRequestException({
+        fields: ['availabilityId'],
+        code: ErrorCodes.BAD_REQUEST,
+        message: errorMessage,
+      });
+    }
+    const availabilityModel = await this.availabilityService.findOne(dto.availabilityId);
+    if (!availabilityModel) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: `Availability of id ${dto.availabilityId} not found`,
+      });
+    }
+    if (availabilityModel.isOccupied) {
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: `Availability of id ${dto.availabilityId} is already used`,
+      });
+    }
+    if (dto.appointmentTypeId) {
+      await this.lookupsService.validateAppointmentsTypes(identity, [dto.appointmentTypeId], transaction);
+    }
+    let endDate = null;
+    if (dto.startDate && dto.durationMinutes) {
+      const dtoEndDate = new Date(dto.startDate).getTime();
+      endDate = new Date(dtoEndDate + dto.durationMinutes * MIN_TO_MILLI_SECONDS);
+    }
+    const upcomingAppointment = await this.getPatientUpcomingAppointment(identity, dto.patientId);
+
+    try {
+      await this.cancelAllAppointments(identity, dto.patientId, transaction);
+      const createdAppointment = await this.appointmentsRepository.create(
+        {
+          patientId: dto.patientId,
+          clinicId: identity.clinicId,
+          createdBy: identity.userId,
+          staffId: dto.staffId || availabilityModel.staffId,
+          availabilityId: dto.availabilityId,
+          startDate: new Date(dto.startDate) || availabilityModel.startDate,
+          endDate: endDate || availabilityModel.endDate,
+          durationMinutes: endDate ? dto.durationMinutes : availabilityModel.durationMinutes,
+          appointmentTypeId: dto.appointmentTypeId || availabilityModel.appointmentTypeId,
+          appointmentStatusId: await this.lookupsService.getReadyAppointmentStatusId(identity),
+          appointmentVisitModeId: dto.appointmentVisitModeId,
+          upcomingAppointment: true,
+          provisionalDate: upcomingAppointment?.startDate || availabilityModel.startDate,
+          previousAppointmentId: upcomingAppointment?.id,
+        },
+        { transaction },
+      );
+      availabilityModel.isOccupied = true;
+      await availabilityModel.save({ transaction });
+      return createdAppointment;
+    } catch (error) {
+      throw new InternalServerErrorException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+
+  async cancelAllAppointments(identity, patientId, transaction) {
+    const statusCanceledId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
+    const statusCompleteId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE);
+    const patientAppointments = await this.appointmentsRepository.findAll({
+      where: {
+        patientId: {
+          [Op.eq]: patientId,
+        },
+        clinicId: {
+          [Op.eq]: identity.clinicId,
+        },
+        appointmentStatusId: {
+          [Op.notIn]: [statusCanceledId, statusCompleteId],
+        },
+        deletedBy: null,
+      },
+      transaction,
+    });
+    patientAppointments.forEach((appointment) => {
+      this.cancelAppointment(identity, {
+        reasonId: 1,
+        keepAvailabiltySlot: true,
+        appointmentId: appointment.id,
+        reasonText: 'Scheduled new appointment',
+        provisionalDate: appointment.provisionalDate.toISOString(),
+      });
+    });
   }
 
   async createAppointmentAfterVisitFlow(identity: IIdentity, dto: CreateAppointmentDto, transaction?: Transaction) {
@@ -1125,27 +1234,27 @@ export class AppointmentsService {
       AppointmentStatusEnum.WAIT_LIST,
     );
     const sqlQuery = `
-      SELECT 
-        A.id,
-        A.staff_id AS staffId,
-        A.clinic_id AS clinicId,
-        A.patient_id AS patientId,
-        A.start_date AS startDate,
-        A.appointment_status_id AS appointmentStatusId,
-        COUNT(*) count
-      FROM Appointments A, Appointments B
-      WHERE (A.start_date BETWEEN :startDate AND :endDate)
-      AND A.patient_id = B.patient_id
-      AND A.appointment_status_id = :waitListStatusId
-      GROUP BY
-        id,
-        staffId,
-        clinicId,
-        patientId,
-        startDate,
-        appointmentStatusId
-      HAVING
-        count = 1
+        SELECT A.id,
+               A.staff_id              AS staffId,
+               A.clinic_id             AS clinicId,
+               A.patient_id            AS patientId,
+               A.start_date            AS startDate,
+               A.appointment_status_id AS appointmentStatusId,
+               COUNT(*) count
+        FROM Appointments A, Appointments B
+        WHERE (A.start_date BETWEEN :startDate
+          AND :endDate)
+          AND A.patient_id = B.patient_id
+          AND A.appointment_status_id = :waitListStatusId
+        GROUP BY
+            id,
+            staffId,
+            clinicId,
+            patientId,
+            startDate,
+            appointmentStatusId
+        HAVING
+            count = 1
     `;
     try {
       return this.appointmentsRepository.sequelize.query<AppointmentsModel>(sqlQuery, {

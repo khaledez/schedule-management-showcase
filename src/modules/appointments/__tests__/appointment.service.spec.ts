@@ -104,7 +104,7 @@ describe('Appointment service', () => {
         await apptService.createAppointment(identity, apptAttributes, true);
       } catch (err) {
         expect(err.message).toMatch(
-          "You didn't provide availbilityId you must provide: startDate, durationMinutes and appointmentTypeId",
+          "You didn't provide availabilityId you must provide: startDate, durationMinutes and appointmentTypeId",
         );
       }
       done();
@@ -116,7 +116,7 @@ describe('Appointment service', () => {
         await apptService.createAppointment(identity, apptAttributes, true);
       } catch (err) {
         expect(err.message).toMatch(
-          "You didn't provide availbilityId you must provide: startDate, durationMinutes and appointmentTypeId",
+          "You didn't provide availabilityId you must provide: startDate, durationMinutes and appointmentTypeId",
         );
       }
       done();
