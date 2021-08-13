@@ -413,6 +413,7 @@ export class AvailabilityService {
   toCalendarEntry(availability: AvailabilityModelAttributes): CalendarEntry {
     return {
       __typename: 'CalendarAvailability',
+      ...availability,
       id: availability.id,
       clinicId: availability.clinicId,
       staffId: availability.staffId,
