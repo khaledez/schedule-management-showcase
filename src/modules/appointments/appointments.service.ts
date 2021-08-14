@@ -143,7 +143,7 @@ export class AppointmentsService {
           clinicId: identity.clinicId,
           deletedBy: null,
         },
-        order: [[AppointmentsService.DATE_COLUMN, Order.ASC]],
+        order: [[AppointmentsService.DATE_COLUMN, Order.DESC]],
         limit,
         offset,
       };
