@@ -8,6 +8,7 @@ import {
   TransactionParam,
 } from '@dashps/monmedx-common';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -194,7 +195,13 @@ export class AppointmentsController {
   async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
     const appt = await this.appointmentsService.findOne(cancelDto.appointmentId);
 
-    await this.appointmentsService.cancelAppointments(identity, [cancelDto]);
+    const cancelResult = await this.appointmentsService.cancelAppointments(identity, [cancelDto]);
+    if (cancelResult && cancelResult[0].status === 'FAIL') {
+      throw new BadRequestException({
+        message: cancelResult[0].error,
+        fields: ['appointmentId'],
+      });
+    }
     await this.appointmentsService.createAppointment(
       identity,
       {

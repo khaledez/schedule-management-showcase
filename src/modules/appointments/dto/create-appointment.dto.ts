@@ -44,4 +44,7 @@ export class CreateAppointmentDto {
   @IsNumber()
   @Type(() => Number)
   durationMinutes?: number;
+
+  @IsOptional()
+  complaintsNotes?: string;
 }

@@ -441,6 +441,7 @@ export class AppointmentsService {
           upcomingAppointment: true,
           provisionalDate: upcomingAppointment?.startDate || availabilityModel.startDate,
           previousAppointmentId: upcomingAppointment?.id,
+          complaintsNotes: dto.complaintsNotes,
         },
         { transaction },
       );
