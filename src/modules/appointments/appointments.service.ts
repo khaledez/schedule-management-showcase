@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { FilterDateInputDto, IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
+import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
   forwardRef,
@@ -10,8 +11,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
+  AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
   MIN_TO_MILLI_SECONDS,
@@ -43,9 +45,7 @@ import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
-import { sequelizeFilterMapper } from './utils/sequelize-filter.mapper';
-import { getQueryGenericSortMapper, sequelizeSortMapper } from './utils/sequelize-sort.mapper';
-import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
+import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -73,6 +73,8 @@ export class AppointmentsService {
   constructor(
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
+    @Inject(AVAILABILITY_REPOSITORY)
+    private readonly availabilityRepository: typeof AvailabilityModel,
     private readonly lookupsService: LookupsService,
     @Inject(forwardRef(() => AvailabilityService))
     private readonly availabilityService: AvailabilityService,
@@ -454,8 +456,12 @@ export class AppointmentsService {
   }
 
   async cancelAllAppointments(identity, patientId, transaction) {
-    const statusCanceledId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
-    const statusCompleteId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE);
+    const [statusCanceledId, statusCompleteId, scheduleReasonId] = await Promise.all([
+      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
+      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE),
+      this.lookupsService.getCancelRescheduleReasonByCode('RELEASE'), // TODO add a RESCHEDULE code in the lookup table
+    ]);
+
     const patientAppointments = await this.appointmentsRepository.findAll({
       where: {
         patientId: {
@@ -471,15 +477,16 @@ export class AppointmentsService {
       },
       transaction,
     });
-    patientAppointments.forEach((appointment) => {
-      this.cancelAppointment(identity, {
-        reasonId: 1,
-        keepAvailabiltySlot: true,
+
+    const appointmentsToCancel = patientAppointments.map(
+      (appointment): CancelAppointmentDto => ({
         appointmentId: appointment.id,
-        reasonText: 'Scheduled new appointment',
-        provisionalDate: appointment.provisionalDate.toISOString(),
-      });
-    });
+        keepAvailabiltySlot: true,
+        reasonText: 'Scheduled a new appointment',
+        reasonId: scheduleReasonId,
+      }),
+    );
+    await this.cancelAppointments(identity, appointmentsToCancel, transaction);
   }
 
   async createAppointmentAfterVisitFlow(identity: IIdentity, dto: CreateAppointmentDto, transaction?: Transaction) {
@@ -642,7 +649,7 @@ export class AppointmentsService {
     return this.lookupsService.getProvisionalAppointmentStatusId(identity);
   }
 
-  async findOne(id: number): Promise<any> {
+  async findOne(id: number): Promise<AppointmentsModelAttributes> {
     const appointment = await this.appointmentsRepository.unscoped().findByPk(id, {
       include: [
         {
@@ -817,17 +824,16 @@ export class AppointmentsService {
         // 4. cancel appointment and create a new appointment
         const scheduleStatusId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
         const [cancelResult, createResult] = await Promise.all([
-          this.cancelAppointment(
+          this.cancelAppointments(
             identity,
-            {
-              appointmentId: appointment.id,
-              keepAvailabiltySlot: false, // we delete the availability as we've already handled this case above
-              provisionalDate: dto.provisionalDate
-                ? dto.provisionalDate
-                : DateTime.fromJSDate(appointment.provisionalDate).toISODate(),
-              reasonId: dto.rescheduleReason,
-              reasonText: dto.rescheduleText,
-            },
+            [
+              {
+                appointmentId: appointment.id,
+                keepAvailabiltySlot: false, // we delete the availability as we've already handled this case above
+                reasonId: dto.rescheduleReason,
+                reasonText: dto.rescheduleText,
+              },
+            ],
             transaction,
           ),
 
@@ -944,50 +950,111 @@ export class AppointmentsService {
     return cancelActionWithTransaction(transaction);
   }
 
-  cancelAppointment(identity: IIdentity, cancelDto: CancelAppointmentDto, transaction?: Transaction): Promise<void> {
+  /**
+   * Only cancels the given appointment, it doesn't create any new provisional appointments,
+   * make sure to handle it separately
+   * @param identity
+   * @param cancelDto provisionalDate attribute is ignored
+   * @param transaction
+   * @returns
+   */
+  cancelAppointments(
+    identity: IIdentity,
+    cancelDto: CancelAppointmentDto[],
+    transaction?: Transaction,
+  ): Promise<BatchCancelResult[]> {
     const procedureInTx = async (transaction) => {
       // 1. validate input
-      await this.lookupsService.validateAppointmentCancelRescheduleReason(identity, [cancelDto.reasonId], transaction);
+      await this.lookupsService.validateAppointmentCancelRescheduleReason(
+        identity,
+        cancelDto.map((d) => d.reasonId),
+        transaction,
+      );
 
-      const appointment = await this.appointmentsRepository.unscoped().findOne({
-        where: { id: cancelDto.appointmentId, clinicId: identity.clinicId },
+      const appointments = await this.appointmentsRepository.unscoped().findAll({
+        where: { id: { [Op.in]: cancelDto.map((d) => d.appointmentId) }, clinicId: identity.clinicId },
         include: AvailabilityModel,
         transaction,
       });
 
-      if (!appointment) {
-        throw new BadRequestException({
-          fields: ['appointmentId'],
-          message: `Appointment with id = ${cancelDto.appointmentId} not found`,
-          error: 'NOT_FOUND',
+      // match returned appointments with dtos and create result tuple
+      const actionTuples = cancelDto.map((dto): {
+        cancelReq: CancelAppointmentDto;
+        appointment: AppointmentsModel;
+        result: BatchCancelResult;
+      } => {
+        const apptsMatching = appointments.filter((a) => a.id === dto.appointmentId);
+        const appointment = apptsMatching ? apptsMatching[0] : null;
+
+        const result: BatchCancelResult = appointment
+          ? { appointmentId: dto.appointmentId, status: 'OK' }
+          : {
+              appointmentId: dto.appointmentId,
+              status: 'FAIL',
+              error: `Appointment with id = ${dto.appointmentId} not found`,
+            };
+
+        return { cancelReq: dto, appointment, result };
+      });
+
+      // 2. release availability if asked
+      const availabilitiesToUpdate = actionTuples
+        .filter((t) => t.appointment?.availability)
+        .map(({ cancelReq, appointment }) => {
+          if (cancelReq.keepAvailabiltySlot && appointment.availability) {
+            appointment.availability.updatedAt = new Date();
+            appointment.availability.updatedBy = identity.userId;
+            appointment.availability.isOccupied = false;
+            return appointment.availability.get({ plain: true });
+          } else if (appointment.availability) {
+            appointment.availability.deletedAt = new Date();
+            appointment.availability.deletedBy = identity.userId;
+            return appointment.availability.get({ plain: true });
+          }
+          return null;
+        })
+        .filter((av) => av !== null);
+
+      if (availabilitiesToUpdate) {
+        await this.availabilityRepository.bulkCreate(availabilitiesToUpdate, {
+          transaction,
+          updateOnDuplicate: ['updatedAt', 'updatedBy', 'isOccupied', 'deletedAt', 'deletedBy'],
+          validate: true,
         });
       }
 
-      // 2. release availability if asked
-      if (cancelDto.keepAvailabiltySlot && appointment.availability) {
-        appointment.availability.updatedAt = new Date();
-        appointment.availability.updatedBy = identity.userId;
-        appointment.availability.isOccupied = false;
-        await appointment.availability.save({ transaction });
-      } else if (appointment.availability) {
-        appointment.availability.deletedAt = new Date();
-        appointment.availability.deletedBy = identity.userId;
-        await appointment.availability.save({ transaction });
+      // 3. cancel appointments
+      const statusCanceledId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
+      const appointmentsToUpdate = actionTuples
+        .filter((t) => t.appointment)
+        .map(({ cancelReq, appointment }) => {
+          appointment.appointmentStatusId = statusCanceledId;
+          appointment.cancelRescheduleReasonId = cancelReq.reasonId;
+          appointment.cancelRescheduleText = cancelReq.reasonText;
+          appointment.upcomingAppointment = false;
+          appointment.updatedAt = new Date();
+          appointment.updatedBy = identity.userId;
+          appointment.canceledAt = new Date();
+          appointment.canceledBy = identity.userId;
+          return appointment.get({ plain: true });
+        });
+      if (appointmentsToUpdate) {
+        await this.appointmentsRepository.bulkCreate(appointmentsToUpdate, {
+          transaction,
+          updateOnDuplicate: [
+            'appointmentStatusId',
+            'cancelRescheduleReasonId',
+            'cancelRescheduleText',
+            'upcomingAppointment',
+            'updatedAt',
+            'updatedBy',
+            'canceledAt',
+            'canceledBy',
+          ],
+        });
       }
 
-      // 3. cancel appointment
-      const statusCanceledId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
-      appointment.appointmentStatusId = statusCanceledId;
-      appointment.cancelRescheduleReasonId = cancelDto.reasonId;
-      appointment.cancelRescheduleText = cancelDto.reasonText;
-      appointment.provisionalDate = DateTime.fromISO(cancelDto.provisionalDate).toJSDate();
-      appointment.upcomingAppointment = false;
-      appointment.updatedAt = new Date();
-      appointment.updatedBy = identity.userId;
-      appointment.canceledAt = new Date();
-      appointment.canceledBy = identity.userId;
-
-      await appointment.save({ transaction });
+      return actionTuples.map(({ result }) => result);
     };
 
     if (transaction) {
@@ -1098,7 +1165,7 @@ export class AppointmentsService {
   }
 
   // TODO: delete this after ability to change status
-  async patchAppointment(id: number, data: any, transaction?: Transaction): Promise<AppointmentsModel> {
+  async patchAppointment(id: number, data: any, transaction?: Transaction): Promise<AppointmentsModelAttributes> {
     const options: UpdateOptions = {
       where: {
         id,
@@ -1423,3 +1490,5 @@ function mapCreateGlobalDtoToAttributes(
     upcomingAppointment: true,
   };
 }
+
+type BatchCancelResult = { appointmentId: number; status: 'OK' | 'FAIL'; error?: string };

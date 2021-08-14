@@ -4,8 +4,6 @@ import {
   PaginationInterceptor,
   PagingInfo,
   PagingInfoInterface,
-  PermissionCode,
-  Permissions,
   TransactionInterceptor,
   TransactionParam,
 } from '@dashps/monmedx-common';
@@ -194,7 +192,21 @@ export class AppointmentsController {
   @Post('cancel')
   // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
-    await this.appointmentsService.cancelAppointment(identity, cancelDto);
+    const appt = await this.appointmentsService.findOne(cancelDto.appointmentId);
+
+    await this.appointmentsService.cancelAppointments(identity, [cancelDto]);
+    await this.appointmentsService.createAppointment(
+      identity,
+      {
+        patientId: appt.patientId,
+        staffId: appt.staffId,
+        appointmentTypeId: appt.appointmentTypeId,
+        startDate: cancelDto.provisionalDate,
+        durationMinutes: 0,
+        appointmentVisitModeId: appt.appointmentVisitModeId,
+      },
+      true,
+    );
   }
 
   /**

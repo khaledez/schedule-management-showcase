@@ -8,7 +8,7 @@ export class CancelAppointmentDto {
   appointmentId: number;
 
   @IsISO8601()
-  provisionalDate: string;
+  provisionalDate?: string;
 
   @IsString()
   reasonText: string;

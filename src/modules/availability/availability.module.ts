@@ -11,6 +11,6 @@ import { AvailabilityService } from './availability.service';
   imports: [DatabaseModule, EventsModule, LookupsModule, forwardRef(() => AppointmentsModule)],
   controllers: [AvailabilityController],
   providers: [AvailabilityService, ...availabilityProviders],
-  exports: [AvailabilityService],
+  exports: [AvailabilityService, ...availabilityProviders],
 })
 export class AvailabilityModule {}

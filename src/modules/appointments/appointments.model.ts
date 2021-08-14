@@ -1,3 +1,4 @@
+import { LookupWithCodeAttributes } from 'modules/lookups/models';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { Op } from 'sequelize';
 import { BelongsTo, Column, DataType, ForeignKey, Scopes, Table } from 'sequelize-typescript';
@@ -29,6 +30,10 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
   complaintsNotes?: string;
   visitId?: number;
   visitSummaryDocumentId?: string;
+
+  primaryAction?: LookupWithCodeAttributes;
+  secondaryActions?: LookupWithCodeAttributes[];
+  provisionalAppointment?: boolean;
 }
 
 // note that the id will auto added by sequelize.
