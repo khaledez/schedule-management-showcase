@@ -13,7 +13,7 @@ export class CreateAvailabilityDto
 
   @IsString()
   @IsISO8601({ strict: true })
-  @IsFutureDateTime()
+  // @IsFutureDateTime()
   startDate: string;
 
   @IsNumber()

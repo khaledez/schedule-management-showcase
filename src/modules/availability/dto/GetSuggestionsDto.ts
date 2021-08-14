@@ -23,7 +23,7 @@ export class GetSuggestionsDto {
   @IsOptional()
   @IsString()
   @IsISO8601({ strict: true })
-  @IsFutureDateTime()
+  // @IsFutureDateTime()
   referenceDate?: string;
 
   @IsOptional()

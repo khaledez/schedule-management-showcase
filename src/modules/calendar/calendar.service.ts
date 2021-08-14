@@ -94,25 +94,18 @@ export class CalendarService {
         }
         return true;
       })
+      .filter((model) => {
+        if (model.appointment && queryType.isRequired('APPOINTMENT')) {
+          return true;
+        }
+        return queryType.isRequired('AVAILABILITY');
+      })
       .map((model) => {
-        if (queryType.isRequired('AVAILABILITY')) {
-          return availabilityAsCalendarEvent(model);
-        }
-        if (queryType.isRequired('APPOINTMENT')) {
-          return availabilityToAppointment(model);
-        }
-        if (queryType.isRequired('EVENT')) {
-          return availabilityToEvent(model);
-        }
-
         if (model.appointment) {
           return availabilityToAppointment(model);
-        } else if (model.event) {
-          return availabilityToEvent(model);
         }
         return availabilityAsCalendarEvent(model);
       });
-
     return { entries };
   }
 }

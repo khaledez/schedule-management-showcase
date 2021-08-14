@@ -16,7 +16,7 @@ export class UpdateAvailabilityDto
 
   @IsString()
   @IsISO8601({ strict: true })
-  @IsFutureDateTime()
+  // @IsFutureDateTime()
   startDate: string;
 
   @IsNumber()
