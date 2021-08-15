@@ -1,11 +1,8 @@
-import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Reflector } from '@nestjs/core';
 @Injectable()
 export class AppointmentStatusActions implements NestInterceptor {
-  constructor(private eventEmitter: EventEmitter2, private reflector: Reflector) {}
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map((res) => {
