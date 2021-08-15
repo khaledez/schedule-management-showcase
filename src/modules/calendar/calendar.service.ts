@@ -38,6 +38,7 @@ export class CalendarService {
     availabilities
       .map((availability) => availability.get({ plain: true }))
       .forEach((availability) => entries.push(availabilityAsCalendarEvent(availability)));
+
     return { entries };
   }
 
@@ -235,7 +236,7 @@ function appointmentAsCalendarEvent(model: AppointmentsModelAttributes): Calenda
   return {
     ...model,
     entryType: CalendarType.APPOINTMENT,
-    __typename: 'CalendarAvailability',
+    __typename: 'CalendarAppointment',
   } as CalendarAvailability;
 }
 
@@ -243,7 +244,7 @@ function eventAsCalendarEvent(model: EventModelAttributes): CalendarAvailability
   return {
     ...model,
     entryType: CalendarType.EVENT,
-    __typename: 'CalendarAvailability',
+    __typename: 'CalendarEvent',
   } as CalendarAvailability;
 }
 
