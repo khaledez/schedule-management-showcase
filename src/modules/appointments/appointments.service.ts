@@ -1100,31 +1100,35 @@ export class AppointmentsService {
           ),
         ]);
 
-        // 3. update database
-        const attributes = mapUpdateDtoToAttributes(identity, appointment, updateDto);
-
-        this.logger.debug({ method: 'appointmentService/updateAppointment', updateDto, attributes });
-        const result = await this.appointmentsRepository.update(attributes, {
-          where: {
-            id: appointmentId,
-          },
-          transaction,
-        });
-
-        this.logger.debug({ method: 'appointmentService/updateAppointment', result });
-
-        const updatedAppt = await this.appointmentsRepository.findByPk(appointmentId, { transaction });
-
-        // 4. publish event if status changed to check in
-        this.publishEventIfStatusMatches(
-          identity,
-          AppointmentStatusEnum.CHECK_IN,
-          updatedAppt,
-          updateDto,
-          APPOINTMENT_CHECKIN_STATUS_EVENT,
-        );
-
-        return updatedAppt;
+        try {
+          // 3. update database
+          const attributes = mapUpdateDtoToAttributes(identity, appointment, updateDto);
+          this.logger.debug({ method: 'appointmentService/updateAppointment', updateDto, attributes });
+          await this.appointmentsRepository.update(attributes, {
+            where: {
+              id: appointmentId,
+            },
+            transaction,
+            returning: true,
+          });
+          const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
+          this.logger.debug({ method: 'appointmentService/updateAppointment', updatedAppt });
+          // 4. publish event if status changed to check in
+          this.publishEventIfStatusMatches(
+            identity,
+            AppointmentStatusEnum.CHECK_IN,
+            updatedAppt,
+            updateDto,
+            APPOINTMENT_CHECKIN_STATUS_EVENT,
+          );
+          return updatedAppt;
+        } catch (error) {
+          this.logger.error({ method: 'appointmentService/updateAppointment', updateDto, message: error.message });
+          throw new InternalServerErrorException({
+            code: ErrorCodes.INTERNAL_SERVER_ERROR,
+            message: error.message,
+          });
+        }
       },
     );
   }
@@ -1457,18 +1461,21 @@ function mapUpdateDtoToAttributes(
   appointment: AppointmentsModel,
   updateDto: UpdateAppointmentDto,
 ): AppointmentsModelAttributes {
-  const startDate = DateTime.fromISO(updateDto.startDate);
+  const startDate = updateDto.startDate ? DateTime.fromISO(updateDto.startDate).toJSDate() : appointment.startDate;
+  const durationMinutes = updateDto.durationMinutes ? updateDto.durationMinutes : appointment.durationMinutes;
   return {
     id: appointment.id,
     patientId: appointment.patientId,
-    startDate: startDate.toJSDate(),
-    endDate: startDate.plus({ minutes: updateDto.durationMinutes }).toJSDate(),
-    durationMinutes: updateDto.durationMinutes,
+    startDate: startDate,
+    endDate: new Date(startDate.getTime() + durationMinutes * MIN_TO_MILLI_SECONDS),
+    durationMinutes: durationMinutes,
     staffId: appointment.staffId,
     provisionalDate: appointment.provisionalDate,
     appointmentVisitModeId: updateDto.appointmentVisitModeId,
     complaintsNotes: updateDto.complaintsNotes,
     updatedBy: identity.userId,
+    appointmentStatusId: updateDto.appointmentStatusId,
+    appointmentTypeId: updateDto.appointmentTypeId,
   };
 }
 
