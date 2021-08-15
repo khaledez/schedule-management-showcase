@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -32,7 +32,7 @@ import { AvailabilityModel } from 'modules/availability/models/availability.mode
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import moment from 'moment';
-import { CreateOptions, FindOptions, Op, QueryTypes, Transaction, UpdateOptions } from 'sequelize';
+import { CreateOptions, FindOptions, Op, QueryTypes, Transaction, UpdateOptions, WhereOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
@@ -127,12 +127,15 @@ export class AppointmentsService {
     const appointmentStatusIdWhereClause = this.getAppointmentStatusIdWhereClause(
       queryParams.filter?.appointmentStatusId || { or: null },
     );
-
+    const patientInfoInclude = this.buildAppointmentIncludePatientOption(queryParams);
     try {
       const options: FindOptions = {
         include: [
           {
             all: true,
+          },
+          {
+            ...patientInfoInclude,
           },
         ],
         where: {
@@ -163,6 +166,36 @@ export class AppointmentsService {
         error: error.message,
       });
     }
+  }
+
+  buildAppointmentIncludePatientOption(queryParams: QueryParamsDto) {
+    let where: WhereOptions<PatientInfoModel> = {};
+
+    if (queryParams?.filter?.patientFullName?.contains) {
+      where = {
+        ...where,
+        fullName: { [Op.like]: `%${queryParams.filter.patientFullName.contains}%` },
+      };
+    }
+
+    if (queryParams?.filter?.patientHealthPlanNumber?.contains) {
+      where = {
+        ...where,
+        primaryHealthPlanNumber: { [Op.like]: `%${queryParams.filter.patientHealthPlanNumber.contains}%` },
+      };
+    }
+
+    if (queryParams?.filter?.dob?.eq) {
+      where = {
+        ...where,
+        dob: { [Op.eq]: queryParams.filter.dob.eq },
+      };
+    }
+    return {
+      model: PatientInfoModel,
+      as: 'patient',
+      where: where,
+    };
   }
 
   // TODO: refactor filters mappers to a proper util class
