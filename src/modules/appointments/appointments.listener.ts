@@ -45,20 +45,20 @@ export class AppointmentsListener {
 
       const identity: IIdentity = { clinicId, userId, cognitoId: null, userInfo: null, userLang: null };
 
-      await this.appointmentsService.completeAppointment(
-        identity,
-        visitAppointmentId,
-        visitId,
-        documentId,
-        transaction,
-      );
-
       // cancel all patient future appointments including provisional
       await this.appointmentsService.cancelPatientInCompleteAppointments(
         identity,
         patientId,
         CancelRescheduleReasonCode.RELEASE,
         [visitAppointmentId],
+        transaction,
+      );
+
+      await this.appointmentsService.completeAppointment(
+        identity,
+        visitAppointmentId,
+        visitId,
+        documentId,
         transaction,
       );
 
