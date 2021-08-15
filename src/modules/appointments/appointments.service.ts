@@ -153,14 +153,13 @@ export class AppointmentsService {
       const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
 
       const filterAppointments = appointments.filter((appointment) => {
-        if (!queryParams?.filter?.time.between) {
+        if (!queryParams?.filter?.time?.between) {
           return true;
         }
         const start = queryParams.filter.time.between[0];
         const end = queryParams.filter.time.between[1];
         return isInTimeGroup(appointment.startDate, { start, end });
       });
-
       const searchResult = await this.buildAppointmentConnectionResponse(filterAppointments);
 
       return [searchResult, filterAppointments.length];
