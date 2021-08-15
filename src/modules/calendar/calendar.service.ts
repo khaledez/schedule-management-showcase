@@ -10,6 +10,9 @@ import { AvailabilityModel } from '../availability/models/availability.model';
 import { EventModel, EventModelAttributes } from '../events/models';
 import { CalendarAvailability, CalendarSearchInput, CalendarSearchResult } from './calendar.interface';
 import { CalendarType } from 'common/enums';
+import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
+import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
+import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
 
 @Injectable()
 export class CalendarService {
@@ -74,6 +77,7 @@ export class CalendarService {
 
     return AppointmentsModel.findAll({
       where: appointmentWhereClauses,
+      include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
     });
   }
 
@@ -135,6 +139,7 @@ export class CalendarService {
 
     return AvailabilityModel.findAll({
       where: availabilityWhereClauses,
+      include: [AppointmentTypesLookupsModel],
     });
   }
 }
