@@ -3,21 +3,13 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
-import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
-import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
-import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
-import { Includeable, Op, WhereAttributeHash, WhereOptions } from 'sequelize';
-import { BAD_REQUEST } from '../../common/constants';
-import { AppointmentsModel } from '../appointments/appointments.model';
+import { Op, WhereAttributeHash, WhereOptions } from 'sequelize';
+import { BAD_REQUEST } from 'common/constants';
+import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
-import { EventModel } from '../events/models';
-import {
-  CalendarAppointment,
-  CalendarAvailability,
-  CalendarEvent,
-  CalendarSearchInput,
-  CalendarSearchResult,
-} from './calendar.interface';
+import { EventModel, EventModelAttributes } from '../events/models';
+import { CalendarAvailability, CalendarSearchInput, CalendarSearchResult } from './calendar.interface';
+import { CalendarType } from 'common/enums';
 
 @Injectable()
 export class CalendarService {
@@ -34,79 +26,114 @@ export class CalendarService {
 
     const queryType = new EntryType(query.entryType);
 
-    let availabilityConditions: WhereOptions<AvailabilityModel> = {
+    const appointments = await this.searchAppointments(identity, query, queryType);
+    const events = await this.searchEvents(identity, query, queryType);
+    const availabilities = await this.searchAvailabilities(identity, query, queryType);
+    await Promise.all([appointments, events, availabilities]);
+    const entries = [];
+    appointments
+      .map((appt) => appt.get({ plain: true }))
+      .forEach((appt) => entries.push(appointmentAsCalendarEvent(appt)));
+    events.map((event) => event.get({ plain: true })).forEach((event) => entries.push(eventAsCalendarEvent(event)));
+    availabilities
+      .map((availability) => availability.get({ plain: true }))
+      .forEach((availability) => entries.push(availabilityAsCalendarEvent(availability)));
+    return { entries };
+  }
+
+  async searchAppointments(
+    identity: IIdentity,
+    query: CalendarSearchInput,
+    queryType: EntryType,
+  ): Promise<AppointmentsModel[]> {
+    if (!queryType.hasType(CalendarType.APPOINTMENT)) {
+      return [];
+    }
+    const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
+    let appointmentWhereClauses: WhereOptions<AppointmentsModel> = {
       clinicId: { [Op.eq]: identity.clinicId },
+      appointmentStatusId: { [Op.ne]: provisionalStatusId },
       deletedBy: { [Op.is]: null },
     };
 
     if (query.staffId) {
-      availabilityConditions = {
-        ...availabilityConditions,
+      appointmentWhereClauses = {
+        ...appointmentWhereClauses,
         ...processIdCondition('staffId', 'staffId', query.staffId),
       };
     }
 
     if (query.dateRange) {
-      availabilityConditions = {
-        ...availabilityConditions,
+      appointmentWhereClauses = {
+        ...appointmentWhereClauses,
+        ...processDateCondition('startDate', 'dateRange', query.dateRange),
+      };
+    }
+
+    return AppointmentsModel.findAll({
+      where: appointmentWhereClauses,
+    });
+  }
+
+  searchEvents(identity: IIdentity, query: CalendarSearchInput, queryType: EntryType): Promise<EventModel[]> {
+    if (!queryType.hasType(CalendarType.EVENT)) {
+      return Promise.resolve([]);
+    }
+    let eventWhereClauses: WhereOptions<AppointmentsModel> = {
+      clinicId: { [Op.eq]: identity.clinicId },
+      deletedBy: { [Op.is]: null },
+    };
+
+    if (query.staffId) {
+      eventWhereClauses = {
+        ...eventWhereClauses,
+        ...processIdCondition('staffId', 'staffId', query.staffId),
+      };
+    }
+
+    if (query.dateRange) {
+      eventWhereClauses = {
+        ...eventWhereClauses,
         ...processDateCondition('date', 'dateRange', query.dateRange),
       };
     }
 
-    const toInclude: Includeable[] = [];
-    if (queryType.hasType('EVENT')) {
-      toInclude.push({
-        model: EventModel,
-        required: queryType.isRequired('EVENT'),
-      });
+    return EventModel.findAll({
+      where: eventWhereClauses,
+    });
+  }
+
+  searchAvailabilities(
+    identity: IIdentity,
+    query: CalendarSearchInput,
+    queryType: EntryType,
+  ): Promise<AvailabilityModel[]> {
+    if (!queryType.hasType(CalendarType.AVAILABILITY)) {
+      return Promise.resolve([]);
+    }
+    let availabilityWhereClauses: WhereOptions<AvailabilityModelAttributes> = {
+      clinicId: { [Op.eq]: identity.clinicId },
+      isOccupied: { [Op.eq]: false },
+      deletedBy: { [Op.is]: null },
+    };
+
+    if (query.staffId) {
+      availabilityWhereClauses = {
+        ...availabilityWhereClauses,
+        ...processIdCondition('staffId', 'staffId', query.staffId),
+      };
     }
 
-    if (queryType.hasType('APPOINTMENT')) {
-      toInclude.push({
-        model: AppointmentsModel,
-        required: queryType.isRequired('APPOINTMENT'),
-        include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
-      });
+    if (query.dateRange) {
+      availabilityWhereClauses = {
+        ...availabilityWhereClauses,
+        ...processDateCondition('date', 'dateRange', query.dateRange),
+      };
     }
 
-    if (queryType.hasType('AVAILABILITY')) {
-      toInclude.push(AppointmentTypesLookupsModel);
-      availabilityConditions = { ...availabilityConditions, ...availabilityFilters(query) };
-      if (query.availabilityFilter?.withAppointment && !queryType.hasType('APPOINTMENT')) {
-        toInclude.push({
-          model: AppointmentsModel,
-          required: true,
-          include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
-        });
-      }
-    }
-
-    // execute now
-    const result = await AvailabilityModel.findAll({ where: availabilityConditions, include: toInclude });
-
-    const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
-    const entries = result
-      .map((el) => el.get({ plain: true }))
-      .filter((model) => {
-        // filter out provisional appointments.. I couldn't find a type-safe way to do it in the query
-        if (model.appointment) {
-          return model.appointment.appointmentStatusId !== provisionalStatusId;
-        }
-        return true;
-      })
-      .filter((model) => {
-        if (model.appointment && queryType.isRequired('APPOINTMENT')) {
-          return true;
-        }
-        return queryType.isRequired('AVAILABILITY');
-      })
-      .map((model) => {
-        if (model.appointment) {
-          return availabilityToAppointment(model);
-        }
-        return availabilityAsCalendarEvent(model);
-      });
-    return { entries };
+    return AvailabilityModel.findAll({
+      where: availabilityWhereClauses,
+    });
   }
 }
 
@@ -196,59 +223,28 @@ function processIdCondition(
   return {};
 }
 
-function availabilityFilters(query: CalendarSearchInput): WhereOptions<AvailabilityModel> {
-  let availConditions: WhereOptions<AvailabilityModel> = {
-    deletedBy: {
-      [Op.is]: null,
-    },
-  };
-
-  if (query.availabilityFilter?.appointmentTypeId) {
-    availConditions = {
-      ...processIdCondition(
-        'appointmentTypeId',
-        'availabilityFilter.appointmentTypeId',
-        query.availabilityFilter.appointmentTypeId,
-      ),
-      ...availConditions,
-    };
-  }
-
-  return availConditions;
-}
-
 function availabilityAsCalendarEvent(model: AvailabilityModelAttributes): CalendarAvailability {
   return {
     ...model,
-    entryType: 'AVAILABILITY',
+    entryType: CalendarType.AVAILABILITY,
     __typename: 'CalendarAvailability',
   } as CalendarAvailability;
 }
 
-function availabilityToAppointment(model: AvailabilityModelAttributes): CalendarAppointment {
-  const appt = model.appointment;
+function appointmentAsCalendarEvent(model: AppointmentsModelAttributes): CalendarAvailability {
   return {
-    entryType: 'APPOINTMENT',
-    __typename: 'CalendarAppointment',
-    startDate: appt.startDate,
-    provisionalDate: appt.provisionalDate,
-    canceledAt: appt.canceledAt,
-    canceledBy: appt.canceledBy,
-    patientId: appt.patientId,
-    endDate: appt.endDate,
-    staffId: appt.staffId,
-    availabilityId: appt.availabilityId,
-    ...model.appointment,
-  } as CalendarAppointment;
+    ...model,
+    entryType: CalendarType.APPOINTMENT,
+    __typename: 'CalendarAvailability',
+  } as CalendarAvailability;
 }
 
-function availabilityToEvent(model: AvailabilityModelAttributes): CalendarEvent {
+function eventAsCalendarEvent(model: EventModelAttributes): CalendarAvailability {
   return {
-    ...model.event,
-    entryType: 'EVENT',
-    __typename: 'CalendarEvent',
-    startDate: model.startDate,
-  } as CalendarEvent;
+    ...model,
+    entryType: CalendarType.EVENT,
+    __typename: 'CalendarAvailability',
+  } as CalendarAvailability;
 }
 
 class EntryType {
@@ -267,9 +263,5 @@ class EntryType {
 
   hasType(entryName: string): boolean {
     return this.all || this.entryTypes.includes(entryName);
-  }
-
-  isRequired(entryName: string): boolean {
-    return this.entryTypes.includes(entryName);
   }
 }
