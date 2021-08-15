@@ -970,6 +970,8 @@ export class AppointmentsService {
         {
           appointmentStatusId: canceledStatusId,
           cancelRescheduleReasonId: cancelReasonId,
+          canceledAt: new Date(),
+          canceledBy: identity.userId,
         },
         {
           where: {
@@ -978,8 +980,6 @@ export class AppointmentsService {
             appointmentStatusId: {
               [Op.ne]: completeStatusId,
             },
-            canceledAt: new Date(),
-            canceledBy: identity.userId,
             id: {
               [Op.notIn]: excludeAppointmentIds,
             },
