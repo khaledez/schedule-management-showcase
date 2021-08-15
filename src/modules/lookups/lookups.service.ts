@@ -278,7 +278,7 @@ export class LookupsService {
 
   getCancelRescheduleReasonByCode(code: string, transaction?: Transaction): Promise<number> {
     return this.appointmentCancelRescheduleReasonRepo
-      .findOne({ where: { code: code.toString() }, attributes: ['id'], transaction })
+      .findOne({ where: { code: code }, attributes: ['id'], transaction })
       .then((model) => model?.id);
   }
 

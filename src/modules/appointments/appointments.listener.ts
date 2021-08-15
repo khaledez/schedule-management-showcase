@@ -84,13 +84,13 @@ export class AppointmentsListener {
         transaction,
       );
 
-      transaction.commit();
+      await transaction.commit();
     } catch (error) {
       this.logger.error({
         function: 'handleCompleteVisitEvent',
         error,
       });
-      transaction.rollback();
+      await transaction.rollback();
     }
   }
 }

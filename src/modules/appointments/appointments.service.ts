@@ -937,7 +937,10 @@ export class AppointmentsService {
 
   /**
    * cancel all patient InComplete appointments including provisional
+   * @param identity
    * @param patientId
+   * @param cancelReason
+   * @param excludeAppointmentIds
    * @param transaction
    */
   cancelPatientInCompleteAppointments(
