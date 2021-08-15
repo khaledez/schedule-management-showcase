@@ -32,5 +32,8 @@ export function extractDayTimeInSeconds(date: Date) {
 
 export function transformDayTimeToSeconds(time: string): number {
   const actualTime: string[] = time.split(':');
+  if (actualTime.length === 2) {
+    return +actualTime[0] * HOUR_TO_SECONDS + +actualTime[1];
+  }
   return +actualTime[0] * HOUR_TO_SECONDS + +actualTime[1] * MIN_TO_SECONDS + +actualTime[2];
 }

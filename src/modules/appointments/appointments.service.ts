@@ -21,7 +21,7 @@ import {
   PAGING_OFFSET_DEFAULT,
   SCHEDULE_MGMT_TOPIC,
 } from 'common/constants';
-import { AppointmentStatusEnum, AppointmentVisitModeEnum, ErrorCodes, Order } from 'common/enums';
+import { AppointmentStatusEnum, AppointmentVisitModeEnum, ErrorCodes, isInTimeGroup, Order } from 'common/enums';
 import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
@@ -152,9 +152,18 @@ export class AppointmentsService {
       };
       const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
 
-      const searchResult = await this.buildAppointmentConnectionResponse(appointments);
+      const filterAppointments = appointments.filter((appointment) => {
+        if (!queryParams?.filter?.time.between) {
+          return true;
+        }
+        const start = queryParams.filter.time.between[0];
+        const end = queryParams.filter.time.between[1];
+        return isInTimeGroup(appointment.startDate, { start, end });
+      });
 
-      return [searchResult, count];
+      const searchResult = await this.buildAppointmentConnectionResponse(filterAppointments);
+
+      return [searchResult, filterAppointments.length];
     } catch (error) {
       this.logger.error({
         function: 'service/appt/findall catch error',
