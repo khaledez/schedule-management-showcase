@@ -39,6 +39,7 @@ export class CalendarService {
       .map((availability) => availability.get({ plain: true }))
       .forEach((availability) => entries.push(availabilityAsCalendarEvent(availability)));
 
+    entries.sort((a, b) => a.startDate - b.startDate);
     return { entries };
   }
 
