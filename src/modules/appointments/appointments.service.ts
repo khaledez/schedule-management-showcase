@@ -975,13 +975,20 @@ export class AppointmentsService {
         },
         {
           where: {
-            clinicId: identity.clinicId,
-            patientId,
+            clinicId: {
+              [Op.eq]: identity.clinicId,
+            },
+            patientId: {
+              [Op.eq]: patientId,
+            },
             appointmentStatusId: {
-              [Op.ne]: completeStatusId,
+              [Op.notIn]: [completeStatusId, canceledStatusId],
             },
             id: {
               [Op.notIn]: excludeAppointmentIds,
+            },
+            deletedBy: {
+              [Op.is]: null,
             },
           },
           transaction,
