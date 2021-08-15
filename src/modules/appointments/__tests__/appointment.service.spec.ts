@@ -27,7 +27,8 @@ import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
 
 const identity: IIdentity = {
-  clinicId: Math.floor(Math.random() * 1000),
+  // clinicId: Math.floor(Math.random() * 1000),
+  clinicId: 5000,
   userId: 2,
   cognitoId: null,
   userLang: 'en',
@@ -280,11 +281,38 @@ describe('Appointment service', () => {
     });
   });
 
+  test('#getAppointmentsByPeriod', async () => {
+    //Create two appointments
+    const UnconfirmedStatuses = await Promise.all([
+      lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE),
+      lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM1),
+      lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM2),
+    ]).then((data) => [...data]);
+
+    const randomUnconfirmedStatus = () => UnconfirmedStatuses[Math.floor(Math.random() * UnconfirmedStatuses.length)];
+    await createProvisionalAppointmentWithNonProvisionalAfterXDays(identity, 333, randomUnconfirmedStatus(), 1);
+    await createProvisionalAppointmentWithNonProvisionalAfterXDays(identity, 555, randomUnconfirmedStatus(), 1, 5);
+    await createProvisionalAppointmentWithNonProvisionalAfterXDays(identity, 777, randomUnconfirmedStatus(), 2);
+    await createProvisionalAppointmentWithNonProvisionalAfterXDays(identity, 357, randomUnconfirmedStatus(), 3);
+
+    const res = await apptService.getAppointmentsByPeriods(identity.clinicId, {
+      fromDate: DateTime.now().startOf('day').toJSDate(),
+      toDate: DateTime.now().plus({ months: 1 }).endOf('day').toJSDate(),
+      doctorIds: [20],
+    });
+
+    console.log(res);
+    expect(res).toHaveLength(3);
+    expect(res[0].date).toEqual('2021-08-16');
+    expect(res[0].total).toEqual(2);
+  });
+
   const createProvisionalAppointmentWithNonProvisionalAfterXDays = async (
     identity: IIdentity,
     patientId: number,
     statusId: number,
-    x: number,
+    days: number,
+    hours?: number,
   ) => {
     const waitList = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
     // Attributes
@@ -301,7 +329,7 @@ describe('Appointment service', () => {
     await apptService.createAppointment(identity, apptAttributes, false);
     // Non-Provisional
     apptAttributes.appointmentStatusId = statusId;
-    apptAttributes.startDate = DateTime.now().plus({ days: x }).toISO(); // Tomorrow
+    apptAttributes.startDate = DateTime.now().toUTC().startOf('day').plus({ days, hours }).toISO(); // Tomorrow
     await apptService.createAppointment(identity, apptAttributes, false);
   };
 });
@@ -316,7 +344,7 @@ describe('# Cancel appointment', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
     }).compile();
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
@@ -458,7 +486,7 @@ describe('# reschedule appointment', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
     }).compile();
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);

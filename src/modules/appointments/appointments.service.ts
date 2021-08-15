@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -22,7 +22,6 @@ import {
   SCHEDULE_MGMT_TOPIC,
 } from 'common/constants';
 import { AppointmentStatusEnum, AppointmentVisitModeEnum, ErrorCodes, isInTimeGroup, Order } from 'common/enums';
-import { map } from 'lodash';
 import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
 import { UpComingAppointmentQueryDto } from 'modules/appointments/dto/upcoming-appointment-query.dto';
@@ -31,7 +30,6 @@ import { AvailabilityModelAttributes } from 'modules/availability/models/availab
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
-import moment from 'moment';
 import { CreateOptions, FindOptions, Op, QueryTypes, Transaction, UpdateOptions, WhereOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
@@ -553,7 +551,7 @@ export class AppointmentsService {
       appointmentVisitModeId,
       appointmentStatusId,
     }));
-    return await this.appointmentsRepository.create(
+    return this.appointmentsRepository.create(
       {
         ...dto,
         appointmentTypeId,
@@ -1360,33 +1358,47 @@ export class AppointmentsService {
       },
     };
     if (query.doctorIds && query.doctorIds.length) {
-      where.doctorId = { [Op.in]: query.doctorIds };
+      where.staffId = { [Op.in]: query.doctorIds };
     }
-    const result = await this.appointmentsRepository.scope('active').count({
-      attributes: ['start_date'],
-      group: ['start_date'],
+
+    // Get all appointments
+    const result = await this.appointmentsRepository.findAll({
       include: [
         {
           model: AppointmentStatusLookupsModel,
           as: 'status',
           where: {
             code: {
-              [Op.in]: ['SCHEDULE', 'CONFIRM', 'CHECK_IN', 'READY'],
+              [Op.notIn]: [
+                AppointmentStatusEnum.COMPLETE,
+                AppointmentStatusEnum.CANCELED,
+                AppointmentStatusEnum.WAIT_LIST,
+              ],
             },
           },
-        },
-        {
-          model: PatientInfoModel,
-          as: 'patient',
         },
       ],
       where,
     });
 
-    return map(result, ({ count, date }: { count: number; date: string }) => ({
-      count,
-      date: moment(date).format('YYYY-MM-DD'),
-    }));
+    // Group by date only
+    const groupedResult = result.reduce((rv, cv) => {
+      const date = cv.startDate.toISOString().split('T')[0];
+      (rv[date] = rv[date] || []).push(cv);
+      return rv;
+    }, {});
+
+    // Match appsync requirement
+    const mappedResult = [];
+    for (const [date, arr] of Object.entries<[any]>(groupedResult)) {
+      mappedResult.push({
+        total: arr.length,
+        appointments: arr.map((obj: AppointmentsModel) => obj.toJSON()),
+        date,
+      });
+    }
+
+    return mappedResult;
   }
 
   private async validateAvailabilityId(id: number): Promise<void> {
