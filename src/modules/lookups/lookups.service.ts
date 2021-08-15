@@ -437,6 +437,10 @@ export class LookupsService {
     return this.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
   }
 
+  getScheduleAppointmentStatusId(identity: IIdentity): Promise<number> {
+    return this.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
+  }
+
   getFUBAppointmentTypeId(identity: IIdentity): Promise<number> {
     return this.getTypeByCode(identity, AppointmentTypeEnum.FUP);
   }

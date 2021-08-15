@@ -477,7 +477,7 @@ export class AppointmentsService {
           durationMinutes: endDate ? dto.durationMinutes : availabilityModel.durationMinutes,
           appointmentTypeId: dto.appointmentTypeId || availabilityModel.appointmentTypeId,
           appointmentStatusId:
-            dto.appointmentStatusId || (await this.lookupsService.getReadyAppointmentStatusId(identity)),
+            dto.appointmentStatusId || (await this.lookupsService.getScheduleAppointmentStatusId(identity)),
           appointmentVisitModeId: dto.appointmentVisitModeId,
           upcomingAppointment: true,
           provisionalDate: upcomingAppointment?.startDate || availabilityModel.startDate,
