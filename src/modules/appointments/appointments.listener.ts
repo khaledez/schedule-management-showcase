@@ -52,6 +52,7 @@ export class AppointmentsListener {
         documentId,
         transaction,
       );
+      await transaction.commit();
 
       // cancel all patient future appointments including provisional
       await this.appointmentsService.cancelPatientInCompleteAppointments(
@@ -83,8 +84,6 @@ export class AppointmentsListener {
         },
         transaction,
       );
-
-      transaction.commit();
     } catch (error) {
       this.logger.error({
         function: 'handleCompleteVisitEvent',
