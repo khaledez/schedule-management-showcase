@@ -23,7 +23,7 @@ export class AppointmentStatusActions implements NestInterceptor {
             ...res,
             edges: edges,
           };
-        } else if (res.primaryAction) {
+        } else if (res?.primaryAction) {
           res.primaryAction.nameEn = statusToActionName(res.primaryAction.nameEn);
         }
         return res;
