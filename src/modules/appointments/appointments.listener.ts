@@ -58,6 +58,7 @@ export class AppointmentsListener {
         identity,
         patientId,
         CancelRescheduleReasonCode.RELEASE,
+        [visitAppointmentId],
         transaction,
       );
 

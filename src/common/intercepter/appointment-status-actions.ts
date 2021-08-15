@@ -48,6 +48,6 @@ function statusToActionName(name) {
     case 'checked in':
       return 'Ready';
     default:
-      return null;
+      return name;
   }
 }

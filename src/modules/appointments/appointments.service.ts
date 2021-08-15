@@ -553,8 +553,7 @@ export class AppointmentsService {
       appointmentVisitModeId,
       appointmentStatusId,
     }));
-    await this.cancelAllAppointments(identity, dto.patientId, transaction);
-    const createdAppointment = await this.appointmentsRepository.create(
+    return await this.appointmentsRepository.create(
       {
         ...dto,
         appointmentTypeId,
@@ -571,7 +570,6 @@ export class AppointmentsService {
       },
       { transaction },
     );
-    return createdAppointment;
   }
 
   /**
@@ -843,6 +841,7 @@ export class AppointmentsService {
             identity,
             appointment.patientId,
             reasonLookup.code,
+            [],
             transaction,
           );
         }
@@ -945,6 +944,7 @@ export class AppointmentsService {
     identity: IIdentity,
     patientId: number,
     cancelReason: string,
+    excludeAppointmentIds: number[],
     transaction?: Transaction,
   ) {
     const cancelActionWithTransaction = async (transaction: Transaction) => {
@@ -980,6 +980,9 @@ export class AppointmentsService {
             },
             canceledAt: new Date(),
             canceledBy: identity.userId,
+            id: {
+              [Op.notIn]: excludeAppointmentIds,
+            },
           },
           transaction,
         },
