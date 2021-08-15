@@ -40,8 +40,10 @@ import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { AppointmentStatusActions } from 'common/intercepter/appointment-status-actions';
 
 @Controller('appointments')
+@UseInterceptors(AppointmentStatusActions)
 export class AppointmentsController {
   private readonly logger = new Logger(AppointmentsController.name);
 
