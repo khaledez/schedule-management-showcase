@@ -89,13 +89,24 @@ export class CalendarService {
       include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
     });
 
+    const actions = await this.lookupService.findAppointmentsActions(
+      appointments.map((appt) => appt.appointmentStatusId),
+    );
+    this.logger.debug({
+      title: 'appointment actions',
+      actions,
+    });
+
     const statuses = await this.lookupService.getActiveAppointmentsStatuses(identity);
     return appointments
       .map((appt) => appt.get())
-      .map((appt) => {
+      .map((appt, index) => {
         return {
           ...appt,
           active: statuses.includes(appt.appointmentStatusId),
+          primaryAction: actions[index].nextAction,
+          secondaryActions: actions[index].secondaryActions,
+          provisionalAppointment: appt.appointmentStatusId === provisionalStatusId,
         };
       });
   }
