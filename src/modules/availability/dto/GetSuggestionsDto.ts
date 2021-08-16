@@ -1,8 +1,7 @@
-import { IsEnum, IsISO8601, IsNumber, IsOptional, IsPositive, IsString, ValidateNested } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { IsFutureDateTime } from 'common/decorators/IsFutureDateTime';
-import { TimeGroupCode } from 'common/enums/time-group';
 import { FilterIdsInputDto } from '@dashps/monmedx-common';
+import { Transform, Type } from 'class-transformer';
+import { IsEnum, IsISO8601, IsNumber, IsOptional, IsPositive, IsString, ValidateNested } from 'class-validator';
+import { TimeGroupCode } from 'common/enums/time-group';
 
 export class GetSuggestionsDto {
   @IsNumber()

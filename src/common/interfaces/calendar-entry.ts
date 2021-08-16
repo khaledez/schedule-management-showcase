@@ -17,7 +17,7 @@ export interface CalendarEntry extends BaseModelAttributes {
   title?: string;
   staffId: number;
 
-  appointmentTypeId: number;
+  appointmentTypeId?: number;
 
   __typename: string;
 }

@@ -28,18 +28,6 @@ export class EventsService {
     return this.eventModel.create(payload, { transaction, include: AvailabilityModel });
   }
 
-  async addAppointmentToEventByAvailability(
-    userId: number,
-    availabilityId: number,
-    appointmentId: number,
-    transaction: Transaction,
-  ): Promise<void> {
-    await this.eventModel.update(
-      { appointmentId: appointmentId, updatedBy: userId, updatedAt: new Date() },
-      { where: { availabilityId: availabilityId }, transaction },
-    );
-  }
-
   async update(identity: IIdentity, input: EventUpdateRequest): Promise<EventModel> {
     await this.eventModel.update(mapDtoToModelAttr(identity, input), {
       where: { id: input.id, clinicId: identity.clinicId },

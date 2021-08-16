@@ -301,7 +301,6 @@ describe('Appointment service', () => {
       doctorIds: [20],
     });
 
-    console.log(res);
     expect(res).toHaveLength(3);
     expect(res[0].date).toEqual('2021-08-16');
     expect(res[0].total).toEqual(2);
@@ -477,106 +476,106 @@ describe('Patient appointment history tests', () => {
   });
 });
 
-describe('# reschedule appointment', () => {
-  const identity = getTestIdentity(205, 205);
-  let apptService: AppointmentsService;
-  let moduleRef: TestingModule;
-  let repo: typeof AppointmentsModel;
-  let lookupsService: LookupsService;
+// describe('# reschedule appointment', () => {
+//   const identity = getTestIdentity(205, 205);
+//   let apptService: AppointmentsService;
+//   let moduleRef: TestingModule;
+//   let repo: typeof AppointmentsModel;
+//   let lookupsService: LookupsService;
 
-  beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
-    }).compile();
-    apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
-    repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
-    lookupsService = moduleRef.get<LookupsService>(LookupsService);
-  });
+//   beforeAll(async () => {
+//     moduleRef = await Test.createTestingModule({
+//       imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
+//     }).compile();
+//     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
+//     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
+//     lookupsService = moduleRef.get<LookupsService>(LookupsService);
+//   });
 
-  afterAll(async () => {
-    await moduleRef.close();
-  });
+//   afterAll(async () => {
+//     await moduleRef.close();
+//   });
 
-  async function createProvisionalAppt(): Promise<AppointmentsModel> {
-    await repo.destroy({ where: { clinicId: identity.clinicId } });
-    return apptService.createAppointment(
-      identity,
-      {
-        appointmentStatusId: 1,
-        appointmentTypeId: 3,
-        patientId: 981,
-        staffId: 110,
-        startDate: new Date().toISOString(),
-        durationMinutes: 60,
-      },
-      true,
-    );
-  }
+//   async function createProvisionalAppt(): Promise<AppointmentsModel> {
+//     await repo.destroy({ where: { clinicId: identity.clinicId } });
+//     return apptService.createAppointment(
+//       identity,
+//       {
+//         appointmentStatusId: 1,
+//         appointmentTypeId: 3,
+//         patientId: 981,
+//         staffId: 110,
+//         startDate: new Date().toISOString(),
+//         durationMinutes: 60,
+//       },
+//       true,
+//     );
+//   }
 
-  // test('reschedule provisional appointment should throw an exception', async () => {
-  //   // Given ..
-  //   const appt = await createProvisionalAppt();
-  //   // When ..
-  //   const newDate = DateTime.now().plus({ days: 60 }).toISODate();
-  //   await expect(
-  //     apptService.rescheduleAppointment(identity, {
-  //       appointmentId: appt.id,
-  //       rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode('DOCTOR_CHANGE'),
-  //       staffId: 20,
-  //       provisionalDate: newDate,
-  //     }),
-  //   ).resolves.toMatchObject({
-  //     staffId: 20,
-  //     durationMinutes: DEFAULT_EVENT_DURATION_MINS,
-  //   });
-  // });
+//   // test('reschedule provisional appointment should throw an exception', async () => {
+//   //   // Given ..
+//   //   const appt = await createProvisionalAppt();
+//   //   // When ..
+//   //   const newDate = DateTime.now().plus({ days: 60 }).toISODate();
+//   //   await expect(
+//   //     apptService.rescheduleAppointment(identity, {
+//   //       appointmentId: appt.id,
+//   //       rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode('DOCTOR_CHANGE'),
+//   //       staffId: 20,
+//   //       provisionalDate: newDate,
+//   //     }),
+//   //   ).resolves.toMatchObject({
+//   //     staffId: 20,
+//   //     durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+//   //   });
+//   // });
 
-  // test('reschedule an actual appointment with a new provisonal date should cancel the current one, create a new appt and provisionsl', async () => {
-  //   // Given ..
-  //   const provisionalAppt = await createProvisionalAppt();
-  //   const appt = await apptService.createAppointment(
-  //     identity,
-  //     {
-  //       patientId: provisionalAppt.patientId,
-  //       staffId: provisionalAppt.staffId,
-  //       appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM2),
-  //       appointmentTypeId: provisionalAppt.appointmentTypeId,
-  //       appointmentVisitModeId: await lookupsService.getVisitModeByCode(AppointmentVisitModeEnum.IN_PERSON),
-  //       durationMinutes: 30,
-  //       startDate: DateTime.now().plus({ days: 14 }).toISO(),
-  //     },
-  //     true,
-  //   );
+//   // test('reschedule an actual appointment with a new provisonal date should cancel the current one, create a new appt and provisionsl', async () => {
+//   //   // Given ..
+//   //   const provisionalAppt = await createProvisionalAppt();
+//   //   const appt = await apptService.createAppointment(
+//   //     identity,
+//   //     {
+//   //       patientId: provisionalAppt.patientId,
+//   //       staffId: provisionalAppt.staffId,
+//   //       appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM2),
+//   //       appointmentTypeId: provisionalAppt.appointmentTypeId,
+//   //       appointmentVisitModeId: await lookupsService.getVisitModeByCode(AppointmentVisitModeEnum.IN_PERSON),
+//   //       durationMinutes: 30,
+//   //       startDate: DateTime.now().plus({ days: 14 }).toISO(),
+//   //     },
+//   //     true,
+//   //   );
 
-  //   // When ..
-  //   const rescheduled = await apptService.rescheduleAppointment(identity, {
-  //     appointmentId: appt.id,
-  //     rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode('NO_SHOW_UP'),
-  //     rescheduleText: 'Missed the appointment',
-  //     durationMinutes: appt.durationMinutes,
-  //     startDate: DateTime.now().plus({ days: 30 }).toISODate(),
-  //   });
+//   //   // When ..
+//   //   const rescheduled = await apptService.rescheduleAppointment(identity, {
+//   //     appointmentId: appt.id,
+//   //     rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode('NO_SHOW_UP'),
+//   //     rescheduleText: 'Missed the appointment',
+//   //     durationMinutes: appt.durationMinutes,
+//   //     startDate: DateTime.now().plus({ days: 30 }).toISODate(),
+//   //   });
 
-  //   // Then ..
-  //   const canceledAppt = await apptService.findOne(appt.id);
-  //   const canceledProvisional = await apptService.findOne(provisionalAppt.id);
+//   //   // Then ..
+//   //   const canceledAppt = await apptService.findOne(appt.id);
+//   //   const canceledProvisional = await apptService.findOne(provisionalAppt.id);
 
-  //   expect(rescheduled.id).not.toEqual(appt.id);
-  //   expect(canceledAppt).toMatchObject({
-  //     status: {
-  //       code: AppointmentStatusEnum.CANCELED,
-  //     },
-  //     availability: {
-  //       isOccupied: true,
-  //     },
-  //   });
-  //   expect(canceledProvisional).toMatchObject({
-  //     status: {
-  //       code: AppointmentStatusEnum.WAIT_LIST,
-  //     },
-  //   });
-  // });
-});
+//   //   expect(rescheduled.id).not.toEqual(appt.id);
+//   //   expect(canceledAppt).toMatchObject({
+//   //     status: {
+//   //       code: AppointmentStatusEnum.CANCELED,
+//   //     },
+//   //     availability: {
+//   //       isOccupied: true,
+//   //     },
+//   //   });
+//   //   expect(canceledProvisional).toMatchObject({
+//   //     status: {
+//   //       code: AppointmentStatusEnum.WAIT_LIST,
+//   //     },
+//   //   });
+//   // });
+// });
 
 describe('Patient upcoming and next appointments tests', () => {
   const identity = getTestIdentity(295, 295);

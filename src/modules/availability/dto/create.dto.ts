@@ -1,6 +1,5 @@
 import { Transform } from 'class-transformer';
 import { IsISO8601, IsNumber, IsPositive, IsString } from 'class-validator';
-import { IsFutureDateTime } from 'common/decorators/IsFutureDateTime';
 import { BaseModelAttributes } from 'common/models';
 import { AvailabilityModelAttributes } from '../models/availability.interfaces';
 

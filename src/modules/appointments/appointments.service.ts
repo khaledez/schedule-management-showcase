@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -148,7 +148,7 @@ export class AppointmentsService {
         limit,
         offset,
       };
-      const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
+      const { rows: appointments } = await this.appointmentsRepository.findAndCountAll(options);
 
       const filterAppointments = appointments.filter((appointment) => {
         if (!queryParams?.filter?.time?.between) {
@@ -799,24 +799,6 @@ export class AppointmentsService {
     }
 
     const result: AppointmentsModel = await this.appointmentsRepository.create(inputAttr, options);
-
-    // attach this appointment the event
-    if (dto.availabilityId) {
-      await this.eventsService.addAppointmentToEventByAvailability(
-        dto.createdBy,
-        dto.availabilityId,
-        result.id,
-        transaction,
-      );
-    } else {
-      // here create new calender event without availability
-      await this.eventsService.create(
-        // @ts-ignore
-        { userId: dto.createdBy, clinicId: dto.clinicId },
-        { staffId: dto.createdBy, ...dto, startDate: dto.date, appointmentId: result.id },
-        transaction,
-      );
-    }
 
     this.logger.debug({
       function: 'createAnAppointmentWithFullResponse',

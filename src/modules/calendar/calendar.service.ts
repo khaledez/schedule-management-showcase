@@ -1,18 +1,24 @@
 import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto, IIdentity } from '@dashps/monmedx-common';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BAD_REQUEST } from 'common/constants';
+import { CalendarType } from 'common/enums';
 import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
+import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
+import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
+import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { Op, WhereAttributeHash, WhereOptions } from 'sequelize';
-import { BAD_REQUEST } from 'common/constants';
 import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { EventModel, EventModelAttributes } from '../events/models';
-import { CalendarAvailability, CalendarSearchInput, CalendarSearchResult } from './calendar.interface';
-import { CalendarType } from 'common/enums';
-import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
-import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
-import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
+import {
+  CalendarAppointment,
+  CalendarAvailability,
+  CalendarEvent,
+  CalendarSearchInput,
+  CalendarSearchResult,
+} from './calendar.interface';
 
 @Injectable()
 export class CalendarService {
@@ -29,10 +35,12 @@ export class CalendarService {
 
     const queryType = new EntryType(query.entryType);
 
-    const appointments = await this.searchAppointments(identity, query, queryType);
-    const events = await this.searchEvents(identity, query, queryType);
-    const availabilities = await this.searchAvailabilities(identity, query, queryType);
-    await Promise.all([appointments, events, availabilities]);
+    const [appointments, events, availabilities] = await Promise.all([
+      this.searchAppointments(identity, query, queryType),
+      this.searchEvents(identity, query, queryType),
+      this.searchAvailabilities(identity, query, queryType),
+    ]);
+
     const entries = [];
     appointments
       .map((appt) => appt.get({ plain: true }))
@@ -238,20 +246,20 @@ function availabilityAsCalendarEvent(model: AvailabilityModelAttributes): Calend
   } as CalendarAvailability;
 }
 
-function appointmentAsCalendarEvent(model: AppointmentsModelAttributes): CalendarAvailability {
+function appointmentAsCalendarEvent(model: AppointmentsModelAttributes): CalendarAppointment {
   return {
     ...model,
     entryType: CalendarType.APPOINTMENT,
     __typename: 'CalendarAppointment',
-  } as CalendarAvailability;
+  } as CalendarAppointment;
 }
 
-function eventAsCalendarEvent(model: EventModelAttributes): CalendarAvailability {
+function eventAsCalendarEvent(model: EventModelAttributes): CalendarEvent {
   return {
     ...model,
     entryType: CalendarType.EVENT,
     __typename: 'CalendarEvent',
-  } as CalendarAvailability;
+  };
 }
 
 class EntryType {
