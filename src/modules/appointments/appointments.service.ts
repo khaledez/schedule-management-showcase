@@ -1290,15 +1290,29 @@ export class AppointmentsService {
     }
   };
 
-  getAppointmentByPatientId(
+  async getAppointmentByPatientId(
     identity: IIdentity,
     patientId: number,
     query: UpComingAppointmentQueryDto,
   ): Promise<AppointmentsModelAttributes> {
+    let appointment;
     if (query?.after) {
-      return this.getPatientNextAppointment(identity, patientId, query.after);
+      appointment = await this.getPatientNextAppointment(identity, patientId, query.after);
+    } else {
+      appointment = await this.getPatientUpcomingAppointment(identity, patientId);
     }
-    return this.getPatientUpcomingAppointment(identity, patientId);
+    if (!appointment) {
+      return appointment;
+    }
+    const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
+    const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
+    return {
+      ...appointment.get(),
+      previousAppointment: appointment.previousAppointmentId,
+      primaryAction: actions[0]?.nextAction ? actions[0].nextAction : [],
+      secondaryActions: actions[0]?.secondaryActions ? actions[0].secondaryActions : [],
+      provisionalAppointment: appointment.appointmentStatusId === appointmentStatusId,
+    };
   }
 
   getPatientUpcomingAppointment(identity: IIdentity, id: number) {
