@@ -367,19 +367,19 @@ export class AppointmentsService {
         });
       }
 
-      if (!isProvisional && !provisionalAppointment) {
-        const errorMessage =
-          'Cannot create non-provisional appointment, patient has no previous provisional appointment';
-        this.logger.error({
-          function: 'service/appointment/createAppointment',
-          message: errorMessage,
-        });
-        throw new NotFoundException({
-          fields: [],
-          code: ErrorCodes.CONFLICTS,
-          message: errorMessage,
-        });
-      }
+      // if (!isProvisional && !provisionalAppointment) {
+      //   const errorMessage =
+      //     'Cannot create non-provisional appointment, patient has no previous provisional appointment';
+      //   this.logger.error({
+      //     function: 'service/appointment/createAppointment',
+      //     message: errorMessage,
+      //   });
+      //   throw new NotFoundException({
+      //     fields: [],
+      //     code: ErrorCodes.CONFLICTS,
+      //     message: errorMessage,
+      //   });
+      // }
 
       /* 2. Arrange attributes */
       const {
