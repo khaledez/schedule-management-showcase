@@ -263,7 +263,7 @@ export class AppointmentsController {
         appointmentTypeId: typeFUBId,
         appointmentVisitModeId: appointmentModeId,
         staffId: identity.userId,
-        startDate: DateTime.fromJSDate(appointmentData.date).toISO(),
+        startDate: appointmentData.date.toISOString(),
         durationMinutes: DEFAULT_EVENT_DURATION_MINS,
       },
       true,
