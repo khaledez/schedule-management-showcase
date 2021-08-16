@@ -32,18 +32,18 @@ export class AppointmentStatusActions implements NestInterceptor {
 // eslint-disable-next-line complexity
 function statusToActionName(name) {
   switch (name.toLowerCase()) {
-    case 'status':
-      return 'Action';
     case 'wait list':
-      return 'Schedule';
+      return 'Wait List';
     case 'scheduled':
-      return 'Confirm (1)';
+      return 'Schedule';
     case 'first confirmation':
-      return 'Confirm (2)';
+      return 'Confirm (1)';
     case 'final confirmation':
-      return 'Check-in';
+      return 'Confirm (2)';
     case 'checked in':
-      return 'Ready';
+      return 'Check-in';
+    case 'canceled':
+      return 'Cancel';
     default:
       return name;
   }
