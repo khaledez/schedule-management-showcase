@@ -1407,8 +1407,8 @@ export class AppointmentsService {
     const mappedResult = [];
     for (const [date, arr] of Object.entries<[any]>(groupedResult)) {
       mappedResult.push({
-        total: arr.length,
-        appointments: arr.map((obj: AppointmentsModel) => obj.toJSON()),
+        count: arr.length,
+        // appointments: arr.map((obj: AppointmentsModel) => obj.toJSON()),
         date,
       });
     }
