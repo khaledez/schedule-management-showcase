@@ -183,7 +183,7 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData });
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return { appointment: await this.appointmentsService.createAppointment(identity, appointmentData, false) };
+    return { appointment: await this.appointmentsService.createAppointment(identity, appointmentData, true) };
   }
 
   @Post('reschedule')

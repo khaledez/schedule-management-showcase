@@ -41,10 +41,13 @@ export class CalendarService {
       this.searchAvailabilities(identity, query, queryType),
     ]);
 
+    const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
     const entries = [];
     appointments
       .map((appt) => appt.get({ plain: true }))
-      .forEach((appt) => entries.push(appointmentAsCalendarEvent(appt)));
+      .forEach((appt) =>
+        entries.push(appointmentAsCalendarEvent(appt, appt.appointmentStatusId === provisionalStatusId)),
+      );
     events.map((event) => event.get({ plain: true })).forEach((event) => entries.push(eventAsCalendarEvent(event)));
     availabilities
       .map((availability) => availability.get({ plain: true }))
@@ -246,10 +249,11 @@ function availabilityAsCalendarEvent(model: AvailabilityModelAttributes): Calend
   } as CalendarAvailability;
 }
 
-function appointmentAsCalendarEvent(model: AppointmentsModelAttributes): CalendarAppointment {
+function appointmentAsCalendarEvent(model: AppointmentsModelAttributes, isProvisional: boolean): CalendarAppointment {
   return {
     ...model,
     entryType: CalendarType.APPOINTMENT,
+    provisionalAppointment: isProvisional,
     __typename: 'CalendarAppointment',
   } as CalendarAppointment;
 }
