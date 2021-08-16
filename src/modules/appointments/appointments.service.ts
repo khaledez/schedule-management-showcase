@@ -473,6 +473,7 @@ export class AppointmentsService {
       const dtoEndDate = new Date(dto.startDate).getTime();
       endDate = new Date(dtoEndDate + dto.durationMinutes * MIN_TO_MILLI_SECONDS);
     }
+    const startDate = dto.startDate ? new Date(dto.startDate) : availabilityModel.startDate;
     const upcomingAppointment = await this.getPatientUpcomingAppointment(identity, dto.patientId);
 
     try {
@@ -484,7 +485,7 @@ export class AppointmentsService {
           createdBy: identity.userId,
           staffId: dto.staffId || availabilityModel.staffId,
           availabilityId: dto.availabilityId,
-          startDate: new Date(dto.startDate) || availabilityModel.startDate,
+          startDate: startDate,
           endDate: endDate || availabilityModel.endDate,
           durationMinutes: endDate ? dto.durationMinutes : availabilityModel.durationMinutes,
           appointmentTypeId: dto.appointmentTypeId || availabilityModel.appointmentTypeId,
