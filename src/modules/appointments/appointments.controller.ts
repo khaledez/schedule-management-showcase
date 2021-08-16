@@ -5,7 +5,6 @@ import {
   PagingInfo,
   PagingInfoInterface,
   TransactionInterceptor,
-  TransactionParam,
 } from '@dashps/monmedx-common';
 import {
   BadRequestException,
@@ -22,12 +21,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
+import { AppointmentVisitModeEnum } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
+import { AppointmentStatusActions } from 'common/intercepter/appointment-status-actions';
 import { UserError } from 'common/interfaces/user-error.interface';
+import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
 import { GetPatientNextAppointment } from 'modules/appointments/dto/get-patient-next-appointment';
 import { PatientInfoService } from 'modules/patient-info';
-import { Transaction } from 'sequelize';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel } from './appointments.model';
 import { AppointmentsService } from './appointments.service';
@@ -40,7 +41,6 @@ import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { AppointmentStatusActions } from 'common/intercepter/appointment-status-actions';
 
 @Controller('appointments')
 @UseInterceptors(AppointmentStatusActions)
@@ -230,8 +230,8 @@ export class AppointmentsController {
   // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createAdHoc(
     @Identity() identity: IIdentity,
+    @Headers('Authorization') authToken: string,
     @Body() appointmentData: CreateAppointmentAdhocDto,
-    @TransactionParam() transaction: Transaction,
   ): Promise<AppointmentsModel> {
     this.logger.debug({
       function: 'appointment/createAdHoc',
@@ -241,6 +241,9 @@ export class AppointmentsController {
 
     const readyStatus = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
     const typeFUBId = await this.lookupsService.getFUBAppointmentTypeId(identity);
+    const appointmentModeId = await this.lookupsService.getVisitModeByCode(
+      AppointmentVisitModeEnum[appointmentData.modeCode],
+    );
 
     this.logger.debug({
       appointmentData,
@@ -248,16 +251,19 @@ export class AppointmentsController {
       typeFUBId: `${typeFUBId}`,
     });
 
-    return this.appointmentsService.createAnAppointmentWithFullResponse(
+    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    return this.appointmentsService.createAppointment(
+      identity,
       {
-        ...appointmentData,
+        patientId: appointmentData.patientId,
         appointmentStatusId: readyStatus,
-        clinicId: identity.clinicId,
-        createdBy: identity.userId,
         appointmentTypeId: typeFUBId,
-        provisionalDate: appointmentData.date,
+        appointmentVisitModeId: appointmentModeId,
+        staffId: identity.userId,
+        startDate: DateTime.fromJSDate(appointmentData.date).toISO(),
+        durationMinutes: DEFAULT_EVENT_DURATION_MINS,
       },
-      transaction,
+      true,
     );
   }
 

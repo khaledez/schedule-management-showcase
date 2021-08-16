@@ -15,7 +15,6 @@ import {
   APPOINTMENT_CHECKIN_STATUS_EVENT,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
-  DEFAULT_EVENT_DURATION_MINS,
   MIN_TO_MILLI_SECONDS,
   PAGING_LIMIT_DEFAULT,
   PAGING_OFFSET_DEFAULT,
@@ -30,14 +29,13 @@ import { AvailabilityModelAttributes } from 'modules/availability/models/availab
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
-import { CreateOptions, FindOptions, Op, QueryTypes, Transaction, UpdateOptions, WhereOptions } from 'sequelize';
+import { FindOptions, Op, QueryTypes, Transaction, UpdateOptions, WhereOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
-import { CreateGlobalAppointmentDto } from './dto/global-appointment-create.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
@@ -762,51 +760,51 @@ export class AppointmentsService {
     return this.appointmentsRepository.findOne(options);
   }
 
-  async createAnAppointmentWithFullResponse(
-    dto: CreateGlobalAppointmentDto,
-    transaction?: Transaction,
-  ): Promise<AppointmentsModel> {
-    this.logger.debug({
-      function: 'appointmentToCreate',
-      dto,
-    });
+  // async createAnAppointmentWithFullResponse(
+  //   dto: CreateGlobalAppointmentDto,
+  //   transaction?: Transaction,
+  // ): Promise<AppointmentsModel> {
+  //   this.logger.debug({
+  //     function: 'appointmentToCreate',
+  //     dto,
+  //   });
 
-    let appointmentStatusId = dto.appointmentStatusId;
-    if (!appointmentStatusId) {
-      appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId({
-        clinicId: dto.clinicId,
-      } as IIdentity);
-    }
+  //   let appointmentStatusId = dto.appointmentStatusId;
+  //   if (!appointmentStatusId) {
+  //     appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId({
+  //       clinicId: dto.clinicId,
+  //     } as IIdentity);
+  //   }
 
-    const inputAttr = mapCreateGlobalDtoToAttributes(dto, appointmentStatusId);
-    this.logger.debug({
-      title: 'appointment create payload',
-      payload: inputAttr,
-    });
+  //   const inputAttr = mapCreateGlobalDtoToAttributes(dto, appointmentStatusId);
+  //   this.logger.debug({
+  //     title: 'appointment create payload',
+  //     payload: inputAttr,
+  //   });
 
-    if (dto.availabilityId) {
-      await this.validateAvailabilityId(dto.availabilityId);
-    }
+  //   if (dto.availabilityId) {
+  //     await this.validateAvailabilityId(dto.availabilityId);
+  //   }
 
-    //change other appointments upcoming_appointment field to 0
-    await this.appointmentsRepository.update(
-      { upcomingAppointment: false },
-      { where: { patientId: dto.patientId }, transaction },
-    );
+  //   //change other appointments upcoming_appointment field to 0
+  //   await this.appointmentsRepository.update(
+  //     { upcomingAppointment: false },
+  //     { where: { patientId: dto.patientId }, transaction },
+  //   );
 
-    const options: CreateOptions = {};
-    if (transaction) {
-      options.transaction = transaction;
-    }
+  //   const options: CreateOptions = {};
+  //   if (transaction) {
+  //     options.transaction = transaction;
+  //   }
 
-    const result: AppointmentsModel = await this.appointmentsRepository.create(inputAttr, options);
+  //   const result: AppointmentsModel = await this.appointmentsRepository.create(inputAttr, options);
 
-    this.logger.debug({
-      function: 'createAnAppointmentWithFullResponse',
-      result,
-    });
-    return result;
-  }
+  //   this.logger.debug({
+  //     function: 'createAnAppointmentWithFullResponse',
+  //     result,
+  //   });
+  //   return result;
+  // }
 
   rescheduleAppointment(identity: IIdentity, dto: RescheduleAppointmentDto): Promise<AppointmentsModelAttributes> {
     return this.appointmentsRepository.sequelize.transaction(
@@ -1553,24 +1551,24 @@ function mapUpdateDtoToAttributes(
   };
 }
 
-function mapCreateGlobalDtoToAttributes(
-  dto: CreateGlobalAppointmentDto,
-  appointmentStatusId: number,
-): AppointmentsModelAttributes {
-  const startDate = DateTime.fromJSDate(dto.date);
-  const durationMins = dto.durationMinutes || DEFAULT_EVENT_DURATION_MINS;
+// function mapCreateGlobalDtoToAttributes(
+//   dto: CreateGlobalAppointmentDto,
+//   appointmentStatusId: number,
+// ): AppointmentsModelAttributes {
+//   const startDate = DateTime.fromJSDate(dto.date);
+//   const durationMins = dto.durationMinutes || DEFAULT_EVENT_DURATION_MINS;
 
-  return {
-    ...dto,
-    startDate: startDate.toJSDate(),
-    appointmentStatusId,
-    durationMinutes: durationMins,
-    endDate: startDate.plus({ minutes: durationMins }).toJSDate(),
-    provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
-    staffId: dto.doctorId,
-    availabilityId: dto.availabilityId,
-    upcomingAppointment: true,
-  };
-}
+//   return {
+//     ...dto,
+//     startDate: startDate.toJSDate(),
+//     appointmentStatusId,
+//     durationMinutes: durationMins,
+//     endDate: startDate.plus({ minutes: durationMins }).toJSDate(),
+//     provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
+//     staffId: dto.doctorId,
+//     availabilityId: dto.availabilityId,
+//     upcomingAppointment: true,
+//   };
+// }
 
 type BatchCancelResult = { appointmentId: number; status: 'OK' | 'FAIL'; error?: string };

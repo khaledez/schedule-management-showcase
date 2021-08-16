@@ -62,6 +62,8 @@ export class CreateGlobalAppointmentDto {
   @IsNumber()
   doctorId?: number;
 
+  staffId?: number;
+
   @IsOptional()
   @IsBoolean()
   upcomingAppointment?: boolean;
