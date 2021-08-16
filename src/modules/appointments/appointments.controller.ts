@@ -88,8 +88,8 @@ export class AppointmentsController {
 
   @Get(':id')
   // @Permissions(PermissionCode.APPOINTMENT_READ)
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.appointmentsService.findOne(id);
+  findOne(@Identity() identity: IIdentity, @Param('id', ParseIntPipe) id: number) {
+    return this.appointmentsService.findOne(identity, id);
   }
 
   @Patch(':id')
@@ -195,7 +195,7 @@ export class AppointmentsController {
   @Post('cancel')
   // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
-    const appt = await this.appointmentsService.findOne(cancelDto.appointmentId);
+    const appt = await this.appointmentsService.findOne(identity, cancelDto.appointmentId);
 
     const cancelResult = await this.appointmentsService.cancelAppointments(identity, [cancelDto]);
     if (cancelResult && cancelResult[0].status === 'FAIL') {

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { FilterDateInputDto, IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
+import { FilterDateInputDto, Identity, IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
@@ -42,6 +42,7 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
+import { identity } from 'rxjs';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -701,7 +702,7 @@ export class AppointmentsService {
     return this.lookupsService.getProvisionalAppointmentStatusId(identity);
   }
 
-  async findOne(id: number): Promise<AppointmentsModelAttributes> {
+  async findOne(@Identity() identity: IIdentity, id: number): Promise<AppointmentsModelAttributes> {
     const appointment = await this.appointmentsRepository.unscoped().findByPk(id, {
       include: [
         {
@@ -716,6 +717,7 @@ export class AppointmentsService {
         message: 'This appointment does not exits!',
       });
     }
+    const provisionalStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
     const appointmentAsPlain = appointment.get({ plain: true });
     const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
     this.logger.debug({
@@ -726,7 +728,7 @@ export class AppointmentsService {
       ...appointmentAsPlain,
       primaryAction: actions[0].nextAction,
       secondaryActions: actions[0].secondaryActions,
-      provisionalAppointment: !appointment.availabilityId,
+      provisionalAppointment: appointment.appointmentStatusId === provisionalStatusId,
     };
   }
 
@@ -1215,20 +1217,6 @@ export class AppointmentsService {
         updatedAppointment,
       });
     }
-  }
-
-  // TODO: delete this after ability to change status
-  async patchAppointment(id: number, data: any, transaction?: Transaction): Promise<AppointmentsModelAttributes> {
-    const options: UpdateOptions = {
-      where: {
-        id,
-      },
-    };
-    if (transaction) {
-      options.transaction = transaction;
-    }
-    await this.appointmentsRepository.scope('id').update(data, options);
-    return this.findOne(id);
   }
 
   // eslint-disable-next-line complexity
