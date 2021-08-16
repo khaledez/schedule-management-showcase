@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -1542,7 +1542,17 @@ function mapUpdateDtoToAttributes(
   appointment: AppointmentsModel,
   updateDto: UpdateAppointmentDto,
 ): AppointmentsModelAttributes {
-  const startDate = updateDto.startDate ? DateTime.fromISO(updateDto.startDate).toJSDate() : appointment.startDate;
+  let startDate = appointment.startDate;
+  if (updateDto.startDate) {
+    const startDateDto = DateTime.fromISO(updateDto.startDate);
+    if (!startDateDto.isValid) {
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'Bad startDate, it should follow iso',
+      });
+    }
+    startDate = startDateDto.toJSDate();
+  }
   const durationMinutes = updateDto.durationMinutes ? updateDto.durationMinutes : appointment.durationMinutes;
   return {
     id: appointment.id,
