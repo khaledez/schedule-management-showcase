@@ -241,9 +241,9 @@ export class AppointmentsController {
 
     const readyStatus = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
     const typeFUBId = await this.lookupsService.getFUBAppointmentTypeId(identity);
-    const appointmentModeId = await this.lookupsService.getVisitModeByCode(
-      AppointmentVisitModeEnum[appointmentData.modeCode],
-    );
+    const appointmentModeId = appointmentData.modeCode
+      ? await this.lookupsService.getVisitModeByCode(AppointmentVisitModeEnum[appointmentData.modeCode])
+      : null;
 
     this.logger.debug({
       appointmentData,
