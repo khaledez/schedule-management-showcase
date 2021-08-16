@@ -355,6 +355,19 @@ export class AppointmentsService {
         });
       }
 
+      if (!isProvisional && !dto.staffId) {
+        const errorMessage = 'Non provisional appointment requires a staffId';
+        this.logger.error({
+          function: 'service/appointment/createAppointment',
+          message: errorMessage,
+        });
+        throw new BadRequestException({
+          fields: [],
+          code: ErrorCodes.BAD_REQUEST,
+          message: errorMessage,
+        });
+      }
+
       if (!isProvisional && !provisionalAppointment) {
         const errorMessage =
           'Cannot create non-provisional appointment, patient has no previous provisional appointment';
@@ -397,6 +410,7 @@ export class AppointmentsService {
       const createdAppointment = await this.appointmentsRepository.create(
         {
           ...dto,
+          staffId: dto.staffId,
           appointmentTypeId,
           clinicId: identity.clinicId,
           createdBy: identity.userId,
@@ -554,6 +568,7 @@ export class AppointmentsService {
     return this.appointmentsRepository.create(
       {
         ...dto,
+        staffId: dto.staffId,
         appointmentTypeId,
         clinicId: identity.clinicId,
         createdBy: identity.userId,

@@ -7,9 +7,10 @@ export class CreateAppointmentDto {
   @Transform((value) => parseInt(value))
   patientId: number;
 
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  staffId: number;
+  staffId?: number;
 
   /* Optional Attributes */
   @IsOptional()
