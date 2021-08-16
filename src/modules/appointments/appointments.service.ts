@@ -1147,7 +1147,7 @@ export class AppointmentsService {
           throw new NotFoundException({
             fields: ['appointmentId'],
             message: `Appointment with id = ${appointmentId} not found`,
-            error: 'NOT_FOUND',
+            code: ErrorCodes.NOT_FOUND,
           });
         }
 
