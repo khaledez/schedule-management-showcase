@@ -433,6 +433,21 @@ export class LookupsService {
     return this.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
   }
 
+  async getActiveAppointmentsStatuses(identity: IIdentity) {
+    const result = await this.appointmentStatusLookupsRepository.findAll({
+      where: {
+        code: {
+          [Op.notIn]: [AppointmentStatusEnum.WAIT_LIST, AppointmentStatusEnum.CANCELED, AppointmentStatusEnum.COMPLETE],
+        },
+        clinicId: {
+          [Op.or]: [null, identity.clinicId],
+        },
+      },
+      attributes: ['id'],
+    });
+    return result.map((status) => status.id);
+  }
+
   getReadyAppointmentStatusId(identity: IIdentity): Promise<number> {
     return this.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
   }

@@ -43,11 +43,9 @@ export class CalendarService {
 
     const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
     const entries = [];
-    appointments
-      .map((appt) => appt.get({ plain: true }))
-      .forEach((appt) =>
-        entries.push(appointmentAsCalendarEvent(appt, appt.appointmentStatusId === provisionalStatusId)),
-      );
+    appointments.forEach((appt) =>
+      entries.push(appointmentAsCalendarEvent(appt, appt.appointmentStatusId === provisionalStatusId)),
+    );
     events.map((event) => event.get({ plain: true })).forEach((event) => entries.push(eventAsCalendarEvent(event)));
     availabilities
       .map((availability) => availability.get({ plain: true }))
@@ -61,7 +59,7 @@ export class CalendarService {
     identity: IIdentity,
     query: CalendarSearchInput,
     queryType: EntryType,
-  ): Promise<AppointmentsModel[]> {
+  ): Promise<AppointmentsModelAttributes[]> {
     if (!queryType.hasType(CalendarType.APPOINTMENT)) {
       return [];
     }
@@ -86,10 +84,20 @@ export class CalendarService {
       };
     }
 
-    return AppointmentsModel.findAll({
+    const appointments = await AppointmentsModel.findAll({
       where: appointmentWhereClauses,
       include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
     });
+
+    const statuses = await this.lookupService.getActiveAppointmentsStatuses(identity);
+    return appointments
+      .map((appt) => appt.get())
+      .map((appt) => {
+        return {
+          ...appt,
+          active: statuses.includes(appt.appointmentStatusId),
+        };
+      });
   }
 
   searchEvents(identity: IIdentity, query: CalendarSearchInput, queryType: EntryType): Promise<EventModel[]> {
