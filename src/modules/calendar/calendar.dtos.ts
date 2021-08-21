@@ -14,15 +14,8 @@ export class CalendarSearchDto implements CalendarSearchInput {
   dateRange: FilterDateInputDto;
 
   @IsOptional()
-  timezoneId: string;
-
-  @IsOptional()
   @Type(() => FilterIdsInputDto)
   staffId: FilterIdsInputDto;
-
-  @IsOptional()
-  @Type(() => FilterAvailabilityInputDto)
-  availabilityFilter: FilterAvailabilityInputDto;
 }
 
 export class CalendarSearchBodyDto {

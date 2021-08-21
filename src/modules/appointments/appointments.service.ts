@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   MIN_TO_MILLI_SECONDS,
@@ -29,7 +29,7 @@ import { AvailabilityModelAttributes } from 'modules/availability/models/availab
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
-import { FindOptions, Op, QueryTypes, Transaction, UpdateOptions, WhereOptions } from 'sequelize';
+import { FindOptions, Op, QueryTypes, Transaction, WhereOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
 import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
@@ -42,7 +42,8 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
-import { identity } from 'rxjs';
+import { CreateProvisionalAppointmentDto } from 'modules/appointments/dto/create-provisional-appointment-dto';
+import { addMinutesToDate } from 'common/helpers/date-time-helpers';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -509,6 +510,48 @@ export class AppointmentsService {
     }
   }
 
+  async createProvisionalAppointment(
+    identity: IIdentity,
+    dto: CreateProvisionalAppointmentDto,
+    transaction?: Transaction,
+  ) {
+    if (!(await this.lookupsService.doesAppointmentTypeExist(dto.appointmentTypeId))) {
+      throw new BadRequestException({
+        message: `Unknown appointment type id: ${dto.appointmentTypeId}`,
+        code: BAD_REQUEST,
+      });
+    }
+
+    if (await this.getPatientProvisionalAppointment(identity, dto.patientId, transaction)) {
+      throw new BadRequestException({
+        message: `Patient ${dto.patientId} already has a provisional appointment`,
+        code: BAD_REQUEST,
+      });
+    }
+
+    if (await this.getPatientActiveAppointment(identity, dto.patientId, transaction)) {
+      throw new BadRequestException({
+        message: `Patient ${dto.patientId} already has an active appointment`,
+        code: BAD_REQUEST,
+      });
+    }
+
+    const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
+
+    return this.appointmentsRepository.create(
+      {
+        ...dto,
+        staffId: dto.staffId,
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
+        provisionalDate: dto.startDate,
+        endDate: addMinutesToDate(dto.startDate, dto.durationMinutes),
+        appointmentStatusId,
+      },
+      { transaction },
+    );
+  }
+
   async cancelAllAppointments(identity, patientId, transaction) {
     const [statusCanceledId, statusCompleteId, scheduleReasonId] = await Promise.all([
       this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
@@ -744,7 +787,9 @@ export class AppointmentsService {
 
   /**
    * Get patient next provisional appointment
+   * @param identity
    * @param patientId
+   * @param transaction
    */
   async getPatientProvisionalAppointment(
     identity: IIdentity,
@@ -754,6 +799,7 @@ export class AppointmentsService {
     const waitListStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
     const options: FindOptions = {
       where: {
+        deletedAt: null,
         patientId,
         appointmentStatusId: waitListStatusId,
       },
@@ -762,51 +808,25 @@ export class AppointmentsService {
     return this.appointmentsRepository.findOne(options);
   }
 
-  // async createAnAppointmentWithFullResponse(
-  //   dto: CreateGlobalAppointmentDto,
-  //   transaction?: Transaction,
-  // ): Promise<AppointmentsModel> {
-  //   this.logger.debug({
-  //     function: 'appointmentToCreate',
-  //     dto,
-  //   });
-
-  //   let appointmentStatusId = dto.appointmentStatusId;
-  //   if (!appointmentStatusId) {
-  //     appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId({
-  //       clinicId: dto.clinicId,
-  //     } as IIdentity);
-  //   }
-
-  //   const inputAttr = mapCreateGlobalDtoToAttributes(dto, appointmentStatusId);
-  //   this.logger.debug({
-  //     title: 'appointment create payload',
-  //     payload: inputAttr,
-  //   });
-
-  //   if (dto.availabilityId) {
-  //     await this.validateAvailabilityId(dto.availabilityId);
-  //   }
-
-  //   //change other appointments upcoming_appointment field to 0
-  //   await this.appointmentsRepository.update(
-  //     { upcomingAppointment: false },
-  //     { where: { patientId: dto.patientId }, transaction },
-  //   );
-
-  //   const options: CreateOptions = {};
-  //   if (transaction) {
-  //     options.transaction = transaction;
-  //   }
-
-  //   const result: AppointmentsModel = await this.appointmentsRepository.create(inputAttr, options);
-
-  //   this.logger.debug({
-  //     function: 'createAnAppointmentWithFullResponse',
-  //     result,
-  //   });
-  //   return result;
-  // }
+  async getPatientActiveAppointment(
+    identity: IIdentity,
+    patientId: number,
+    transaction?: Transaction,
+  ): Promise<AppointmentsModel> {
+    const statuses = await this.lookupsService.getActiveAppointmentsStatuses(identity);
+    const options: FindOptions = {
+      where: {
+        clinicId: identity.clinicId,
+        deletedAt: null,
+        patientId,
+        appointmentStatusId: {
+          [Op.notIn]: statuses,
+        },
+      },
+      transaction,
+    };
+    return this.appointmentsRepository.findOne(options);
+  }
 
   rescheduleAppointment(identity: IIdentity, dto: RescheduleAppointmentDto): Promise<AppointmentsModelAttributes> {
     return this.appointmentsRepository.sequelize.transaction(

@@ -1,14 +1,12 @@
-import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto, IIdentity } from '@dashps/monmedx-common';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { BAD_REQUEST } from 'common/constants';
+import { FilterStringInputDto, IIdentity } from '@dashps/monmedx-common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CalendarType } from 'common/enums';
-import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
-import { Op, WhereAttributeHash, WhereOptions } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { EventModel, EventModelAttributes } from '../events/models';
@@ -19,6 +17,7 @@ import {
   CalendarSearchInput,
   CalendarSearchResult,
 } from './calendar.interface';
+import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
 
 @Injectable()
 export class CalendarService {
@@ -73,14 +72,14 @@ export class CalendarService {
     if (query.staffId) {
       appointmentWhereClauses = {
         ...appointmentWhereClauses,
-        ...processIdCondition('staffId', 'staffId', query.staffId),
+        ...processFilterIdsInput('staffId', 'staffId', query.staffId),
       };
     }
 
     if (query.dateRange) {
       appointmentWhereClauses = {
         ...appointmentWhereClauses,
-        ...processDateCondition('startDate', 'dateRange', query.dateRange),
+        ...processFilterDatesInput('startDate', 'dateRange', query.dateRange),
       };
     }
 
@@ -123,14 +122,14 @@ export class CalendarService {
     if (query.staffId) {
       eventWhereClauses = {
         ...eventWhereClauses,
-        ...processIdCondition('staffId', 'staffId', query.staffId),
+        ...processFilterIdsInput('staffId', 'staffId', query.staffId),
       };
     }
 
     if (query.dateRange) {
       eventWhereClauses = {
         ...eventWhereClauses,
-        ...processDateCondition('date', 'dateRange', query.dateRange),
+        ...processFilterDatesInput('date', 'dateRange', query.dateRange),
       };
     }
 
@@ -156,14 +155,14 @@ export class CalendarService {
     if (query.staffId) {
       availabilityWhereClauses = {
         ...availabilityWhereClauses,
-        ...processIdCondition('staffId', 'staffId', query.staffId),
+        ...processFilterIdsInput('staffId', 'staffId', query.staffId),
       };
     }
 
     if (query.dateRange) {
       availabilityWhereClauses = {
         ...availabilityWhereClauses,
-        ...processDateCondition('date', 'dateRange', query.dateRange),
+        ...processFilterDatesInput('date', 'dateRange', query.dateRange),
       };
     }
 
@@ -172,92 +171,6 @@ export class CalendarService {
       include: [AppointmentTypesLookupsModel],
     });
   }
-}
-
-function processDateCondition(
-  columnName: string,
-  filterName: string,
-  filter: FilterDateInputDto,
-): { [key: string]: WhereAttributeHash } {
-  // eq and between are only supported
-  if (![filter.ne, filter.ge, filter.gt, filter.lt].every((el) => !el)) {
-    throw new BadRequestException({
-      fields: [filterName],
-      message: 'unsupported filter operation, supported: between, eq',
-      code: BAD_REQUEST,
-    });
-  }
-
-  if (filter.between && filter.eq) {
-    throw new BadRequestException({
-      fields: [filterName],
-      message: 'only one filter at a time is supported',
-      code: BAD_REQUEST,
-    });
-  }
-
-  if (filter.eq) {
-    const startOfDay = DateTime.fromJSDate(filter.eq).toSQLDate();
-    const endOfDay = `${startOfDay} 23:59:59`;
-    return { [columnName]: { [Op.between]: [startOfDay, endOfDay] } };
-  }
-
-  if (filter.between) {
-    const startOfDate1 = DateTime.fromJSDate(filter.between[0]).toSQLDate();
-    const endOfDate2 = `${DateTime.fromJSDate(filter.between[1]).toSQLDate()} 23:59:59`; //Append end of day time
-    return {
-      [columnName]: {
-        [Op.between]: [startOfDate1, endOfDate2],
-      },
-    };
-  }
-
-  return undefined;
-}
-
-function processIdCondition(
-  columnName: string,
-  filterName: string,
-  filter: FilterIdsInputDto,
-): { [key: string]: WhereAttributeHash } {
-  // eq and in are only supported
-  if (
-    ![
-      filter.ne,
-      filter.ge,
-      filter.gt,
-      filter.lt,
-      filter.beginsWith,
-      filter.between,
-      filter.contains,
-      filter.or,
-      filter.notContains,
-      filter.notContains,
-    ].every((el) => !el)
-  ) {
-    throw new BadRequestException({
-      fields: [filterName],
-      message: 'unsupported filter operation, supported: in, eq',
-      code: BAD_REQUEST,
-    });
-  }
-  if (filter.in && filter.eq) {
-    throw new BadRequestException({
-      fields: [filterName],
-      message: 'only one filter at a time is supported',
-      code: BAD_REQUEST,
-    });
-  }
-
-  if (filter.eq) {
-    return { [columnName]: { [Op.eq]: filter.eq } };
-  }
-
-  if (filter.in) {
-    return { [columnName]: { [Op.in]: filter.in } };
-  }
-
-  return {};
 }
 
 function availabilityAsCalendarEvent(model: AvailabilityModelAttributes): CalendarAvailability {
@@ -288,6 +201,7 @@ function eventAsCalendarEvent(model: EventModelAttributes): CalendarEvent {
 class EntryType {
   private entryTypes: string[];
   private all = false;
+
   constructor(entryTypeQuery: FilterStringInputDto) {
     if (entryTypeQuery?.eq) {
       this.entryTypes = [entryTypeQuery?.eq];

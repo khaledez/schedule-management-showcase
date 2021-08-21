@@ -12,14 +12,9 @@ import { EventModel } from 'modules/events/models';
 import { Sequelize } from 'sequelize-typescript';
 import { CalendarModule } from '../calendar.module';
 import { CalendarService } from '../calendar.service';
+import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 
-const identity: IIdentity = {
-  clinicId: 1,
-  userId: 2,
-  cognitoId: null,
-  userLang: 'en',
-  userInfo: null,
-};
+const identity: IIdentity = getTestIdentity(17, 18);
 
 describe('Calendar service', () => {
   let calendarService: CalendarService;
@@ -50,11 +45,18 @@ describe('Calendar service', () => {
     await moduleRef.close();
   });
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     await eventRepo.destroy({ where: {} });
     await apptRepo.destroy({ where: {} });
     await availRepo.destroy({ where: {} });
   });
+
+  afterEach(async () => {
+    await eventRepo.destroy({ where: {} });
+    await apptRepo.destroy({ where: {} });
+    await availRepo.destroy({ where: {} });
+  });
+
   test('should be defined', () => {
     expect(calendarService).toBeDefined();
   });
@@ -137,24 +139,20 @@ describe('Calendar service', () => {
       startDate: new Date('2021-09-02'),
     });
     // Provisional (Does not count in event)
-    await apptService.createAppointment(
-      identity,
-      {
-        staffId: 100,
-        patientId: 1,
-        appointmentTypeId: 1,
-        durationMinutes: 120,
-        startDate: '2021-09-10',
-      },
-      false,
-    );
+    await apptService.createProvisionalAppointment(identity, {
+      staffId: 100,
+      patientId: 1,
+      appointmentTypeId: 1,
+      durationMinutes: 120,
+      startDate: new Date('2021-09-10'),
+    });
     // Non-Provisional
     // (Counts as availability #3) and (Appointment #4)
     await apptService.createAppointment(
       identity,
       {
         staffId: 100,
-        patientId: 1,
+        patientId: 2,
         appointmentTypeId: 1,
         appointmentStatusId: 2,
         durationMinutes: 120,
