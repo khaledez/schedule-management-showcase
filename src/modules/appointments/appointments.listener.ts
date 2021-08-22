@@ -8,6 +8,7 @@ import {
   VISIT_COMPLETE_EVENT_NAME,
 } from 'common/constants';
 import { AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { DateTime } from 'luxon';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
@@ -137,37 +138,65 @@ export class AppointmentsListener {
       userInfo: null,
       userLang: null,
     };
-    await this.sequelizeInstance.transaction(async (transaction: Transaction) => {
-      // 1. cancel the appointment
-      const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
-        identity,
-        CancelRescheduleReasonCode.ABORT_VISIT,
-      );
-      // TODO - Do we need a provisional date?
-      const [cancelResult] = await this.appointmentsService.cancelAppointments(
-        identity,
-        [
-          {
-            appointmentId: payload.data.visit.appointmentId,
-            keepAvailabiltySlot: false,
-            reasonId: cancelReasonId,
-            reasonText: 'visit aborted',
-            visitId: payload.data.visit.id,
-          },
-        ],
-        transaction,
-      );
+    try {
+      await this.sequelizeInstance.transaction(async (transaction: Transaction) => {
+        // 1. get appointment info
+        const appointment = await this.appointmentsService.findOne(identity, payload.data.visit.appointmentId);
 
-      if (cancelResult.status === 'FAIL') {
-        this.logger.error(cancelResult.error, 'appointmentListner/handleAbortVisit');
-      } else {
-        this.logger.debug({
-          message: 'canceled appointment after visit',
-          visitId: payload.data.visit.id,
-          appointmentId: payload.data.visit.appointmentId,
-        });
-      }
-      // 2. TODO create a new appointment with release? -- check with Shoukri
-    });
+        if (!appointment) {
+          this.logger.error({
+            message: `cannot find appointment with id: ${payload.data?.visit?.appointmentId}`,
+            payload,
+          });
+          return;
+        }
+        // 2. cancel the appointment
+        const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
+          identity,
+          CancelRescheduleReasonCode.ABORT_VISIT,
+        );
+        const [cancelResult] = await this.appointmentsService.cancelAppointments(
+          identity,
+          [
+            {
+              appointmentId: payload.data.visit.appointmentId,
+              keepAvailabiltySlot: false,
+              reasonId: cancelReasonId,
+              reasonText: 'visit aborted',
+              visitId: payload.data.visit.id,
+            },
+          ],
+          transaction,
+        );
+
+        if (cancelResult.status === 'FAIL') {
+          this.logger.error(cancelResult.error, 'appointmentListner/handleAbortVisit');
+          throw new Error(`failed to cancel appointment`);
+        } else {
+          this.logger.debug({
+            message: 'canceled appointment after visit',
+            visitId: payload.data.visit.id,
+            appointmentId: payload.data.visit.appointmentId,
+          });
+        }
+        // 3. create a provisional appointment with the same date as the cancelled appointment
+        const newAppt = await this.appointmentsService.createAppointment(
+          identity,
+          {
+            staffId: appointment.staffId,
+            durationMinutes: appointment.durationMinutes,
+            appointmentTypeId: payload.data.visit.appointmentTypeId,
+            patientId: payload.patientId,
+            startDate: DateTime.fromJSDate(appointment.startDate).toISO(), // TODO - ask Shoukri What to use in this case?
+          },
+          true,
+          transaction,
+        );
+
+        this.logger.debug({ newAppt, message: 'created a new provisional appointment' });
+      });
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
 }
