@@ -203,51 +203,69 @@ export class LookupsService {
       const appointmentActionsPlain = internalAppointmentsActions.map((e) => e.get({ plain: true }));
 
       const nextActions = {
-        WAIT_LIST: ['SCHEDULE'],
-        SCHEDULE: ['CONFIRM1'],
-        CONFIRM1: ['CONFIRM2'],
-        CONFIRM2: ['CHECK_IN'],
-        CHECK_IN: ['READY'],
-        READY: ['IN_PROGRESS'],
-        IN_PROGRESS: ['COMPLETE'],
-        COMPLETE: [],
-        CANCELED: [],
+        WAIT_LIST: {
+          Primary: ['SCHEDULE'],
+          Secondary: ['CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        },
+        SCHEDULE: {
+          Primary: ['CONFIRM1'],
+          Secondary: [
+            'CONFIRM2',
+            'CHECK_IN',
+            'READY',
+            'RESCHEDULE_APPT',
+            'CANCEL',
+            'CHANGE_APPT_TYPE',
+            'RELEASE_PATIENT',
+          ],
+        },
+        CONFIRM1: {
+          Primary: ['CONFIRM2'],
+          Secondary: ['CHECK_IN', 'READY', 'RESCHEDULE_APPT', 'CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        },
+        CONFIRM2: {
+          Primary: ['CHECK_IN'],
+          Secondary: ['READY', 'RESCHEDULE_APPT', 'CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        },
+        CHECK_IN: {
+          Primary: ['READY'],
+          Secondary: ['RESCHEDULE_APPT', 'CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        },
+        READY: {
+          Primary: ['RESCHEDULE_APPT'],
+          Secondary: ['CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        },
+        IN_PROGRESS: {
+          Primary: [],
+          Secondary: [],
+        },
+        COMPLETE: {
+          Primary: [],
+          Secondary: [],
+        },
+        CANCELED: {
+          Primary: [],
+          Secondary: [],
+        },
       };
 
       const internalStatuses = await internalAppointmentsStatus;
       // TODO: MMX-S4/S5 create fcm and check the status
       // At S2 status are sorted in the order so the next id is next status
-      const appointmentsPrimaryActions = ids.map((id: number) => {
+      const appointmentsActions = ids.map((id: number) => {
         const statusData = internalStatuses.find((statusObj) => statusObj.id === id);
+        const primaryAction = nextActions[statusData.code].Primary[0];
+        const secondaryActions = nextActions[statusData.code].Secondary || [];
         return {
           currentActionId: id,
           // next status type calculated depend ids !!!
           // nextAction: internalAppointmentsStatus.find((statusObj) => statusObj.id === id + 1),
-          nextAction: internalStatuses.find((statusObj) => statusObj.code === nextActions[statusData.code][0]),
+          nextAction: appointmentActionsPlain.find((ele) => ele.code === primaryAction),
+          secondaryActions: secondaryActions.length
+            ? appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) => secondaryActions.includes(e.code))
+            : [],
         };
       });
-
-      //TODO: MMX-later change the static way to dynamic.
-      //TODO: MMX-CurrentSprint => static value
-      const secondaryAppointmentActions = {
-        WAIT_LIST: ['CHANGE_DATE', 'CHANGE_APPT_TYPE', 'CHANGE_DOCTOR'],
-        SCHEDULE: ['CANCEL', 'CHANGE_DATE', 'CHANGE_APPT_TYPE', 'RESCHEDULE_APPT'],
-        CONFIRM1: ['CANCEL', 'CHANGE_APPT_TYPE'],
-        CONFIRM2: ['CANCEL', 'CHANGE_APPT_TYPE'],
-        CHECK_IN: ['CANCEL'],
-        READY: ['IN_PROGRESS', 'CANCEL'],
-        IN_PROGRESS: [],
-        COMPLETE: [],
-      };
-
-      const appointmentsActions = appointmentsPrimaryActions.map((action) => ({
-        ...action,
-        secondaryActions: action.nextAction
-          ? appointmentActionsPlain.filter((e: AppointmentActionsLookupsModel) =>
-              secondaryAppointmentActions[action.nextAction.code].includes(e.code),
-            )
-          : [],
-      }));
 
       return appointmentsActions;
     } catch (error) {
