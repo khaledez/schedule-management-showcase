@@ -1047,12 +1047,16 @@ export class AppointmentsService {
           appointment.updatedBy = identity.userId;
           appointment.canceledAt = new Date();
           appointment.canceledBy = identity.userId;
+          if (cancelReq.visitId) {
+            appointment.visitId = cancelReq.visitId;
+          }
           return appointment.get({ plain: true });
         });
       if (appointmentsToUpdate) {
         await this.appointmentsRepository.bulkCreate(appointmentsToUpdate, {
           transaction,
           updateOnDuplicate: [
+            'visitId',
             'appointmentStatusId',
             'cancelRescheduleReasonId',
             'cancelRescheduleText',

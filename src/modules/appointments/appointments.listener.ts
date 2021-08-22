@@ -1,11 +1,39 @@
 import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { DEFAULT_EVENT_DURATION_MINS, SEQUELIZE, VISIT_COMPLETE_EVENT_NAME } from 'common/constants';
-import { CancelRescheduleReasonCode } from 'common/enums';
+import {
+  ABORT_VISIT_EVENT_NAME,
+  DEFAULT_EVENT_DURATION_MINS,
+  SEQUELIZE,
+  VISIT_COMPLETE_EVENT_NAME,
+} from 'common/constants';
+import { AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
+
+interface AbortVisitMessage {
+  eventName: 'ABORT_VISIT_EVENT';
+  source: string;
+  patientId: number;
+  clinicId: number;
+  userId: number;
+  data: {
+    visit: {
+      active: boolean;
+      amended: boolean;
+      appointmentId: number;
+      appointmentTypeId: number;
+      clinicId: number;
+      createdBy: number;
+      updatedBy: number;
+      createdAt: Date;
+      updatedAt: Date;
+      modeCode: AppointmentVisitModeEnum;
+      id: number;
+    };
+  };
+}
 
 @Injectable()
 export class AppointmentsListener {
@@ -98,5 +126,48 @@ export class AppointmentsListener {
       });
       await transaction.rollback();
     }
+  }
+
+  @OnEvent(ABORT_VISIT_EVENT_NAME, { async: true })
+  async handleAbortVisit(payload: AbortVisitMessage) {
+    const identity: IIdentity = {
+      clinicId: payload.clinicId,
+      userId: payload.userId,
+      cognitoId: null,
+      userInfo: null,
+      userLang: null,
+    };
+    await this.sequelizeInstance.transaction(async (transaction: Transaction) => {
+      // 1. cancel the appointment
+      const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
+        identity,
+        CancelRescheduleReasonCode.ABORT_VISIT,
+      );
+      // TODO - Do we need a provisional date?
+      const [cancelResult] = await this.appointmentsService.cancelAppointments(
+        identity,
+        [
+          {
+            appointmentId: payload.data.visit.appointmentId,
+            keepAvailabiltySlot: false,
+            reasonId: cancelReasonId,
+            reasonText: 'visit aborted',
+            visitId: payload.data.visit.id,
+          },
+        ],
+        transaction,
+      );
+
+      if (cancelResult.status === 'FAIL') {
+        this.logger.error(cancelResult.error, 'appointmentListner/handleAbortVisit');
+      } else {
+        this.logger.debug({
+          message: 'canceled appointment after visit',
+          visitId: payload.data.visit.id,
+          appointmentId: payload.data.visit.appointmentId,
+        });
+      }
+      // 2. TODO create a new appointment with release? -- check with Shoukri
+    });
   }
 }

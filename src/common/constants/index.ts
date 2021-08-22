@@ -36,6 +36,7 @@ export const BAD_REQUEST = 'BAD_REQUEST';
 
 /* Events & Topics */
 export const VISIT_COMPLETE_EVENT_NAME = 'visit_complete';
+export const ABORT_VISIT_EVENT_NAME = 'ABORT_VISIT_EVENT';
 export const APPOINTMENT_CHECKIN_STATUS_EVENT = 'appointment_checkin';
 
 export const SCHEDULE_MGMT_TOPIC = 'schedule-management';

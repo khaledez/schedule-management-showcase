@@ -21,4 +21,8 @@ export class CancelAppointmentDto {
   @IsBoolean()
   @Type(() => Boolean)
   keepAvailabiltySlot: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  visitId?: number;
 }
