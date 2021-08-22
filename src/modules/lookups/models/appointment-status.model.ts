@@ -1,7 +1,6 @@
-import { Column, HasMany, Table } from 'sequelize-typescript';
+import { LookupsModel } from 'common/models/lookup.model';
+import { Column, Table } from 'sequelize-typescript';
 import { LookupWithCodeAttributes } from '.';
-import { LookupsModel } from '../../../common/models/lookup.model';
-import { AppointmentsModel } from '../../appointments/appointments.model';
 
 @Table({ tableName: 'AppointmentStatusLookups', underscored: true })
 export class AppointmentStatusLookupsModel
@@ -9,7 +8,4 @@ export class AppointmentStatusLookupsModel
   implements LookupWithCodeAttributes {
   @Column
   code: string;
-
-  @HasMany(() => AppointmentsModel, 'appointmentStatusId')
-  appointment?: AppointmentsModel[];
 }

@@ -1,7 +1,7 @@
 import { FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
 import { Type } from 'class-transformer';
 import { IsObject, IsOptional, ValidateNested } from 'class-validator';
-import { FilterAvailabilityInputDto, FilterDateInputDto } from '../../common/dtos';
+import { FilterDateInputDto } from '../../common/dtos';
 import { CalendarSearchInput } from './calendar.interface';
 
 export class CalendarSearchDto implements CalendarSearchInput {

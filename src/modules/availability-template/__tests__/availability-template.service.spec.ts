@@ -5,7 +5,6 @@ import { AVAILABILITY_TEMPLATE_REPOSITORY, SEQUELIZE } from 'common/constants';
 import { ConfigurationModule } from 'modules/config/config.module';
 import { DatabaseModule } from 'modules/database/database.module';
 import { Sequelize } from 'sequelize/types';
-// import { createDB, dropDB, migrateDB } from 'utils/test-helpers/DatabaseHelpers';
 import { AvailabilityTemplateModule } from '../availability-template.module';
 import { AvailabilityTemplateService } from '../availability-template.service';
 import { AvailabilitySlotDto } from '../dto/availability-template-slot.dto';
@@ -30,9 +29,6 @@ describe('AvailabilityTemplateService', () => {
     }).compile();
 
     service = module.get<AvailabilityTemplateService>(AvailabilityTemplateService);
-    // await dropDB();
-    // await createDB();
-    // await migrateDB();
     db = await module.get(SEQUELIZE);
     repo = await module.get<typeof AvailabilityTemplateModel>(AVAILABILITY_TEMPLATE_REPOSITORY);
     config = await module.get<ConfigService>('ConfigService');
@@ -96,7 +92,7 @@ describe('AvailabilityTemplateService', () => {
   describe('#createAvailabilityTemplate', () => {
     // Success case
     it('Creates an entry in database with valid dto', async () => {
-      const obj = await service.createAvailabilityTemplate(mockDto);
+      const obj = await service.createAvailabilityTemplate(identity, mockDto);
       const template = obj.templates[0];
       expect(template.name).toBe(mockDto.name);
       expect(template.availabilitySlots.length).toBe(mockSlots.length);
@@ -105,7 +101,7 @@ describe('AvailabilityTemplateService', () => {
     // Rest of validation is done through pipes in controller
     it('Fails if appointment type not valid', async () => {
       mockSlots[0].appointmentTypeId = 100;
-      await expect(service.createAvailabilityTemplate(mockDto)).rejects.toThrow(/type/);
+      await expect(service.createAvailabilityTemplate(identity, mockDto)).rejects.toThrow(/type/);
     });
   });
 
@@ -113,21 +109,21 @@ describe('AvailabilityTemplateService', () => {
     // Create templates to search for
     const populateDatabase = async () => {
       // 1. Dr. Khaled
-      await service.createAvailabilityTemplate(mockDto);
+      await service.createAvailabilityTemplate(identity, mockDto);
 
       // 2. Dr. Khaled 2
       mockDto.name += ' 2';
-      await service.createAvailabilityTemplate(mockDto);
+      await service.createAvailabilityTemplate(identity, mockDto);
 
       // 3. Dr Ehab
       mockDto.name = "Dr. Ehab's Typical Monday";
-      await service.createAvailabilityTemplate(mockDto);
+      await service.createAvailabilityTemplate(identity, mockDto);
 
       // Different clinic
       const mockDto2 = { ...mockDto };
       mockDto2.clinicId = 200;
       mockDto2.name = "Dr. Raji's Typical Monday";
-      await service.createAvailabilityTemplate(mockDto2);
+      await service.createAvailabilityTemplate(identity, mockDto2);
     };
     it('Searches succesfully providing key (case insensitive)', async () => {
       await populateDatabase();
@@ -149,9 +145,9 @@ describe('AvailabilityTemplateService', () => {
     // Create templates to search for
     const ids = [];
     const populateDatabase = async () => {
-      ids.push((await service.createAvailabilityTemplate(mockDto)).templates[0].id);
-      ids.push((await service.createAvailabilityTemplate(mockDto)).templates[0].id);
-      ids.push((await service.createAvailabilityTemplate(mockDto)).templates[0].id);
+      ids.push((await service.createAvailabilityTemplate(identity, mockDto)).templates[0].id);
+      ids.push((await service.createAvailabilityTemplate(identity, mockDto)).templates[0].id);
+      ids.push((await service.createAvailabilityTemplate(identity, mockDto)).templates[0].id);
     };
     it('Succesfully deletes and cascades an entry provided id', async () => {
       await populateDatabase();

@@ -46,12 +46,17 @@ export class AppointmentsListener {
       const identity: IIdentity = { clinicId, userId, cognitoId: null, userInfo: null, userLang: null };
 
       // cancel all patient future appointments including provisional
-      await this.appointmentsService.cancelPatientInCompleteAppointments(
+      const releaseReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
+        identity,
+        CancelRescheduleReasonCode.RELEASE,
+      );
+      await this.appointmentsService.cancelAllOpenAppointments(
         identity,
         patientId,
-        CancelRescheduleReasonCode.RELEASE,
-        [visitAppointmentId],
+        releaseReasonId,
+        'visit completed',
         transaction,
+        [visitAppointmentId],
       );
 
       await this.appointmentsService.completeAppointment(
@@ -71,7 +76,7 @@ export class AppointmentsListener {
         ? await this.lookupsService.getFUBAppointmentTypeId(identity)
         : provisionalTypeId;
 
-      await this.appointmentsService.createAppointmentAfterVisitFlow(
+      await this.appointmentsService.createAppointment(
         identity,
         {
           patientId,
@@ -81,6 +86,7 @@ export class AppointmentsListener {
           appointmentTypeId,
           appointmentStatusId,
         },
+        true,
         transaction,
       );
 

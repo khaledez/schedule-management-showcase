@@ -1,7 +1,6 @@
 import { FilterDateInputDto, IIdentity } from '@dashps/monmedx-common';
 import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 import {
-  BadRequestException,
   forwardRef,
   Inject,
   Injectable,
@@ -14,7 +13,6 @@ import {
   APPOINTMENT_SUGGESTIONS_QUERY_LIMIT,
   APPOINTMENT_SUGGESTIONS_RETURN_LIMIT,
   AVAILABILITY_REPOSITORY,
-  BAD_REQUEST,
   DAY_TO_MILLI_SECOND,
   SEQUELIZE,
 } from 'common/constants';
@@ -262,14 +260,7 @@ export class AvailabilityService {
    */
   async getAvailabilitySuggestions(identity: IIdentity, payload: GetSuggestionsDto): Promise<CalendarEntry[]> {
     const appointmentTypeId: number = payload.appointmentTypeId;
-    const isValid: boolean = await this.lookupsService.doesAppointmentTypeExist(payload.appointmentTypeId);
-    if (!isValid) {
-      throw new BadRequestException({
-        fields: ['appointmentTypeId'],
-        message: 'Unknown appointment type',
-        code: BAD_REQUEST,
-      });
-    }
+    await this.lookupsService.validateAppointmentsTypes(identity, [appointmentTypeId]);
     const referenceDate: Date = await this.pickReferenceDate(identity, payload.referenceDate, payload.patientId);
     const suggestions: AvailabilityModel[] = await this.getSuggestions(
       identity.clinicId,

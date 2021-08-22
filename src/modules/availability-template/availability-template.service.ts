@@ -1,9 +1,9 @@
+import { IIdentity } from '@dashps/monmedx-common';
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { AVAILABILITY_TEMPLATE_REPOSITORY, BAD_REQUEST } from 'common/constants';
 import { ErrorCodes } from 'common/enums/error-code.enum';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { Op, WhereOptions } from 'sequelize';
-import { AvailabilitySlotDto } from './dto/availability-template-slot.dto';
 import { AvailabilityTemplateDto } from './dto/availability-template.dto';
 import { AvailabilityTemplateResult } from './interfaces/availability-template.interface';
 import { AvailabilityTemplateSlotModel } from './model/availability-template-slot.model';
@@ -22,9 +22,15 @@ export class AvailabilityTemplateService {
    * @param payload [name, userId, clinicId, array of AvailabilitySlot objects]
    * @returns Promise that resolves to added Template
    */
-  async createAvailabilityTemplate(payload: AvailabilityTemplateDto): Promise<AvailabilityTemplateResult> {
+  async createAvailabilityTemplate(
+    identity: IIdentity,
+    payload: AvailabilityTemplateDto,
+  ): Promise<AvailabilityTemplateResult> {
     // Validate if slot appointment type
-    await this.validateSlotsLookupTypes(payload);
+    await this.lookupsService.validateAppointmentsTypes(
+      identity,
+      payload.availabilitySlots.map((s) => s.appointmentTypeId),
+    );
     try {
       // Creates nested slots automatically
       const templates = [];
@@ -109,37 +115,5 @@ export class AvailabilityTemplateService {
       });
     }
     return;
-  }
-
-  /**
-   * valdiates appointment type in each slot
-   * @param input clinicId and slots
-   * @throws BadRequestException if slots are invalid
-   * @todo validate by clinicId when functionality is available
-   */
-  private async validateSlotsLookupTypes(input: {
-    clinicId: number;
-    availabilitySlots: AvailabilitySlotDto[];
-  }): Promise<void> {
-    const { availabilitySlots } = input;
-    // Get unique appointmentTypeIds
-    const ids = [...new Set(availabilitySlots.map((slot) => slot.appointmentTypeId))];
-
-    // Get type ids
-    const types = await this.lookupsService.findAllAppointmentTypesLookups();
-    // const types = await this.lookupsService.findAllAppointmentTypesLookups({ clinicId });
-
-    const typeIds = types.map((type) => type.id);
-    // Check if ids are valid
-
-    const idsAreSubsetOfTypeIds = ids.every((id) => typeIds.includes(id));
-    if (!idsAreSubsetOfTypeIds) {
-      this.logger.error({
-        code: BAD_REQUEST,
-        function: 'createAvailabiltyTemplate -> validateSlotsLookupTypes',
-        error: 'Invalid appointment type id',
-      });
-      throw new BadRequestException({ code: BAD_REQUEST, message: 'Invalid appointment type id' });
-    }
   }
 }

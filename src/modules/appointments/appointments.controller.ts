@@ -1,11 +1,4 @@
-import {
-  Identity,
-  IIdentity,
-  PaginationInterceptor,
-  PagingInfo,
-  PagingInfoInterface,
-  TransactionInterceptor,
-} from '@dashps/monmedx-common';
+import { Identity, IIdentity, PaginationInterceptor, PagingInfo, PagingInfoInterface } from '@dashps/monmedx-common';
 import {
   BadRequestException,
   Body,
@@ -21,19 +14,17 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
-import { AppointmentVisitModeEnum } from 'common/enums';
-import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
+import { CancelRescheduleReasonCode } from 'common/enums';
 import { AppointmentStatusActions } from 'common/intercepter/appointment-status-actions';
 import { UserError } from 'common/interfaces/user-error.interface';
-import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
 import { GetPatientNextAppointment } from 'modules/appointments/dto/get-patient-next-appointment';
 import { PatientInfoService } from 'modules/patient-info';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel } from './appointments.model';
 import { AppointmentsService } from './appointments.service';
+import { AdhocAppointmentDto } from './dto/appointment-adhoc.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
-import { CreateAppointmentAdhocDto } from './dto/create-appointment-adhoc.dto';
 import { CreateAppointmentProvisionalBodyDto } from './dto/create-appointment-provisional-body.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
@@ -183,7 +174,19 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData });
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return { appointment: await this.appointmentsService.createAppointment(identity, appointmentData, true) };
+    const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.RELEASE,
+    );
+    return {
+      appointment: await this.appointmentsService.cancelAllAndCreateAppointment(
+        identity,
+        appointmentData,
+        true,
+        cancelReasonId,
+        'create new appointment',
+      ),
+    };
   }
 
   @Post('reschedule')
@@ -219,55 +222,21 @@ export class AppointmentsController {
   }
 
   /**
-   * @deprecated
-   * @param identity
-   * @param appointmentData
-   * @param transaction
-   * @returns
+   * Adhoc visit/appointment, is when a staff initiate a visit from patient's profile
+   *
+   * https://monmedx.atlassian.net/browse/MMX-4351
+   *
    */
-  @UseInterceptors(TransactionInterceptor)
   @Post('adhoc')
   // @Permissions(PermissionCode.APPOINTMENT_WRITE)
-  async createAdHoc(
+  async adhocAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
-    @Body() appointmentData: CreateAppointmentAdhocDto,
+    @Body() appointmentData: AdhocAppointmentDto,
   ): Promise<AppointmentsModel> {
-    this.logger.debug({
-      function: 'appointment/createAdHoc',
-      identity,
-      appointmentData,
-    });
-    let modeCode = appointmentData.modeCode;
-    if (modeCode === 'IN-PERSON') {
-      modeCode = AppointmentVisitModeEnum.IN_PERSON;
-    }
-    const readyStatus = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
-    const typeFUBId = await this.lookupsService.getFUBAppointmentTypeId(identity);
-    const appointmentModeId = modeCode
-      ? await this.lookupsService.getVisitModeByCode(AppointmentVisitModeEnum[modeCode])
-      : null;
-
-    this.logger.debug({
-      appointmentData,
-      readyStatus,
-      typeFUBId: `${typeFUBId}`,
-    });
-
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return this.appointmentsService.createAppointment(
-      identity,
-      {
-        patientId: appointmentData.patientId,
-        appointmentStatusId: readyStatus,
-        appointmentTypeId: typeFUBId,
-        appointmentVisitModeId: appointmentModeId,
-        staffId: identity.userId,
-        startDate: appointmentData.date.toISOString(),
-        durationMinutes: DEFAULT_EVENT_DURATION_MINS,
-      },
-      true,
-    );
+
+    return this.appointmentsService.adhocAppointment(identity, appointmentData);
   }
 
   @Post('forPatient')

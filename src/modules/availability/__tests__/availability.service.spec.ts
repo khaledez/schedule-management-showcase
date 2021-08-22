@@ -188,7 +188,7 @@ describe('# AvailabilityService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.response).toHaveProperty('fields', ['appointmentTypeId']);
-        expect(error.response).toHaveProperty('message', 'Unknown appointment type');
+        expect(error.response).toHaveProperty('invalidIds', [5]);
         expect(error.response).toHaveProperty('code', BAD_REQUEST);
       }
     });

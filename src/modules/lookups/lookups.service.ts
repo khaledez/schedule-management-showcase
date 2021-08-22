@@ -1,5 +1,14 @@
 import { IIdentity } from '@dashps/monmedx-common';
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  CacheInterceptor,
+  CACHE_MANAGER,
+  Inject,
+  Injectable,
+  Logger,
+  UseInterceptors,
+} from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
   APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY,
@@ -10,10 +19,12 @@ import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
-import { AppointmentActionEnum, AppointmentVisitModeEnum } from 'common/enums';
+import { AppointmentActionEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AppointmentTypesEnum as AppointmentTypeEnum } from 'common/enums/appointment-type.enum';
 import { FindOptions, Op, Transaction } from 'sequelize';
+import { Cached } from 'utils/cached.decorator';
+import { LookupWithCodeAttributes } from './models';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentCancelRescheduleReasonLookupModel } from './models/appointment-cancel-reschedule-reason.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
@@ -23,6 +34,7 @@ import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
 
 @Injectable()
+@UseInterceptors(CacheInterceptor)
 export class LookupsService {
   private readonly logger = new Logger(LookupsService.name);
 
@@ -41,6 +53,7 @@ export class LookupsService {
     private readonly appointmentVisitModeRepository: typeof AppointmentVisitModeLookupModel,
     @Inject(APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY)
     private readonly appointmentCancelRescheduleReasonRepo: typeof AppointmentCancelRescheduleReasonLookupModel,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
   /**
    *
@@ -93,7 +106,11 @@ export class LookupsService {
    * @param identity
    * example: NEW, FUP
    */
-  public findAllAppointmentTypesLookups(identity?, transaction?: Transaction): Promise<AppointmentTypesLookupsModel[]> {
+  @Cached(({ clinicId = 0 }: IIdentity) => `appttypes-${clinicId}`)
+  public findAllAppointmentTypesLookups(
+    identity: IIdentity,
+    transaction?: Transaction,
+  ): Promise<AppointmentTypesLookupsModel[]> {
     const conditions: FindOptions<AppointmentTypesLookupsModel> = identity?.clinicId
       ? {
           where: {
@@ -112,6 +129,7 @@ export class LookupsService {
    * @param identity
    * example: READY, CHECK-IN
    */
+  @Cached(({ clinicId }: IIdentity) => `apptstatus-${clinicId}`)
   public findAllAppointmentStatusLookups(
     identity,
     transaction?: Transaction,
@@ -127,10 +145,11 @@ export class LookupsService {
     });
   }
 
-  public findAllAppointmentVisitModes(
+  @Cached(({ clinicId }: IIdentity) => `visitmode-${clinicId}`)
+  findAllAppointmentVisitModes(
     { clinicId }: IIdentity,
     transaction?: Transaction,
-  ): Promise<AppointmentVisitModeLookupModel[]> {
+  ): Promise<LookupWithCodeAttributes[]> {
     return this.appointmentVisitModeRepository.findAll({
       where: {
         clinicId: {
@@ -141,6 +160,7 @@ export class LookupsService {
     });
   }
 
+  @Cached(({ clinicId }: IIdentity) => `cancelreschedule-${clinicId}`)
   public findAllAppointmentCancelRescheduleReasons({
     clinicId,
   }: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
@@ -236,6 +256,7 @@ export class LookupsService {
     }
   }
 
+  @Cached(({ clinicId }: IIdentity, code: AppointmentStatusEnum) => `apptstatusid-${clinicId}-${code.toString()}`)
   public async getStatusIdByCode({ clinicId }: IIdentity | null, code: AppointmentStatusEnum): Promise<number> {
     if (!Object.keys(AppointmentStatusEnum).includes(code)) {
       throw new BadRequestException({
@@ -256,6 +277,7 @@ export class LookupsService {
     return result.id;
   }
 
+  @Cached(({ clinicId }: IIdentity, code: AppointmentStatusEnum) => `appttypeid-${clinicId}-${code.toString()}`)
   async getTypeByCode({ clinicId }: IIdentity | null, code: AppointmentTypeEnum): Promise<number> {
     if (!Object.keys(AppointmentTypeEnum).includes(code)) {
       throw new BadRequestException({
@@ -276,12 +298,29 @@ export class LookupsService {
     return result?.id;
   }
 
-  getCancelRescheduleReasonByCode(code: string, transaction?: Transaction): Promise<number> {
+  @Cached(
+    ({ clinicId }: IIdentity, code: CancelRescheduleReasonCode) => `apptcancelresid-${clinicId}-${code.toString()}`,
+  )
+  getCancelRescheduleReasonByCode(
+    { clinicId }: IIdentity,
+    code: CancelRescheduleReasonCode,
+    transaction?: Transaction,
+  ): Promise<number> {
     return this.appointmentCancelRescheduleReasonRepo
-      .findOne({ where: { code: code }, attributes: ['id'], transaction })
+      .findOne({
+        where: {
+          code,
+          clinicId: {
+            [Op.or]: [null, clinicId],
+          },
+        },
+        attributes: ['id'],
+        transaction,
+      })
       .then((model) => model?.id);
   }
 
+  @Cached((id: number) => `apptcancelres-${id}`)
   getCancelRescheduleReasonById(
     id: number,
     transaction?: Transaction,
@@ -297,16 +336,6 @@ export class LookupsService {
       attributes: ['id'],
     });
     return result?.id;
-  }
-
-  /**
-   * Check if an appointment type exists for a given id
-   * @param id appointment type id
-   */
-  async doesAppointmentTypeExist(id): Promise<boolean> {
-    // TODO: Once we support lookup configuration for clinic, we have to change this to include clinic id
-    const type = await this.appointmentTypesLookupsRepository.findByPk(id);
-    return type !== null;
   }
 
   /**
@@ -329,6 +358,8 @@ export class LookupsService {
 
     if (invalidIds.length !== 0) {
       throw new BadRequestException({
+        invalidIds,
+        fields: ['appointmentTypeId'],
         message: `The appointment types doesn't exist: [${invalidIds}]`,
         code: BAD_REQUEST,
       });

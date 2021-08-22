@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, CacheModule } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY,
@@ -7,6 +7,9 @@ import {
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
   BAD_REQUEST,
 } from 'common/constants';
+import { ConfigurationModule } from 'modules/config/config.module';
+import { DatabaseModule } from 'modules/database/database.module';
+import { LookupsModule } from 'modules/lookups/lookups.module';
 import { lookupsProviders } from 'modules/lookups/lookups.provider';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import {
@@ -16,9 +19,6 @@ import {
   appointmentVisitModeLookupData,
 } from 'modules/lookups/__tests__/lookups.data';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
-import { ConfigurationModule } from 'modules/config/config.module';
-import { DatabaseModule } from 'modules/database/database.module';
-import { LookupsModule } from 'modules/lookups/lookups.module';
 
 describe('LookupsService', () => {
   let lookupsService: LookupsService;
@@ -51,6 +51,7 @@ describe('LookupsService', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register({ ttl: 60 * 60 /* 1 hour */ })],
       providers: [LookupsService, ...lookupsProviders, ...testLookupProviders],
     }).compile();
     lookupsService = await module.get<LookupsService>(LookupsService);
@@ -58,14 +59,6 @@ describe('LookupsService', () => {
 
   test('should be defined', () => {
     expect(lookupsService).toBeDefined();
-  });
-
-  test.each([
-    { id: 1, expected: true },
-    { id: 5, expected: false },
-  ])('# doesAppointmentTypeExist: %p', async (testCase) => {
-    const result: boolean = await lookupsService.doesAppointmentTypeExist(testCase.id);
-    expect(result).toEqual(testCase.expected);
   });
 
   test.each([{ ids: null }, { ids: [] }, { ids: [1, 2, 3], willThrowException: false }])(
@@ -142,7 +135,6 @@ describe('LookupsService with sequelize', () => {
   beforeAll(async () => {
     module = await Test.createTestingModule({
       imports: [ConfigurationModule, DatabaseModule, LookupsModule],
-      providers: [LookupsService, ...lookupsProviders],
     }).compile();
     lookupsService = await module.get<LookupsService>(LookupsService);
   });

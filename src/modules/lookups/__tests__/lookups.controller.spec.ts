@@ -1,15 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LookupsController } from 'modules/lookups/lookups.controller';
-import { lookupsProviders } from 'modules/lookups/lookups.provider';
-import { LookupsService } from 'modules/lookups/lookups.service';
+import { LookupsModule } from '../lookups.module';
 
 describe('LookupsController', () => {
   let controller: LookupsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LookupsService, ...lookupsProviders],
-      controllers: [LookupsController],
+      imports: [LookupsModule],
     }).compile();
 
     controller = module.get<LookupsController>(LookupsController);

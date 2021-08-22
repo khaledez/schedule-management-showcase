@@ -1,5 +1,5 @@
 export enum AppointmentVisitModeEnum {
-  IN_PERSON = 'IN_PERSON',
+  IN_PERSON = 'IN-PERSON',
   VIRTUAL = 'VIRTUAL ',
   PHONE = 'PHONE',
 }

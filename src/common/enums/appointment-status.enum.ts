@@ -5,6 +5,7 @@ export enum AppointmentStatusEnum {
   CONFIRM2 = 'CONFIRM2',
   CHECK_IN = 'CHECK_IN',
   READY = 'READY',
+  IN_PROGRESS = 'IN_PROGRESS',
   COMPLETE = 'COMPLETE',
   CANCELED = 'CANCELED',
 }

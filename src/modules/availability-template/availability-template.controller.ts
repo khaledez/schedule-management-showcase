@@ -36,7 +36,7 @@ export class AvailabilityTemplateController {
       clinicId: identity.clinicId,
       availabilitySlots,
     };
-    return this.templateService.createAvailabilityTemplate(dto);
+    return this.templateService.createAvailabilityTemplate(identity, dto);
   }
 
   /**

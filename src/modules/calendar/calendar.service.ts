@@ -1,6 +1,7 @@
 import { FilterStringInputDto, IIdentity } from '@dashps/monmedx-common';
 import { Injectable, Logger } from '@nestjs/common';
 import { CalendarType } from 'common/enums';
+import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
@@ -17,7 +18,6 @@ import {
   CalendarSearchInput,
   CalendarSearchResult,
 } from './calendar.interface';
-import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
 
 @Injectable()
 export class CalendarService {
@@ -34,6 +34,8 @@ export class CalendarService {
 
     const queryType = new EntryType(query.entryType);
 
+    // TODO fix these queries .. making queries in such way is wrong,
+    // as it will return appointments with availability as two entries
     const [appointments, events, availabilities] = await Promise.all([
       this.searchAppointments(identity, query, queryType),
       this.searchEvents(identity, query, queryType),

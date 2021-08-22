@@ -95,6 +95,17 @@ export class AppointmentsModel
   @Column(DataType.DATE)
   endDate: Date;
 
+  /**
+   * when creating an adhoc appointment this field represents the actual time.
+   * when completing an appointment and this field is empty,
+   * it will be populated with the same value as startDate
+   */
+  @Column(DataType.DATE)
+  actualStartDate: Date;
+
+  @Column(DataType.DATE)
+  actualEndDate: Date;
+
   @Column
   durationMinutes: number;
 
