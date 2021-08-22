@@ -34,8 +34,6 @@ export class CalendarService {
 
     const queryType = new EntryType(query.entryType);
 
-    // TODO fix these queries .. making queries in such way is wrong,
-    // as it will return appointments with availability as two entries
     const [appointments, events, availabilities] = await Promise.all([
       this.searchAppointments(identity, query, queryType),
       this.searchEvents(identity, query, queryType),

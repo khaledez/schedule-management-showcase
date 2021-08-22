@@ -176,7 +176,7 @@ export class AppointmentsController {
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
     const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
       identity,
-      CancelRescheduleReasonCode.RELEASE,
+      CancelRescheduleReasonCode.RESCHEDULE,
     );
     return {
       appointment: await this.appointmentsService.cancelAllAndCreateAppointment(

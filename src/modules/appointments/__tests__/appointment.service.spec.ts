@@ -302,7 +302,6 @@ describe('Appointment service', () => {
     });
 
     expect(res).toHaveLength(3);
-    //expect(res[0].date).toEqual(DateTime.now().plus({ days: 1 }).toISODate());
     expect(res[0].count).toEqual(2);
   });
 

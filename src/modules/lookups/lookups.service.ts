@@ -208,7 +208,8 @@ export class LookupsService {
         CONFIRM1: ['CONFIRM2'],
         CONFIRM2: ['CHECK_IN'],
         CHECK_IN: ['READY'],
-        READY: ['COMPLETE'],
+        READY: ['IN_PROGRESS'],
+        IN_PROGRESS: ['COMPLETE'],
         COMPLETE: [],
         CANCELED: [],
       };
@@ -234,7 +235,8 @@ export class LookupsService {
         CONFIRM1: ['CANCEL', 'CHANGE_APPT_TYPE'],
         CONFIRM2: ['CANCEL', 'CHANGE_APPT_TYPE'],
         CHECK_IN: ['CANCEL'],
-        READY: ['CANCEL'],
+        READY: ['IN_PROGRESS', 'CANCEL'],
+        IN_PROGRESS: [],
         COMPLETE: [],
       };
 
