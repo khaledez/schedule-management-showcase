@@ -27,7 +27,7 @@ module.exports = {
   down: (queryInterface, Sequelize) => {
     return queryInterface.sequelize.transaction(async (t) => {
       await queryInterface.sequelize.query(
-        "Delete From AppointmentActionsLookups Where WHERE CODE in ('SCHEDULE','CONFIRM1','CONFIRM2','CHECK_IN','READY','RELEASE_PATIENT') ",
+        "Delete From AppointmentActionsLookups WHERE CODE in ('SCHEDULE','CONFIRM1','CONFIRM2','CHECK_IN','READY','RELEASE_PATIENT') ",
         { transaction: t },
       );
       await queryInterface.bulkDelete('AppointmentStatusLookups', { code: 'RELEASED' }, { transaction: t });

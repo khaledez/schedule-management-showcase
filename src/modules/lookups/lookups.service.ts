@@ -32,6 +32,7 @@ import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
+import * as util from 'util';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)
@@ -173,88 +174,92 @@ export class LookupsService {
     });
   }
 
-  //TODO: MMX-CurrentSprint => static value
-  nextAppointmentActions = {
-    WAIT_LIST: [
-      AppointmentActionEnum.CHANGE_DATE,
-      AppointmentActionEnum.CHANGE_APPT_TYPE,
-      AppointmentActionEnum.CHANGE_DOCTOR,
-    ],
-    SCHEDULE: [
-      AppointmentActionEnum.CANCEL,
-      AppointmentActionEnum.CHANGE_DATE,
-      AppointmentActionEnum.CHANGE_APPT_TYPE,
-      AppointmentActionEnum.RESCHEDULE_APPT,
-    ],
-    CONFIRM: [AppointmentActionEnum.CANCEL, AppointmentActionEnum.CHANGE_APPT_TYPE],
-    CHECK_IN: [AppointmentActionEnum.CANCEL],
-    READY: [AppointmentActionEnum.CANCEL],
-    COMPLETE: [],
-  };
-
   /**
    * find Appointments Primary And Secondary Actions By Array Of Status Ids
    * @param ids AppointmentsStatusId
    */
   public async findAppointmentsActions(ids: Array<number>) {
     try {
-      const internalAppointmentsStatus = this.appointmentStatusLookupsRepository.findAll();
+      const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll();
       const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
       const appointmentActionsPlain = internalAppointmentsActions.map((e) => e.get({ plain: true }));
 
       const nextActions = {
-        WAIT_LIST: {
-          Primary: ['SCHEDULE'],
-          Secondary: ['CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        [AppointmentStatusEnum.WAIT_LIST]: {
+          Primary: [AppointmentActionEnum.SCHEDULE],
+          Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE, AppointmentActionEnum.RELEASE_PATIENT],
         },
-        SCHEDULE: {
-          Primary: ['CONFIRM1'],
+        [AppointmentStatusEnum.SCHEDULE]: {
+          Primary: [AppointmentActionEnum.CONFIRM1],
           Secondary: [
-            'CONFIRM2',
-            'CHECK_IN',
-            'READY',
-            'RESCHEDULE_APPT',
-            'CANCEL',
-            'CHANGE_APPT_TYPE',
-            'RELEASE_PATIENT',
+            AppointmentActionEnum.CONFIRM2,
+            AppointmentActionEnum.CHECK_IN,
+            AppointmentActionEnum.READY,
+            AppointmentActionEnum.RESCHEDULE_APPT,
+            AppointmentActionEnum.CANCEL,
+            AppointmentActionEnum.CHANGE_APPT_TYPE,
+            AppointmentActionEnum.RELEASE_PATIENT,
           ],
         },
-        CONFIRM1: {
-          Primary: ['CONFIRM2'],
-          Secondary: ['CHECK_IN', 'READY', 'RESCHEDULE_APPT', 'CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        [AppointmentStatusEnum.CONFIRM1]: {
+          Primary: [AppointmentActionEnum.CONFIRM2],
+          Secondary: [
+            AppointmentActionEnum.CHECK_IN,
+            AppointmentActionEnum.READY,
+            AppointmentActionEnum.RESCHEDULE_APPT,
+            AppointmentActionEnum.CANCEL,
+            AppointmentActionEnum.CHANGE_APPT_TYPE,
+            AppointmentActionEnum.RELEASE_PATIENT,
+          ],
         },
-        CONFIRM2: {
-          Primary: ['CHECK_IN'],
-          Secondary: ['READY', 'RESCHEDULE_APPT', 'CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        [AppointmentStatusEnum.CONFIRM2]: {
+          Primary: [AppointmentActionEnum.CHECK_IN],
+          Secondary: [
+            AppointmentActionEnum.READY,
+            AppointmentActionEnum.RESCHEDULE_APPT,
+            AppointmentActionEnum.CANCEL,
+            AppointmentActionEnum.CHANGE_APPT_TYPE,
+            AppointmentActionEnum.RELEASE_PATIENT,
+          ],
         },
-        CHECK_IN: {
-          Primary: ['READY'],
-          Secondary: ['RESCHEDULE_APPT', 'CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        [AppointmentStatusEnum.CHECK_IN]: {
+          Primary: [AppointmentActionEnum.READY],
+          Secondary: [
+            AppointmentActionEnum.RESCHEDULE_APPT,
+            AppointmentActionEnum.CANCEL,
+            AppointmentActionEnum.CHANGE_APPT_TYPE,
+            AppointmentActionEnum.RELEASE_PATIENT,
+          ],
         },
-        READY: {
-          Primary: ['RESCHEDULE_APPT'],
-          Secondary: ['CANCEL', 'CHANGE_APPT_TYPE', 'RELEASE_PATIENT'],
+        [AppointmentStatusEnum.READY]: {
+          Primary: [AppointmentActionEnum.RESCHEDULE_APPT],
+          Secondary: [
+            AppointmentActionEnum.CANCEL,
+            AppointmentActionEnum.CHANGE_APPT_TYPE,
+            AppointmentActionEnum.RELEASE_PATIENT,
+          ],
         },
-        IN_PROGRESS: {
+        [AppointmentStatusEnum.IN_PROGRESS]: {
           Primary: [],
           Secondary: [],
         },
-        COMPLETE: {
+        [AppointmentStatusEnum.COMPLETE]: {
           Primary: [],
           Secondary: [],
         },
-        CANCELED: {
+        [AppointmentStatusEnum.CANCELED]: {
           Primary: [],
           Secondary: [],
         },
       };
 
-      const internalStatuses = await internalAppointmentsStatus;
+      const internalStatuses = internalAppointmentsStatus.map((el) => el.get({ plain: true }));
       // TODO: MMX-S4/S5 create fcm and check the status
       // At S2 status are sorted in the order so the next id is next status
       const appointmentsActions = ids.map((id: number) => {
         const statusData = internalStatuses.find((statusObj) => statusObj.id === id);
         const primaryAction = nextActions[statusData.code].Primary[0];
+        //console.log(util.inspect(primaryAction));
         const secondaryActions = nextActions[statusData.code].Secondary || [];
         return {
           currentActionId: id,
@@ -269,6 +274,7 @@ export class LookupsService {
 
       return appointmentsActions;
     } catch (error) {
+      console.log({ error });
       throw new BadRequestException({
         function: 'findAppointmentsActions error',
         error,

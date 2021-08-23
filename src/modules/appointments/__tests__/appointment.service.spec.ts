@@ -5,6 +5,7 @@ import { AppointmentStatusEnum, CancelRescheduleReasonCode } from 'common/enums'
 import { DateTime } from 'luxon';
 import {
   getAppointmentByPatientIdTestCases,
+  getAppointmentWithActionsTestCases,
   getPatientAppointmentsTestData,
   getPatientHistoryTestCases,
   getPatientHistoryTestData,
@@ -25,6 +26,7 @@ import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
+import * as util from 'util';
 
 const identity: IIdentity = {
   // clinicId: Math.floor(Math.random() * 1000),
@@ -35,6 +37,33 @@ const identity: IIdentity = {
   userInfo: null,
 };
 
+describe('Appointment Actions', () => {
+  let moduleRef: TestingModule;
+  let sequelize: Sequelize;
+  let lookupsService: LookupsService;
+
+  beforeAll(async () => {
+    moduleRef = await Test.createTestingModule({
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule],
+    }).compile();
+
+    lookupsService = moduleRef.get<LookupsService>(LookupsService);
+    sequelize = moduleRef.get<Sequelize>(SEQUELIZE);
+  });
+
+  test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Primary: %p', async (testCase) => {
+    const actionsResult: any = await lookupsService.findAppointmentsActions([testCase.statusId]);
+    //console.log(util.inspect(actionsResult));
+    expect(actionsResult[0]?.nextAction.code).toEqual(testCase.Primary[0]);
+  });
+
+  test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Secondary: %p', async (testCase) => {
+    const actionsResult: any = await lookupsService.findAppointmentsActions([testCase.statusId]);
+    //console.log(util.inspect(actionsResult));
+    const actionsCodes = actionsResult[0]?.secondaryActions.map((el) => el.code);
+    expect(actionsCodes.sort()).toEqual(testCase.Secondary.sort());
+  });
+});
 describe('Appointment service', () => {
   let apptService: AppointmentsService;
   let moduleRef: TestingModule;

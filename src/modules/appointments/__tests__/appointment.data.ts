@@ -1,5 +1,5 @@
 import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
-import { Order } from 'common/enums';
+import { AppointmentActionEnum, Order } from 'common/enums';
 import { Key } from 'modules/appointments/dto/appointment-sort-dto';
 import { AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
 import { IIdentity } from '@dashps/monmedx-common';
@@ -289,6 +289,62 @@ export function getAppointmentByPatientIdTestCases() {
       patientId: 197,
       query: { after: 6 },
       date: new Date('2032-05-26T08:00:00.000Z'),
+    },
+  ];
+}
+
+export function getAppointmentWithActionsTestCases() {
+  return [
+    {
+      statusId: 1, //WAIT_LIST
+      Primary: [AppointmentActionEnum.SCHEDULE],
+      Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE, AppointmentActionEnum.RELEASE_PATIENT],
+    },
+    {
+      statusId: 2, //SCHEDULE
+      Primary: [AppointmentActionEnum.CONFIRM1],
+      Secondary: [
+        AppointmentActionEnum.CONFIRM2,
+        AppointmentActionEnum.CHECK_IN,
+        AppointmentActionEnum.READY,
+        AppointmentActionEnum.RESCHEDULE_APPT,
+        AppointmentActionEnum.CANCEL,
+        AppointmentActionEnum.CHANGE_APPT_TYPE,
+        AppointmentActionEnum.RELEASE_PATIENT,
+      ],
+    },
+    {
+      statusId: 3, //CONFIRM1
+      Primary: [AppointmentActionEnum.CONFIRM2],
+      Secondary: [
+        AppointmentActionEnum.CHECK_IN,
+        AppointmentActionEnum.READY,
+        AppointmentActionEnum.RESCHEDULE_APPT,
+        AppointmentActionEnum.CANCEL,
+        AppointmentActionEnum.CHANGE_APPT_TYPE,
+        AppointmentActionEnum.RELEASE_PATIENT,
+      ],
+    },
+    {
+      statusId: 4, //CHECK_IN
+      Primary: [AppointmentActionEnum.READY],
+      Secondary: [
+        AppointmentActionEnum.RESCHEDULE_APPT,
+        AppointmentActionEnum.CANCEL,
+        AppointmentActionEnum.CHANGE_APPT_TYPE,
+        AppointmentActionEnum.RELEASE_PATIENT,
+      ],
+    },
+    {
+      statusId: 8, //CONFIRM2
+      Primary: [AppointmentActionEnum.CHECK_IN],
+      Secondary: [
+        AppointmentActionEnum.READY,
+        AppointmentActionEnum.RESCHEDULE_APPT,
+        AppointmentActionEnum.CANCEL,
+        AppointmentActionEnum.CHANGE_APPT_TYPE,
+        AppointmentActionEnum.RELEASE_PATIENT,
+      ],
     },
   ];
 }
