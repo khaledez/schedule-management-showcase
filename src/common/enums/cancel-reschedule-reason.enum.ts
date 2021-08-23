@@ -3,4 +3,5 @@ export enum CancelRescheduleReasonCode {
   RELEASE = 'RELEASE',
   NO_SHOW_UP = 'NO_SHOW_UP',
   ABORT_VISIT = 'ABORT_VISIT',
+  DOCTOR_CHANGE = 'DOCTOR_CHANGE',
 }

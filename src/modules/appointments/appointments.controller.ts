@@ -162,10 +162,10 @@ export class AppointmentsController {
   /**
    *
    * @param identity
+   * @param authToken
    * @param appointmentData
    */
   @Post()
-  // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
