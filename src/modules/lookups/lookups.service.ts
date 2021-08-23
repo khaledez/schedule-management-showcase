@@ -19,7 +19,7 @@ import {
   DURATION_MINUTES_LOOKUPS_REPOSITORY,
   TIME_GROUPS_LOOKUPS_REPOSITORY,
 } from 'common/constants';
-import { AppointmentActionEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentActionEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode, ErrorCodes } from 'common/enums';
 import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AppointmentTypesEnum as AppointmentTypeEnum } from 'common/enums/appointment-type.enum';
 import { FindOptions, Op, Transaction } from 'sequelize';
@@ -442,6 +442,7 @@ export class LookupsService {
       const returnedIds = lookupData.map((lookup) => lookup.id);
       const unknownIds = distinctIds.filter((id) => !returnedIds.includes(id));
       throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
         message: `unknown cancel reschedule reason ID`,
         fields: ['cancel_reschedule_reason_id', 'reasonId'],
         unknownIds,
