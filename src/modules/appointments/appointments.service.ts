@@ -126,8 +126,6 @@ export class AppointmentsService {
     // const sequelizeSort = sequelizeSortMapper(this.logger, queryParams, this.associationFieldsSortNames, false);
 
     const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
-    //TODO: Make 'or' field optional in the filter
-    const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null });
     const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(
       queryParams.filter?.appointmentTypeId || { or: null },
     );
@@ -149,7 +147,6 @@ export class AppointmentsService {
           appointmentTypeId: appointmentTypeIdWhereClause,
           appointmentStatusId: appointmentStatusIdWhereClause,
           startDate: startDateWhereClause,
-          staffId: staffIdWhereClause,
           clinicId: identity.clinicId,
           deletedBy: null,
         },
@@ -206,6 +203,14 @@ export class AppointmentsService {
         dob: { [Op.eq]: queryParams.filter.dob.eq },
       };
     }
+
+    if (queryParams?.filter?.doctorId) {
+      where = {
+        ...where,
+        doctorId: this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null }),
+      };
+    }
+
     return {
       model: PatientInfoModel,
       as: 'patient',

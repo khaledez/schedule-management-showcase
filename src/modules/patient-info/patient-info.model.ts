@@ -5,6 +5,7 @@ export interface PatientInfoAttributes {
   clinicId: number;
   fullName: string;
   primaryHealthPlanNumber: string;
+  doctorId: number;
   dob: string;
   statusCode: string;
 }
@@ -28,6 +29,9 @@ export class PatientInfoModel
 
   @Column
   clinicId: number;
+
+  @Column
+  doctorId: number;
 
   @Column
   fullName: string;

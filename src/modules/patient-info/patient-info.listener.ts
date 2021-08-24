@@ -12,6 +12,7 @@ export interface PatientInfoPayload {
   firstName: string;
   lastName: string;
   primaryHealthPlanNumber: string;
+  doctorId: number;
   statusHistory: {
     status: {
       code: string;
@@ -72,6 +73,7 @@ export function patientInfoPayloadToAttributes(payload: PatientInfoPayload): Pat
     dob: payload.dob,
     fullName: `${payload.firstName} ${payload.lastName}`,
     primaryHealthPlanNumber: payload.primaryHealthPlanNumber,
+    doctorId: payload.doctorId,
     statusCode: payload.statusHistory.status.code,
   };
 }
