@@ -26,7 +26,6 @@ import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
-import * as util from 'util';
 
 const identity: IIdentity = {
   // clinicId: Math.floor(Math.random() * 1000),
@@ -39,7 +38,6 @@ const identity: IIdentity = {
 
 describe('Appointment Actions', () => {
   let moduleRef: TestingModule;
-  let sequelize: Sequelize;
   let lookupsService: LookupsService;
 
   beforeAll(async () => {
@@ -48,7 +46,10 @@ describe('Appointment Actions', () => {
     }).compile();
 
     lookupsService = moduleRef.get<LookupsService>(LookupsService);
-    sequelize = moduleRef.get<Sequelize>(SEQUELIZE);
+  });
+
+  afterAll(async () => {
+    await moduleRef.close();
   });
 
   test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Primary: %p', async (testCase) => {
@@ -150,6 +151,33 @@ describe('Appointment service', () => {
         );
       }
       done();
+    });
+
+    test('Creating an appointment with availabilityId must set the provided availability to occupied', async () => {
+      const createdAvailability = await availabilityService.createSingleAvailability(identity, {
+        appointmentTypeId: 2,
+        durationMinutes: 30,
+        staffId: 333,
+        startDate: '2021-12-12T15:00:00.000Z',
+      });
+
+      await expect(createdAvailability.isOccupied).toBeFalsy();
+
+      const createdAppointment = await apptService.createAppointment(
+        identity,
+        {
+          patientId: 245,
+          appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE),
+          availabilityId: createdAvailability.id,
+        },
+        true,
+      );
+
+      await expect(createdAppointment.staffId).toBe(333);
+      await expect(createdAppointment.appointmentTypeId).toBe(2);
+
+      const availabilityAfterUpdate = await availabilityService.findOne(createdAvailability.id);
+      await expect(availabilityAfterUpdate.isOccupied).toBe(true);
     });
 
     test('Fails if creating a provisional appointment while the patient has an existent one', async (done) => {

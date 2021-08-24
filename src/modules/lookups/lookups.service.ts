@@ -32,7 +32,6 @@ import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
-import * as util from 'util';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)
@@ -274,7 +273,7 @@ export class LookupsService {
 
       return appointmentsActions;
     } catch (error) {
-      console.log({ error });
+      this.logger.error(error);
       throw new BadRequestException({
         function: 'findAppointmentsActions error',
         error,

@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import {
-  FilterDateInputDto,
-  Identity,
-  IIdentity,
-  PagingInfoInterface,
-  sequelizeFilterMapper,
-} from '@dashps/monmedx-common';
+import { FilterDateInputDto, Identity, IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
@@ -33,7 +27,6 @@ import {
   CancelRescheduleReasonCode,
   ErrorCodes,
   isInTimeGroup,
-  Order,
 } from 'common/enums';
 import { addMinutesToDate } from 'common/helpers/date-time-helpers';
 import { DateTime } from 'luxon';
@@ -46,7 +39,6 @@ import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointmen
 import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import sequelize, { FindOptions, Op, QueryTypes, Transaction, WhereOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
-import { EventsService } from '../events/events.service';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
 import { AdhocAppointmentDto } from './dto/appointment-adhoc.dto';
@@ -59,7 +51,6 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
-import { AppointmentSortDto } from './dto/appointment-sort-dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -92,14 +83,7 @@ export class AppointmentsService {
     private readonly lookupsService: LookupsService,
     @Inject(forwardRef(() => AvailabilityService))
     private readonly availabilityService: AvailabilityService,
-    private readonly eventsService: EventsService,
   ) {}
-
-  private readonly associationFieldsFilterNames = {
-    patientFullName: `$patient.full_name$`,
-    patientHealthPlanNumber: `$patient.primary_health_plan_number$`,
-    dob: `$patient.dob$`,
-  };
 
   private readonly associationFieldsSortNames: AssociationFieldsSortCriteria = {
     STATUS: {
@@ -356,8 +340,7 @@ export class AppointmentsService {
     }
 
     this.logger.debug({ message: 'creating an appointment', dto });
-    // This flow is seperated in a function because most of it
-    // requires a database transaction
+    // This flow is seperated in a function because most of it requires a database transaction
     // eslint-disable-next-line complexity
     const validateInputThenArrangeAttributesAndCommit = async (transaction: Transaction) => {
       // 1 Appointment, Status, Visit Mode
@@ -381,7 +364,7 @@ export class AppointmentsService {
         });
       }
 
-      if (!isProvisional && !dto.staffId) {
+      if (!isProvisional && !dto.staffId && !dto.availabilityId) {
         const errorMessage = 'Non provisional appointment requires a staffId';
         this.logger.error({
           function: 'service/appointment/createAppointment',
@@ -395,44 +378,32 @@ export class AppointmentsService {
       }
 
       /* 2. Arrange attributes */
-      const {
-        availabilityId,
-        startDate,
-        endDate,
-        durationMinutes,
-        appointmentTypeId,
-        appointmentStatusId,
-        appointmentVisitModeId,
-      } = await Promise.all([
+      const { availability, appointmentStatusId, appointmentVisitModeId } = await Promise.all([
         this.getAvailabilityOrCreateOne(identity, { ...dto }, transaction),
         this.getAppointmentVisitModeId(dto),
         this.getAppointmentStatusId(identity, dto),
-      ]).then(([availabilityInfo, appointmentVisitModeId, appointmentStatusId]) => ({
-        availabilityId: availabilityInfo.availabilityId,
-        startDate: availabilityInfo.startDate,
-        endDate: availabilityInfo.endDate,
-        durationMinutes: availabilityInfo.durationMinutes,
-        appointmentTypeId: availabilityInfo.appointmentTypeId,
+      ]).then(([availability, appointmentVisitModeId, appointmentStatusId]) => ({
+        availability,
         appointmentVisitModeId,
         appointmentStatusId,
       }));
-      const provisionalDate: Date = provisionalAppointment ? provisionalAppointment.startDate : startDate;
+      const provisionalDate: Date = provisionalAppointment ? provisionalAppointment.startDate : availability.startDate;
 
       // 3.2 create the appointment
       const createdAppointment = await this.appointmentsRepository.create(
         {
           ...dto,
-          staffId: dto.staffId,
-          appointmentTypeId,
+          staffId: availability.staffId,
+          appointmentTypeId: availability.appointmentTypeId,
           clinicId: identity.clinicId,
           createdBy: identity.userId,
           provisionalDate,
-          startDate,
-          endDate,
-          durationMinutes,
+          startDate: availability.startDate,
+          endDate: availability.endDate,
+          durationMinutes: availability.durationMinutes,
           appointmentVisitModeId,
           appointmentStatusId,
-          availabilityId,
+          availabilityId: availability.id,
           upcomingAppointment,
         },
         { transaction },
@@ -512,13 +483,7 @@ export class AppointmentsService {
     identity: IIdentity,
     data: AvailabilityBasicInfo,
     transaction: Transaction,
-  ): Promise<{
-    availabilityId: number | null;
-    startDate: Date;
-    endDate: Date;
-    durationMinutes: number;
-    appointmentTypeId: number;
-  }> {
+  ): Promise<AvailabilityModelAttributes> {
     let availability: AvailabilityModelAttributes;
     if (data.availabilityId) {
       // Get availbility id data if provided
@@ -529,6 +494,8 @@ export class AppointmentsService {
           fields: ['availaiblityId'],
         });
       }
+      // update availability to be occupied
+      await this.availabilityService.markAvailabilityAsOccupied(identity, availability.id, transaction);
     } else {
       // Create availability on spot
       // startDate & durationMinutes are required if exists no availabilityId
@@ -546,11 +513,7 @@ export class AppointmentsService {
         transaction,
       );
     }
-    const startDate = availability.startDate;
-    const endDate = availability.endDate;
-    const durationMinutes = availability.durationMinutes;
-    const appointmentTypeId = availability.appointmentTypeId;
-    return { availabilityId: availability.id, startDate, endDate, durationMinutes, appointmentTypeId };
+    return availability;
   }
 
   /**

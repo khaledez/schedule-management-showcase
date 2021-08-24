@@ -388,6 +388,17 @@ export class AvailabilityService {
     return result.map((availability) => this.toCalendarEntry(availability));
   }
 
+  async markAvailabilityAsOccupied(
+    identity: IIdentity,
+    availabilityId: number,
+    transaction?: Transaction,
+  ): Promise<void> {
+    await this.availabilityRepository.update(
+      { isOccupied: true, updatedBy: identity.userId, updatedAt: new Date() },
+      { where: { id: availabilityId }, transaction },
+    );
+  }
+
   getAvailabilitySearchDateWhereClause(dateRange: FilterDateInputDto) {
     // Set endTime to 23:59:59 due to sequelize limitations
     if (dateRange.between) {

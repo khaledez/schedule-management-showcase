@@ -1,11 +1,11 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigurationModule } from 'modules/config/config.module';
+import { getTestPatientInfoResponse } from 'modules/patient-info/__tests__/patient-info.data';
 import * as nock from 'nock';
 import { PatientInfoService } from '..';
 import { PatientInfoAttributes } from '../patient-info.model';
 import { PatientInfoModule } from '../patient-info.module';
-import { getTestPatientInfoResponse } from 'modules/patient-info/__tests__/patient-info.data';
 
 describe('patient-info service', () => {
   let patientInfoSvc: PatientInfoService;
@@ -36,6 +36,7 @@ describe('patient-info service', () => {
       id: 1,
       clinicId: 1,
       fullName: 'Khaled Ezzughayyar',
+      doctorId: 233,
       dob: '1988-11-01',
       primaryHealthPlanNumber: '123AB',
       statusCode: 'RELEASED',
@@ -52,6 +53,7 @@ describe('patient-info service', () => {
     const patientInfo: PatientInfoAttributes = {
       id: 1,
       clinicId: 1,
+      doctorId: 333,
       fullName: 'Khaled Ezzughayyar',
       dob: '1988-11-01',
       primaryHealthPlanNumber: '123AB',
@@ -79,6 +81,7 @@ describe('patient-info service', () => {
       clinicId: 128,
       id: 89,
       dob: '1994-07-14',
+      doctorId: null,
       fullName: 'Johnn Doh',
       primaryHealthPlanNumber: 'MOX-patient09',
       statusCode: 'ACTIVE',
