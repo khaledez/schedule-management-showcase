@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { FilterDateInputDto, Identity, IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
+import {
+  FilterDateInputDto,
+  Identity,
+  IIdentity,
+  PagingInfoInterface,
+  sequelizeFilterMapper,
+} from '@dashps/monmedx-common';
 import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
@@ -53,6 +59,7 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
+import { AppointmentSortDto } from './dto/appointment-sort-dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -111,19 +118,8 @@ export class AppointmentsService {
     queryParams: QueryParamsDto,
     pagingFilter: PagingInfoInterface,
   ): Promise<[AppointmentsModelAttributes[], number]> {
-    const { limit, offset } = pagingFilter || { limit: 15, offset: 0 };
-
-    // custom filter by appointmentCategory
-    // const filterByAppointmentCategory = this.handleAppointmentCategoryFilter(queryParams, this.logger);
-
-    // common data-filters
-    // const sequelizeFilter = sequelizeFilterMapper(
-    //   this.logger,
-    //   queryParams,
-    //   this.associationFieldsFilterNames,
-    //   filterByAppointmentCategory,
-    // );
-    // const sequelizeSort = sequelizeSortMapper(this.logger, queryParams, this.associationFieldsSortNames, false);
+    const { limit, offset } = pagingFilter || { limit: PAGING_LIMIT_DEFAULT, offset: PAGING_OFFSET_DEFAULT };
+    const order = getQueryGenericSortMapper(queryParams.sort, this.associationFieldsSortNames);
 
     const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
     const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(
@@ -132,6 +128,7 @@ export class AppointmentsService {
     const appointmentStatusIdWhereClause = this.getAppointmentStatusIdWhereClause(
       queryParams.filter?.appointmentStatusId || { or: null },
     );
+    const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null });
     const patientInfoInclude = this.buildAppointmentIncludePatientOption(queryParams);
     try {
       const options: FindOptions = {
@@ -147,10 +144,11 @@ export class AppointmentsService {
           appointmentTypeId: appointmentTypeIdWhereClause,
           appointmentStatusId: appointmentStatusIdWhereClause,
           startDate: startDateWhereClause,
+          staffId: staffIdWhereClause,
           clinicId: identity.clinicId,
           deletedBy: null,
         },
-        order: [[AppointmentsService.DATE_COLUMN, Order.DESC]],
+        order,
         limit,
         offset,
       };
@@ -204,10 +202,10 @@ export class AppointmentsService {
       };
     }
 
-    if (queryParams?.filter?.doctorId) {
+    if (queryParams?.filter?.patientDoctorId) {
       where = {
         ...where,
-        doctorId: this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null }),
+        doctorId: this.getEntityIdWhereClause(queryParams.filter?.patientDoctorId || { or: null }),
       };
     }
 
