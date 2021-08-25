@@ -56,7 +56,8 @@ export class AvailabilityTemplateController {
    * @returns Nothing on success
    */
   @Delete()
-  deleteTemplatesByFilter(@Body() body: DeleteTemplateDto): Promise<void> {
-    return this.templateService.deleteAvailabilityTemplatesByIds(body.ids);
+  async deleteTemplatesByFilter(@Body() body: DeleteTemplateDto): Promise<unknown> {
+    await this.templateService.deleteAvailabilityTemplatesByIds(body.ids);
+    return {};
   }
 }
