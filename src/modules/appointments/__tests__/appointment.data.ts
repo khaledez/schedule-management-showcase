@@ -298,7 +298,7 @@ export function getAppointmentWithActionsTestCases() {
     {
       statusId: 1, //WAIT_LIST
       Primary: [AppointmentActionEnum.SCHEDULE],
-      Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE, AppointmentActionEnum.RELEASE_PATIENT],
+      Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE],
     },
     {
       statusId: 2, //SCHEDULE
@@ -310,7 +310,6 @@ export function getAppointmentWithActionsTestCases() {
         AppointmentActionEnum.RESCHEDULE_APPT,
         AppointmentActionEnum.CANCEL,
         AppointmentActionEnum.CHANGE_APPT_TYPE,
-        AppointmentActionEnum.RELEASE_PATIENT,
       ],
     },
     {
@@ -322,7 +321,6 @@ export function getAppointmentWithActionsTestCases() {
         AppointmentActionEnum.RESCHEDULE_APPT,
         AppointmentActionEnum.CANCEL,
         AppointmentActionEnum.CHANGE_APPT_TYPE,
-        AppointmentActionEnum.RELEASE_PATIENT,
       ],
     },
     {
@@ -332,7 +330,6 @@ export function getAppointmentWithActionsTestCases() {
         AppointmentActionEnum.RESCHEDULE_APPT,
         AppointmentActionEnum.CANCEL,
         AppointmentActionEnum.CHANGE_APPT_TYPE,
-        AppointmentActionEnum.RELEASE_PATIENT,
       ],
     },
     {
@@ -343,7 +340,6 @@ export function getAppointmentWithActionsTestCases() {
         AppointmentActionEnum.RESCHEDULE_APPT,
         AppointmentActionEnum.CANCEL,
         AppointmentActionEnum.CHANGE_APPT_TYPE,
-        AppointmentActionEnum.RELEASE_PATIENT,
       ],
     },
     {
@@ -353,7 +349,6 @@ export function getAppointmentWithActionsTestCases() {
         AppointmentActionEnum.RESCHEDULE_APPT,
         AppointmentActionEnum.CANCEL,
         AppointmentActionEnum.CHANGE_APPT_TYPE,
-        AppointmentActionEnum.RELEASE_PATIENT,
       ],
     },
     {

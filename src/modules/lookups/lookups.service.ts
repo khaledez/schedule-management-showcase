@@ -186,7 +186,7 @@ export class LookupsService {
       const nextActions = {
         [AppointmentStatusEnum.WAIT_LIST]: {
           Primary: [AppointmentActionEnum.SCHEDULE],
-          Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE, AppointmentActionEnum.RELEASE_PATIENT],
+          Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE],
         },
         [AppointmentStatusEnum.SCHEDULE]: {
           Primary: [AppointmentActionEnum.CONFIRM1],
@@ -197,7 +197,6 @@ export class LookupsService {
             AppointmentActionEnum.RESCHEDULE_APPT,
             AppointmentActionEnum.CANCEL,
             AppointmentActionEnum.CHANGE_APPT_TYPE,
-            AppointmentActionEnum.RELEASE_PATIENT,
           ],
         },
         [AppointmentStatusEnum.CONFIRM1]: {
@@ -208,7 +207,6 @@ export class LookupsService {
             AppointmentActionEnum.RESCHEDULE_APPT,
             AppointmentActionEnum.CANCEL,
             AppointmentActionEnum.CHANGE_APPT_TYPE,
-            AppointmentActionEnum.RELEASE_PATIENT,
           ],
         },
         [AppointmentStatusEnum.CONFIRM2]: {
@@ -218,7 +216,6 @@ export class LookupsService {
             AppointmentActionEnum.RESCHEDULE_APPT,
             AppointmentActionEnum.CANCEL,
             AppointmentActionEnum.CHANGE_APPT_TYPE,
-            AppointmentActionEnum.RELEASE_PATIENT,
           ],
         },
         [AppointmentStatusEnum.CHECK_IN]: {
@@ -227,7 +224,6 @@ export class LookupsService {
             AppointmentActionEnum.RESCHEDULE_APPT,
             AppointmentActionEnum.CANCEL,
             AppointmentActionEnum.CHANGE_APPT_TYPE,
-            AppointmentActionEnum.RELEASE_PATIENT,
           ],
         },
         [AppointmentStatusEnum.READY]: {
@@ -236,7 +232,6 @@ export class LookupsService {
             AppointmentActionEnum.RESCHEDULE_APPT,
             AppointmentActionEnum.CANCEL,
             AppointmentActionEnum.CHANGE_APPT_TYPE,
-            AppointmentActionEnum.RELEASE_PATIENT,
           ],
         },
         [AppointmentStatusEnum.VISIT]: {
