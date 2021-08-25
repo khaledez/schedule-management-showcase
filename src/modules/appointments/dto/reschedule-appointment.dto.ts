@@ -46,4 +46,16 @@ export class RescheduleAppointmentDto {
   @IsOptional()
   @IsISO8601()
   provisionalDate?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  availabilityId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  appointmentTypeId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  appointmentVisitModeId?: number;
 }

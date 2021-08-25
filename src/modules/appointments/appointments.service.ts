@@ -575,13 +575,18 @@ export class AppointmentsService {
     return this.lookupsService.getProvisionalAppointmentStatusId(identity);
   }
 
-  async findOne(@Identity() identity: IIdentity, id: number): Promise<AppointmentsModelAttributes> {
+  async findOne(
+    @Identity() identity: IIdentity,
+    id: number,
+    transaction?: Transaction,
+  ): Promise<AppointmentsModelAttributes> {
     const appointment = await this.appointmentsRepository.unscoped().findByPk(id, {
       include: [
         {
           all: true,
         },
       ],
+      transaction,
     });
     if (!appointment) {
       throw new NotFoundException({
@@ -809,7 +814,28 @@ export class AppointmentsService {
       // eslint-disable-next-line complexity
       async (transaction): Promise<AppointmentsModelAttributes> => {
         // 0. validate
-        await this.lookupsService.validateAppointmentCancelRescheduleReason(identity, [dto.rescheduleReason]);
+        await Promise.all([
+          this.lookupsService.validateAppointmentCancelRescheduleReason(identity, [dto.rescheduleReason], transaction),
+          this.lookupsService.validateAppointmentVisitModes(
+            identity,
+            dto.appointmentVisitModeId ? [dto.appointmentVisitModeId] : [],
+            transaction,
+          ),
+          this.lookupsService.validateAppointmentsTypes(
+            identity,
+            dto.appointmentTypeId ? [dto.appointmentTypeId] : [],
+            transaction,
+          ),
+        ]);
+
+        // at least one of availabilityId & startDate must be there
+        if (!dto.availabilityId && !dto.startDate) {
+          throw new BadRequestException({
+            message: `You need to provide one of the following: availabilityId, startDate`,
+            fields: ['availabilityId', 'startDate'],
+            error: 'BAD_REQUEST',
+          });
+        }
 
         // 1. fetch appointment
         const appointment = await this.appointmentsRepository.findOne({
@@ -826,7 +852,12 @@ export class AppointmentsService {
         }
 
         // 2. check if we need to change the doctor permanently
-        if ((appointment.staffId !== dto.staffId && dto.staffChangedPermanent) || dto.removeFutureAppointments) {
+        let staffId = dto.staffId ?? appointment.staffId;
+        if (dto.availabilityId) {
+          const availabiity = await this.availabilityService.findOne(dto.availabilityId);
+          staffId = availabiity.staffId;
+        }
+        if ((appointment.staffId !== staffId && dto.staffChangedPermanent) || dto.removeFutureAppointments) {
           // cancel all future appointments with the current doctor
           await this.cancelAllOpenAppointments(
             identity,
@@ -837,23 +868,7 @@ export class AppointmentsService {
           );
         }
 
-        // 3. availability slot
-        const startDate = dto.startDate ? DateTime.fromISO(dto.startDate) : DateTime.fromJSDate(appointment.startDate);
-        const durationMinutes = dto.durationMinutes ? dto.durationMinutes : appointment.durationMinutes;
-        if (dto.keepAvailabilitySlot) {
-          // create a new availability in the same time for the same staff
-          const newAvailabilityAttrs: CreateAvailabilityDto = {
-            appointmentTypeId: appointment.appointmentTypeId,
-            isOccupied: false,
-            startDate: startDate.toISO(),
-            durationMinutes: durationMinutes,
-            staffId: appointment.staffId,
-          };
-
-          this.availabilityService.createSingleAvailability(identity, newAvailabilityAttrs, transaction);
-        }
-
-        // 4. cancel appointment and create a new appointment
+        // 3. cancel appointment and create a new appointment
         // TODO check if we can use "cancelAllAndCreateAppointment"
         const scheduleStatusId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
         const [cancelResult, createResult] = await Promise.all([
@@ -862,7 +877,7 @@ export class AppointmentsService {
             [
               {
                 appointmentId: appointment.id,
-                keepAvailabiltySlot: false, // we delete the availability as we've already handled this case above
+                keepAvailabiltySlot: dto.keepAvailabilitySlot,
                 reasonId: dto.rescheduleReason,
                 reasonText: dto.rescheduleText,
               },
@@ -877,10 +892,11 @@ export class AppointmentsService {
               patientId: appointment.patientId,
               staffId: dto.staffId || appointment.staffId,
               appointmentStatusId: scheduleStatusId,
-              appointmentVisitModeId: appointment.appointmentVisitModeId,
-              appointmentTypeId: appointment.appointmentTypeId,
-              durationMinutes,
-              startDate: startDate.toISO(),
+              appointmentVisitModeId: dto.appointmentVisitModeId ?? appointment.appointmentVisitModeId,
+              appointmentTypeId: dto.appointmentTypeId ?? appointment.appointmentTypeId,
+              availabilityId: dto.availabilityId,
+              startDate: dto.startDate,
+              durationMinutes: dto.durationMinutes,
             },
             true,
             transaction,
