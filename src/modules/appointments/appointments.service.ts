@@ -1119,7 +1119,11 @@ export class AppointmentsService {
           );
           return updatedAppt;
         } catch (error) {
-          this.logger.error({ method: 'appointmentService/updateAppointment', updateDto, message: error.message });
+          this.logger.error({
+            method: 'appointmentService/updateAppointment',
+            updateDto,
+            message: error.message,
+          });
           throw new InternalServerErrorException({
             code: ErrorCodes.INTERNAL_SERVER_ERROR,
             message: error.message,
@@ -1236,17 +1240,23 @@ export class AppointmentsService {
     }
   };
 
-  async getAppointmentByPatientId(
-    identity: IIdentity,
-    patientId: number,
-    query: UpComingAppointmentQueryDto,
-  ): Promise<AppointmentsModelAttributes> {
-    let appointment;
-    if (query?.after) {
-      appointment = await this.getPatientNextAppointment(identity, patientId, query.after);
-    } else {
-      appointment = await this.getPatientUpcomingAppointment(identity, patientId);
-    }
+  async getAppointmentByPatientId(identity: IIdentity, patientId: number) {
+    const activeStatuses = await this.lookupsService.getUpcomingAppointmentsStatuses(identity);
+    const options: FindOptions = {
+      where: {
+        patientId: patientId,
+        clinicId: identity.clinicId,
+        appointmentStatusId: {
+          [Op.in]: activeStatuses,
+        },
+      },
+      include: [
+        {
+          all: true,
+        },
+      ],
+    };
+    const appointment = await this.appointmentsRepository.findOne(options);
     if (!appointment) {
       return appointment;
     }
@@ -1255,34 +1265,10 @@ export class AppointmentsService {
     return {
       ...appointment.get(),
       previousAppointment: appointment.previousAppointmentId,
-      primaryAction: actions[0]?.nextAction ? actions[0].nextAction : [],
+      primaryAction: actions[0]?.nextAction ? actions[0].nextAction : null,
       secondaryActions: actions[0]?.secondaryActions ? actions[0].secondaryActions : [],
       provisionalAppointment: appointment.appointmentStatusId === appointmentStatusId,
     };
-  }
-
-  getPatientUpcomingAppointment(identity: IIdentity, id: number) {
-    const options: FindOptions = {
-      where: {
-        patientId: id,
-        clinicId: identity.clinicId,
-        upcomingAppointment: true,
-      },
-    };
-    return this.appointmentsRepository.findOne(options);
-  }
-
-  getPatientNextAppointment(identity: IIdentity, patientId: number, appointmentId: number) {
-    const options: FindOptions = {
-      where: {
-        patientId: patientId,
-        clinicId: identity.clinicId,
-        id: {
-          [Op.gt]: appointmentId,
-        },
-      },
-    };
-    return this.appointmentsRepository.findOne(options);
   }
 
   async getAppointmentsByPeriods(

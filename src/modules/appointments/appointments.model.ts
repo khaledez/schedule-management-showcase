@@ -1,7 +1,7 @@
 import { LookupWithCodeAttributes } from 'modules/lookups/models';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { Op } from 'sequelize';
-import { BelongsTo, Column, DataType, ForeignKey, Scopes, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, DefaultScope, ForeignKey, Scopes, Table } from 'sequelize-typescript';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
 import { BaseModel, BaseModelAttributes } from '../../common/models/base.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
@@ -37,6 +37,13 @@ export interface AppointmentsModelAttributes extends BaseModelAttributes {
 }
 
 // note that the id will auto added by sequelize.
+@DefaultScope(() => ({
+  where: {
+    deletedAt: null,
+    deletedBy: null,
+  },
+  attributes: { exclude: ['deletedAt', 'deletedBy'] },
+}))
 // TODO update scope to correctly connect patient and lookups
 @Scopes(() => ({
   id: {

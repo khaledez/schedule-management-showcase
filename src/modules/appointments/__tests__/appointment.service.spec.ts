@@ -9,8 +9,6 @@ import {
   getPatientAppointmentsTestData,
   getPatientHistoryTestCases,
   getPatientHistoryTestData,
-  getPatientNextAppointmentTestCases,
-  getPatientUpcomingAppointmentTestCases,
 } from 'modules/appointments/__tests__/appointment.data';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
@@ -675,24 +673,7 @@ describe('Patient upcoming and next appointments tests', () => {
   });
 
   test.each(getAppointmentByPatientIdTestCases())('#getAppointmentByPatientId: %p', async (testCase) => {
-    if (testCase.query) {
-      testCase.query.after = createdAppointmentsIds[testCase.query.after];
-    }
-    const result = await appointmentsService.getAppointmentByPatientId(identity, testCase.patientId, testCase.query);
-    expect(result?.startDate).toEqual(testCase.date);
-  });
-
-  test.each(getPatientUpcomingAppointmentTestCases())('#getPatientUpcomingAppointment: %p', async (testCase) => {
-    const result = await appointmentsService.getPatientUpcomingAppointment(identity, testCase.patientId);
-    expect(result?.startDate).toEqual(testCase.date);
-  });
-
-  test.each(getPatientNextAppointmentTestCases())('#getPatientNextAppointment: %p', async (testCase) => {
-    const result = await appointmentsService.getPatientNextAppointment(
-      identity,
-      testCase.patientId,
-      createdAppointmentsIds[testCase.appointmentId],
-    );
+    const result = await appointmentsService.getAppointmentByPatientId(identity, testCase.patientId);
     expect(result?.startDate).toEqual(testCase.date);
   });
 });

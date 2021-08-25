@@ -94,39 +94,11 @@ export class AppointmentsController {
   }
 
   /**
-   * @deprecated use {getPatientUpcomingAppointment} & {GetPatientNextAppointment} instead
+   * Get patient upcoming appointment
    */
   @Get('patient-upcoming/:patientId')
-  // @Permissions(PermissionCode.APPOINTMENT_READ)
-  getAppointmentByPatientId(
-    @Identity() identity: IIdentity,
-    @Param('patientId', ParseIntPipe) patientId: number,
-    @Query() query: UpComingAppointmentQueryDto,
-  ) {
-    return this.appointmentsService.getAppointmentByPatientId(identity, patientId, query);
-  }
-
-  /**
-   * Returns patient upcoming appointment which is the appointment with {@link AppointmentsModelAttributes.upcomingAppointment} == True
-   * @param identity
-   * @param patientId
-   */
-  @Get('upcoming-appointment/:patientId')
-  // @Permissions(PermissionCode.APPOINTMENT_READ)
-  getPatientUpcomingAppointment(@Identity() identity: IIdentity, @Param('patientId', ParseIntPipe) patientId: number) {
-    return this.appointmentsService.getPatientUpcomingAppointment(identity, patientId);
-  }
-
-  /**
-   * Returns the patient next appointment with id > {@link GetPatientNextAppointment.appointmentId}
-   * @param identity
-   * @param query continas patientId & appointmentId
-   * @constructor
-   */
-  @Get('patient-next-appointment')
-  // @Permissions(PermissionCode.APPOINTMENT_READ)
-  GetPatientNextAppointment(@Identity() identity: IIdentity, @Query() query: GetPatientNextAppointment) {
-    return this.appointmentsService.getPatientNextAppointment(identity, query.patientId, query.appointmentId);
+  getAppointmentByPatientId(@Identity() identity: IIdentity, @Param('patientId', ParseIntPipe) patientId: number) {
+    return this.appointmentsService.getAppointmentByPatientId(identity, patientId);
   }
 
   /**

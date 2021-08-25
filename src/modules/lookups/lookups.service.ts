@@ -1,8 +1,8 @@
 import { IIdentity } from '@dashps/monmedx-common';
 import {
   BadRequestException,
-  CacheInterceptor,
   CACHE_MANAGER,
+  CacheInterceptor,
   Inject,
   Injectable,
   Logger,
@@ -177,7 +177,15 @@ export class LookupsService {
    * find Appointments Primary And Secondary Actions By Array Of Status Ids
    * @param ids AppointmentsStatusId
    */
-  public async findAppointmentsActions(ids: Array<number>) {
+  public async findAppointmentsActions(
+    ids: Array<number>,
+  ): Promise<
+    {
+      currentActionId: number;
+      secondaryActions: LookupWithCodeAttributes[];
+      nextAction: LookupWithCodeAttributes;
+    }[]
+  > {
     try {
       const internalAppointmentsStatus = await this.appointmentStatusLookupsRepository.findAll();
       const internalAppointmentsActions = await this.appointmentActionsLookupsRepository.findAll();
@@ -490,11 +498,26 @@ export class LookupsService {
     return this.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
   }
 
-  async getActiveAppointmentsStatuses(identity: IIdentity) {
+  getActiveAppointmentsStatuses(identity: IIdentity) {
+    return this.getStatusesIdsNotInCodesGroup(identity, [
+      AppointmentStatusEnum.WAIT_LIST,
+      AppointmentStatusEnum.CANCELED,
+      AppointmentStatusEnum.COMPLETE,
+    ]);
+  }
+
+  getUpcomingAppointmentsStatuses(identity: IIdentity) {
+    return this.getStatusesIdsNotInCodesGroup(identity, [
+      AppointmentStatusEnum.CANCELED,
+      AppointmentStatusEnum.COMPLETE,
+    ]);
+  }
+
+  async getStatusesIdsNotInCodesGroup(identity: IIdentity, codesGroup: AppointmentStatusEnum[]) {
     const result = await this.appointmentStatusLookupsRepository.findAll({
       where: {
         code: {
-          [Op.notIn]: [AppointmentStatusEnum.WAIT_LIST, AppointmentStatusEnum.CANCELED, AppointmentStatusEnum.COMPLETE],
+          [Op.notIn]: codesGroup,
         },
         clinicId: {
           [Op.or]: [null, identity.clinicId],
