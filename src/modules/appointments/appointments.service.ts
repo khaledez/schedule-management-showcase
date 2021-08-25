@@ -696,7 +696,7 @@ export class AppointmentsService {
     ] = await Promise.all([
       this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE),
       this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
-      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.IN_PROGRESS),
+      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.VISIT),
       this.lookupsService.getFUBAppointmentTypeId(identity),
       this.lookupsService.getVisitModeByCode(appointmentData.modeCode || AppointmentVisitModeEnum.IN_PERSON),
       this.lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.RELEASE),

@@ -1,5 +1,5 @@
 import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
-import { AppointmentActionEnum, Order } from 'common/enums';
+import { AppointmentActionEnum, AppointmentStatusEnum, Order } from 'common/enums';
 import { Key } from 'modules/appointments/dto/appointment-sort-dto';
 import { AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
 import { IIdentity } from '@dashps/monmedx-common';
@@ -345,6 +345,36 @@ export function getAppointmentWithActionsTestCases() {
         AppointmentActionEnum.CHANGE_APPT_TYPE,
         AppointmentActionEnum.RELEASE_PATIENT,
       ],
+    },
+    {
+      statusId: 5, //READY
+      Primary: [AppointmentActionEnum.V_PENDING],
+      Secondary: [
+        AppointmentActionEnum.RESCHEDULE_APPT,
+        AppointmentActionEnum.CANCEL,
+        AppointmentActionEnum.CHANGE_APPT_TYPE,
+        AppointmentActionEnum.RELEASE_PATIENT,
+      ],
+    },
+    {
+      statusId: 6, //COMPLETE
+      Primary: [],
+      Secondary: [],
+    },
+    {
+      statusId: 7, //CANCELED
+      Primary: [],
+      Secondary: [],
+    },
+    {
+      statusId: 9, //VISIT
+      Primary: [AppointmentActionEnum.IN_PROGRESS],
+      Secondary: [],
+    },
+    {
+      statusId: 10, //RELEASED
+      Primary: [],
+      Secondary: [],
     },
   ];
 }

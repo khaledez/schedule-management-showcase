@@ -10,4 +10,6 @@ export enum AppointmentActionEnum {
   CHECK_IN = 'CHECK_IN',
   READY = 'READY',
   RELEASE_PATIENT = 'RELEASE_PATIENT',
+  IN_PROGRESS = 'IN_PROGRESS',
+  V_PENDING = 'V_PENDING',
 }

@@ -231,15 +231,16 @@ export class LookupsService {
           ],
         },
         [AppointmentStatusEnum.READY]: {
-          Primary: [AppointmentActionEnum.RESCHEDULE_APPT],
+          Primary: [AppointmentActionEnum.V_PENDING],
           Secondary: [
+            AppointmentActionEnum.RESCHEDULE_APPT,
             AppointmentActionEnum.CANCEL,
             AppointmentActionEnum.CHANGE_APPT_TYPE,
             AppointmentActionEnum.RELEASE_PATIENT,
           ],
         },
-        [AppointmentStatusEnum.IN_PROGRESS]: {
-          Primary: [],
+        [AppointmentStatusEnum.VISIT]: {
+          Primary: [AppointmentActionEnum.IN_PROGRESS],
           Secondary: [],
         },
         [AppointmentStatusEnum.COMPLETE]: {
@@ -247,6 +248,10 @@ export class LookupsService {
           Secondary: [],
         },
         [AppointmentStatusEnum.CANCELED]: {
+          Primary: [],
+          Secondary: [],
+        },
+        [AppointmentStatusEnum.RELEASED]: {
           Primary: [],
           Secondary: [],
         },

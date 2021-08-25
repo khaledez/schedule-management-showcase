@@ -55,7 +55,7 @@ describe('Appointment Actions', () => {
   test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Primary: %p', async (testCase) => {
     const actionsResult: any = await lookupsService.findAppointmentsActions([testCase.statusId]);
     //console.log(util.inspect(actionsResult));
-    expect(actionsResult[0]?.nextAction.code).toEqual(testCase.Primary[0]);
+    expect(actionsResult[0]?.nextAction?.code).toEqual(testCase.Primary[0]);
   });
 
   test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Secondary: %p', async (testCase) => {
