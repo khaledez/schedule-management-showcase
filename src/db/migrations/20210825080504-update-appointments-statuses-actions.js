@@ -23,6 +23,10 @@ module.exports = {
           `UPDATE ${statuses_tableName} SET name_en = 'Checked-in', name_fr = 'Enregistrée' WHERE code = 'CHECK_IN'`,
           { transaction: t },
         ),
+        queryInterface.sequelize.query(
+          `UPDATE ${statuses_tableName} SET name_en = 'Waitlist' WHERE code = 'WAIT_LIST'`,
+          { transaction: t },
+        ),
 
         queryInterface.bulkInsert(
           actions_tableName,
