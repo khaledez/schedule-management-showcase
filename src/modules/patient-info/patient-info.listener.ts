@@ -1,8 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PatientInfoAttributes } from './patient-info.model';
 import { PatientInfoService } from './patient-info.service';
 import { AppointmentsService } from '../appointments/appointments.service';
+import { AvailabilityService } from '../availability/availability.service';
 
 const PATIENT_PROFILE_UPDATED_EVENT = 'patient_profile_updated';
 
@@ -39,6 +40,7 @@ export class PatientInfoListener {
   constructor(
     @Inject(PatientInfoService)
     private readonly patientInfoSvc: PatientInfoService,
+    private readonly appointmentsService: AppointmentsService,
   ) {}
 
   @OnEvent(PATIENT_PROFILE_UPDATED_EVENT, { async: true })

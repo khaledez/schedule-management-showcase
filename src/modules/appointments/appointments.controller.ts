@@ -3,8 +3,10 @@ import {
   BadRequestException,
   Body,
   Controller,
+  forwardRef,
   Get,
   Headers,
+  Inject,
   Logger,
   Param,
   ParseIntPipe,
@@ -41,6 +43,7 @@ export class AppointmentsController {
   constructor(
     private readonly appointmentsService: AppointmentsService,
     private readonly lookupsService: LookupsService,
+    @Inject(forwardRef(() => PatientInfoService))
     private readonly patientSvc: PatientInfoService,
   ) {}
 

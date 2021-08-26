@@ -17,7 +17,7 @@ import { AppointmentsService } from './appointments.service';
     forwardRef(() => AvailabilityModule),
     EventsModule,
     DatabaseModule,
-    PatientInfoModule,
+    forwardRef(() => PatientInfoModule),
     ScheduleModule.forRoot(),
   ],
   controllers: [AppointmentsController],
