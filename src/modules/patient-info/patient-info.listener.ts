@@ -39,7 +39,6 @@ export class PatientInfoListener {
   constructor(
     @Inject(PatientInfoService)
     private readonly patientInfoSvc: PatientInfoService,
-    private readonly appointmentsService: AppointmentsService,
   ) {}
 
   @OnEvent(PATIENT_PROFILE_UPDATED_EVENT, { async: true })
@@ -65,7 +64,7 @@ export class PatientInfoListener {
 
       if (patientAttr.statusCode === 'RELEASED') {
         //Release patient appointment
-        await this.appointmentsService.releasePatientAppointments(patientAttr);
+        //await this.appointmentsService.releasePatientAppointments(patientAttr);
       }
     } catch (error) {
       this.logger.error(error, 'while handlePatientProfileUpdatedEvent', JSON.stringify(payload));
