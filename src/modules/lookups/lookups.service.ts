@@ -310,6 +310,19 @@ export class LookupsService {
     return result.id;
   }
 
+  @Cached(() => `AppointmentFinalStateIds`)
+  public async getAppointmentFinalStateIds() {
+    const res = await this.appointmentStatusLookupsRepository.findAll({
+      where: {
+        code: {
+          [Op.in]: [AppointmentStatusEnum.CANCELED, AppointmentStatusEnum.COMPLETE, AppointmentStatusEnum.RELEASED],
+        },
+      },
+      attributes: ['id'],
+    });
+    return res.map((el) => el.id);
+  }
+
   @Cached(({ clinicId }: IIdentity, code: AppointmentStatusEnum) => `appttypeid-${clinicId}-${code.toString()}`)
   async getTypeByCode({ clinicId }: IIdentity | null, code: AppointmentTypeEnum): Promise<number> {
     if (!Object.keys(AppointmentTypeEnum).includes(code)) {

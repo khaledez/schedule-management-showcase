@@ -36,7 +36,7 @@ import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
-import { PatientInfoModel } from 'modules/patient-info/patient-info.model';
+import { PatientInfoAttributes, PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import sequelize, { FindOptions, Op, QueryTypes, Transaction, WhereOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
 import { LookupsService } from '../lookups/lookups.service';
@@ -51,6 +51,7 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
+import { IUser } from '@dashps/monmedx-common/src/interfaces/index';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -425,10 +426,7 @@ export class AppointmentsService {
     transaction?: Transaction,
     exceptAppointmentIds?: number[],
   ) {
-    const [statusCanceledId, statusCompleteId] = await Promise.all([
-      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
-      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE),
-    ]);
+    const appointmentFinalStateIds: number[] = await this.lookupsService.getAppointmentFinalStateIds();
 
     const exceptAppointmentsWhere = exceptAppointmentIds ? { id: { [Op.notIn]: exceptAppointmentIds } } : {};
 
@@ -442,7 +440,7 @@ export class AppointmentsService {
           [Op.eq]: identity.clinicId,
         },
         appointmentStatusId: {
-          [Op.notIn]: [statusCanceledId, statusCompleteId],
+          [Op.notIn]: [...appointmentFinalStateIds],
         },
         deletedBy: null,
       },
@@ -1435,6 +1433,41 @@ export class AppointmentsService {
         error,
       });
     }
+  }
+
+  async releasePatientAppointments(patientAttr: PatientInfoAttributes) {
+    const { id: patientId, clinicId, statusCode } = patientAttr;
+    const identity = {
+      cognitoId: null,
+      clinicId: clinicId,
+      userLang: null,
+      userId: null,
+      userInfo: null,
+    };
+    const [statusCanceledId, statusCompleteId, statusReleasedId] = await Promise.all([
+      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
+      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE),
+      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED),
+    ]);
+
+    const appointmentFinalStateIds: number[] = await this.lookupsService.getAppointmentFinalStateIds();
+
+    await this.appointmentsRepository.update(
+      {
+        appointmentStatusId: statusReleasedId,
+        cancelRescheduleText: statusCode,
+      },
+      {
+        where: {
+          patientId,
+          clinicId,
+          appointmentStatusId: {
+            [Op.notIn]: [...appointmentFinalStateIds],
+          },
+          deletedAt: null,
+        },
+      },
+    );
   }
 }
 

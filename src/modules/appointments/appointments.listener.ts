@@ -7,7 +7,7 @@ import {
   SEQUELIZE,
   VISIT_COMPLETE_EVENT_NAME,
 } from 'common/constants';
-import { AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
 import { DateTime } from 'luxon';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { Sequelize, Transaction } from 'sequelize';
@@ -100,7 +100,10 @@ export class AppointmentsListener {
       const startDate = release ? startDateInTheDistantPast : provisionalDate;
 
       // create new provisional appointment
-      const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
+      const appointmentStatusId = release
+        ? await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED)
+        : await this.lookupsService.getProvisionalAppointmentStatusId(identity);
+
       const appointmentTypeId = release
         ? await this.lookupsService.getFUBAppointmentTypeId(identity)
         : provisionalTypeId;
