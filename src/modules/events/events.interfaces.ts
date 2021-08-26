@@ -11,12 +11,8 @@ export interface EventUpdateRequest {
   invitees?: Invitee[];
   location?: string;
   colorCode?: string;
-  // startDate is the main field, date is kept for backwards compatibility
   startDate: Date;
-  date?: Date; // deprecated
-  startTime?: string; // deprecated
-  endDate?: Date; // deprecated
-  endTime?: string; // deprecated
+  endDate?: Date;
   durationMinutes?: number;
   descriptionRich?: string;
   staffId: number;

@@ -1,14 +1,11 @@
-import { BaseModelAttributes, BaseModelCreationAttributes } from 'common/models';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
+import { BaseModelCreationAttributes } from 'common/models';
 import { AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
 import { EventModelAttributes } from 'modules/events/models';
 import { Optional } from 'sequelize/types';
 
-export interface AvailabilityModelAttributes extends BaseModelAttributes {
-  staffId: number;
+export interface AvailabilityModelAttributes extends CalendarEntry {
   appointmentTypeId: number;
-  startDate: Date;
-  endDate: Date;
-  durationMinutes: number;
   isOccupied?: boolean;
 
   event?: EventModelAttributes;

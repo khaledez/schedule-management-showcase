@@ -4,20 +4,15 @@ import { CalendarType } from 'common/enums';
 import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
+import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { Op, WhereOptions } from 'sequelize';
 import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
-import { EventModel, EventModelAttributes } from '../events/models';
-import {
-  CalendarAppointment,
-  CalendarAvailability,
-  CalendarEvent,
-  CalendarSearchInput,
-  CalendarSearchResult,
-} from './calendar.interface';
+import { EventModel } from '../events/models';
+import { CalendarSearchInput, CalendarSearchResult } from './calendar.interface';
 
 @Injectable()
 export class CalendarService {
@@ -40,15 +35,12 @@ export class CalendarService {
       this.searchAvailabilities(identity, query, queryType),
     ]);
 
-    const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
     const entries = [];
-    appointments.forEach((appt) =>
-      entries.push(appointmentAsCalendarEvent(appt, appt.appointmentStatusId === provisionalStatusId)),
-    );
-    events.map((event) => event.get({ plain: true })).forEach((event) => entries.push(eventAsCalendarEvent(event)));
+    appointments.forEach((appt) => entries.push(appt));
+    events.map((event) => event.get({ plain: true })).forEach((event) => entries.push(event));
     availabilities
       .map((availability) => availability.get({ plain: true }))
-      .forEach((availability) => entries.push(availabilityAsCalendarEvent(availability)));
+      .forEach((availability) => entries.push(availability));
 
     entries.sort((a, b) => a.startDate - b.startDate);
     return { entries };
@@ -85,7 +77,12 @@ export class CalendarService {
 
     const appointments = await AppointmentsModel.findAll({
       where: appointmentWhereClauses,
-      include: [AppointmentStatusLookupsModel, AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel],
+      include: [
+        AppointmentStatusLookupsModel,
+        AppointmentVisitModeLookupModel,
+        AppointmentTypesLookupsModel,
+        AppointmentCancelRescheduleReasonLookupModel,
+      ],
     });
 
     const actions = await this.lookupService.findAppointmentsActions(
@@ -129,7 +126,7 @@ export class CalendarService {
     if (query.dateRange) {
       eventWhereClauses = {
         ...eventWhereClauses,
-        ...processFilterDatesInput('date', 'dateRange', query.dateRange),
+        ...processFilterDatesInput('startDate', 'dateRange', query.dateRange),
       };
     }
 
@@ -171,31 +168,6 @@ export class CalendarService {
       include: [AppointmentTypesLookupsModel],
     });
   }
-}
-
-function availabilityAsCalendarEvent(model: AvailabilityModelAttributes): CalendarAvailability {
-  return {
-    ...model,
-    entryType: CalendarType.AVAILABILITY,
-    __typename: 'CalendarAvailability',
-  } as CalendarAvailability;
-}
-
-function appointmentAsCalendarEvent(model: AppointmentsModelAttributes, isProvisional: boolean): CalendarAppointment {
-  return {
-    ...model,
-    entryType: CalendarType.APPOINTMENT,
-    provisionalAppointment: isProvisional,
-    __typename: 'CalendarAppointment',
-  } as CalendarAppointment;
-}
-
-function eventAsCalendarEvent(model: EventModelAttributes): CalendarEvent {
-  return {
-    ...model,
-    entryType: CalendarType.EVENT,
-    __typename: 'CalendarEvent',
-  };
 }
 
 class EntryType {

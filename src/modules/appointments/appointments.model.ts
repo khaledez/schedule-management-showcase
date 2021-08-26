@@ -1,23 +1,22 @@
+import { CalendarType } from 'common/enums';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { LookupWithCodeAttributes } from 'modules/lookups/models';
+import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { Op } from 'sequelize';
 import { BelongsTo, Column, DataType, DefaultScope, ForeignKey, Scopes, Table } from 'sequelize-typescript';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
-import { BaseModel, BaseModelAttributes } from '../../common/models/base.model';
+import { BaseModel } from '../../common/models/base.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { PatientInfoModel } from '../patient-info/patient-info.model';
 
-export interface AppointmentsModelAttributes extends BaseModelAttributes {
+export interface AppointmentsModelAttributes extends CalendarEntry {
   patientId: number;
-  staffId: number;
   availabilityId?: number;
   previousAppointmentId?: number;
-  startDate: Date;
-  endDate: Date;
-  durationMinutes: number;
   provisionalDate?: Date;
   appointmentTypeId?: number;
   appointmentStatusId?: number;
@@ -163,9 +162,25 @@ export class AppointmentsModel
   @BelongsTo(() => AppointmentStatusLookupsModel, 'appointmentStatusId')
   status: AppointmentStatusLookupsModel;
 
-  @BelongsTo(() => AppointmentActionsLookupsModel, 'cancelRescheduleReasonId')
-  cancelRescheduleReason: AppointmentActionsLookupsModel;
+  @BelongsTo(() => AppointmentCancelRescheduleReasonLookupModel, 'cancelRescheduleReasonId')
+  cancelRescheduleReason: AppointmentCancelRescheduleReasonLookupModel;
 
   @BelongsTo(() => AppointmentVisitModeLookupModel, 'appointmentVisitModeId')
   visitMode: AppointmentVisitModeLookupModel;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return 'CalendarAppointment';
+    },
+  })
+  __typename: string;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return CalendarType.APPOINTMENT;
+    },
+  })
+  entryType: CalendarType;
 }

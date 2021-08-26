@@ -31,7 +31,6 @@ import {
 import { addMinutesToDate } from 'common/helpers/date-time-helpers';
 import { DateTime } from 'luxon';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
-import { UpComingAppointmentQueryDto } from 'modules/appointments/dto/upcoming-appointment-query.dto';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
@@ -51,7 +50,6 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
-import { IUser } from '@dashps/monmedx-common/src/interfaces/index';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -1444,11 +1442,7 @@ export class AppointmentsService {
       userId: null,
       userInfo: null,
     };
-    const [statusCanceledId, statusCompleteId, statusReleasedId] = await Promise.all([
-      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
-      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE),
-      this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED),
-    ]);
+    const statusReleasedId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED);
 
     const appointmentFinalStateIds: number[] = await this.lookupsService.getAppointmentFinalStateIds();
 

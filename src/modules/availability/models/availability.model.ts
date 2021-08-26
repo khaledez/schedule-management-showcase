@@ -1,6 +1,17 @@
+import { CalendarType } from 'common/enums';
 import { BaseModel } from 'common/models/base.model';
 import { EventModel } from 'modules/events/models';
-import { BelongsTo, Column, DefaultScope, ForeignKey, HasOne, IsDate, Scopes, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  DefaultScope,
+  ForeignKey,
+  HasOne,
+  IsDate,
+  Scopes,
+  Table,
+} from 'sequelize-typescript';
 import { AppointmentsModel } from '../../appointments/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './availability.interfaces';
@@ -54,4 +65,20 @@ export class AvailabilityModel
 
   @BelongsTo(() => AppointmentTypesLookupsModel, 'appointmentTypeId')
   type: AppointmentTypesLookupsModel;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return 'CalendarAvailability';
+    },
+  })
+  __typename: string;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return CalendarType.AVAILABILITY;
+    },
+  })
+  entryType: CalendarType;
 }

@@ -1,6 +1,7 @@
 import { IIdentity } from '@dashps/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DEFAULT_EVENT_DURATION_MINS, EVENTS_REPOSITORY } from 'common/constants';
+import { CalendarType } from 'common/enums';
 import { DateTime } from 'luxon';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { Transaction } from 'sequelize';
@@ -52,7 +53,6 @@ function mapDtoToModelAttr(identity: IIdentity, input: EventCreateRequest | Even
     ...input,
     clinicId: identity.clinicId,
     createdBy: identity.userId,
-    startTime: startDate.toSQLTime({ includeOffset: false, includeZone: false }),
     durationMinutes: input.durationMinutes || DEFAULT_EVENT_DURATION_MINS,
     endDate,
     invitees: input.invitees?.map(
@@ -61,6 +61,8 @@ function mapDtoToModelAttr(identity: IIdentity, input: EventCreateRequest | Even
           email: i.email,
         } as Invitee),
     ),
+    entryType: CalendarType.EVENT,
+    __typename: 'CalendarEvent',
     availability: {
       appointmentTypeId: 1, // TODO create a global appointment type called event
       staffId: input.staffId,
@@ -70,6 +72,8 @@ function mapDtoToModelAttr(identity: IIdentity, input: EventCreateRequest | Even
       clinicId: identity.clinicId,
       createdBy: identity.userId,
       isOccupied: true,
+      entryType: CalendarType.AVAILABILITY,
+      __typename: 'CalendarAvailbility',
     },
   };
 }

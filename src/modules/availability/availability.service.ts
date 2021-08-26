@@ -231,10 +231,8 @@ export class AvailabilityService {
         const [updated, created] = await Promise.all([updatedP, createdP]);
 
         return {
-          created: created.map((e) => ({ ...e, entryType: 'AVAILABILITY' })),
-          updated: Array.isArray(updated)
-            ? updated.map((e) => ({ ...e, entryType: 'AVAILABILITY' }))
-            : [{ ...updated, entryType: 'AVAILABILITY' }],
+          created: created,
+          updated: Array.isArray(updated) ? updated : [updated],
         };
       });
     } catch (error) {
@@ -273,7 +271,7 @@ export class AvailabilityService {
       const sortComparator = this.getSuggestionsPriorityComparator(timeGroup);
       suggestions.sort(sortComparator);
     }
-    return suggestions.slice(0, APPOINTMENT_SUGGESTIONS_RETURN_LIMIT).map((suggest) => this.toCalendarEntry(suggest));
+    return suggestions.slice(0, APPOINTMENT_SUGGESTIONS_RETURN_LIMIT);
   }
 
   getSuggestionsPriorityComparator(timeGroup: TimeGroup) {
@@ -385,7 +383,7 @@ export class AvailabilityService {
       const timeGroup: TimeGroup = getTimeGroup(payload.timeGroup);
       result = result.filter((availability) => isInTimeGroup(availability.startDate, timeGroup));
     }
-    return result.map((availability) => this.toCalendarEntry(availability));
+    return result;
   }
 
   async markAvailabilityAsOccupied(
@@ -411,25 +409,6 @@ export class AvailabilityService {
     }
     return { [Op.notIn]: [] };
   }
-
-  toCalendarEntry(availability: AvailabilityModelAttributes): CalendarEntry {
-    return {
-      __typename: 'CalendarAvailability',
-      ...availability,
-      id: availability.id,
-      clinicId: availability.clinicId,
-      staffId: availability.staffId,
-      startDate: availability.startDate,
-      endDate: availability.endDate,
-      entryType: CalendarType.AVAILABILITY,
-      createdBy: availability.createdBy,
-      createdAt: availability.createdAt,
-      updatedBy: availability.updatedBy,
-      updatedAt: availability.updatedAt,
-      appointmentTypeId: availability.appointmentTypeId,
-      durationMinutes: availability.durationMinutes,
-    };
-  }
 }
 
 interface UpdatePair {
@@ -445,5 +424,7 @@ function mapCreateDtoToModelAttributes(identity: IIdentity, dto: CreateAvailabil
     createdBy: identity.userId,
     startDate: isoDate.toJSDate(),
     endDate: isoDate.plus({ minutes: dto.durationMinutes }).toJSDate(),
+    entryType: CalendarType.AVAILABILITY,
+    __typename: 'CalendarAvailiblity',
   };
 }

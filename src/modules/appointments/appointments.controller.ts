@@ -20,7 +20,6 @@ import { CancelRescheduleReasonCode } from 'common/enums';
 import { AppointmentStatusActions } from 'common/intercepter/appointment-status-actions';
 import { UserError } from 'common/interfaces/user-error.interface';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
-import { GetPatientNextAppointment } from 'modules/appointments/dto/get-patient-next-appointment';
 import { PatientInfoService } from 'modules/patient-info';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel } from './appointments.model';
@@ -32,7 +31,6 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-periods.dto';
 import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
-import { UpComingAppointmentQueryDto } from './dto/upcoming-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 
 @Controller('appointments')

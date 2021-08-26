@@ -23,7 +23,6 @@ import {
   getSearchForAvailabilitiesTestCases,
   getSuggestionsData,
   getSuggestionsPriorityComparatorTestCases,
-  getToCalendarEntryTestData,
   validateAppointmentTypesIdsInvalidTestCase,
   validateAppointmentTypesIdsValidTestData,
 } from 'modules/availability/__tests__/availability.data';
@@ -226,12 +225,6 @@ describe('# AvailabilityService', () => {
       const test = buildGetZeroAvailabilitySuggestionsTestData();
       const result = await availabilityService.getAvailabilitySuggestions(identity, test.getSuggestionsDto);
       expect([]).toEqual(result);
-    });
-
-    test('# toCalendarEntry', () => {
-      const testData = getToCalendarEntryTestData();
-      const result = availabilityService.toCalendarEntry(testData.input);
-      expect(testData.expectedOutput).toEqual(result);
     });
   });
 });
