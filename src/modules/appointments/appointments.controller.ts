@@ -1,6 +1,5 @@
 import { Identity, IIdentity, PaginationInterceptor, PagingInfo, PagingInfoInterface } from '@dashps/monmedx-common';
 import {
-  BadRequestException,
   Body,
   Controller,
   forwardRef,
@@ -171,27 +170,8 @@ export class AppointmentsController {
   @Post('cancel')
   // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
-    const appt = await this.appointmentsService.findOne(identity, cancelDto.appointmentId);
-
-    const cancelResult = await this.appointmentsService.cancelAppointments(identity, [cancelDto]);
-    if (cancelResult && cancelResult[0].status === 'FAIL') {
-      throw new BadRequestException({
-        message: cancelResult[0].error,
-        fields: ['appointmentId'],
-      });
-    }
-    await this.appointmentsService.createAppointment(
-      identity,
-      {
-        patientId: appt.patientId,
-        staffId: appt.staffId,
-        appointmentTypeId: appt.appointmentTypeId,
-        startDate: cancelDto.provisionalDate,
-        durationMinutes: 0,
-        appointmentVisitModeId: appt.appointmentVisitModeId,
-      },
-      true,
-    );
+    await this.appointmentsService.cancelAndCreateAppointment(identity, cancelDto);
+    return {};
   }
 
   /**

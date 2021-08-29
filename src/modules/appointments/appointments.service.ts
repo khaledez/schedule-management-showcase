@@ -307,6 +307,35 @@ export class AppointmentsService {
     return this.appointmentsRepository.sequelize.transaction(procedureInTx);
   }
 
+  async cancelAndCreateAppointment(identity: IIdentity, cancelDto: CancelAppointmentDto): Promise<void> {
+    await this.appointmentsRepository.sequelize.transaction(async (transaction: Transaction) => {
+      const cancelResult = await this.cancelAppointments(identity, [cancelDto], transaction);
+      const result = cancelResult && cancelResult[0] ? cancelResult[0] : null;
+      if (!result || result.status === 'FAIL') {
+        throw new BadRequestException({
+          message: cancelResult[0].error ?? 'Error canceling appointment',
+          fields: ['appointmentId'],
+        });
+      }
+
+      const canceledAppt = await this.findOne(identity, result.appointmentId);
+
+      await this.createAppointment(
+        identity,
+        {
+          patientId: canceledAppt.patientId,
+          staffId: canceledAppt.staffId,
+          appointmentTypeId: canceledAppt.appointmentTypeId,
+          startDate: cancelDto.provisionalDate,
+          durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+          appointmentVisitModeId: canceledAppt.appointmentVisitModeId,
+        },
+        true,
+        transaction,
+      );
+    });
+  }
+
   /**
    * Handles provisional or non-provisional appointment corresponding to patient
    * references to an availability slot (created if non-existent)
@@ -1497,25 +1526,5 @@ function mapUpdateDtoToAttributes(
     appointmentTypeId: updateDto.appointmentTypeId,
   };
 }
-
-// function mapCreateGlobalDtoToAttributes(
-//   dto: CreateGlobalAppointmentDto,
-//   appointmentStatusId: number,
-// ): AppointmentsModelAttributes {
-//   const startDate = DateTime.fromJSDate(dto.date);
-//   const durationMins = dto.durationMinutes || DEFAULT_EVENT_DURATION_MINS;
-
-//   return {
-//     ...dto,
-//     startDate: startDate.toJSDate(),
-//     appointmentStatusId,
-//     durationMinutes: durationMins,
-//     endDate: startDate.plus({ minutes: durationMins }).toJSDate(),
-//     provisionalDate: dto.provisionalDate ? dto.provisionalDate : startDate.toJSDate(),
-//     staffId: dto.doctorId,
-//     availabilityId: dto.availabilityId,
-//     upcomingAppointment: true,
-//   };
-// }
 
 type BatchCancelResult = { appointmentId: number; status: 'OK' | 'FAIL'; error?: string };
