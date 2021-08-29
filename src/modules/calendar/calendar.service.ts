@@ -2,6 +2,8 @@ import { FilterStringInputDto, IIdentity } from '@dashps/monmedx-common';
 import { Injectable, Logger } from '@nestjs/common';
 import { CalendarType } from 'common/enums';
 import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
+import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
@@ -20,7 +22,6 @@ export class CalendarService {
 
   constructor(private readonly lookupService: LookupsService) {}
 
-  // eslint-disable-next-line complexity
   async search(identity: IIdentity, query: CalendarSearchInput): Promise<CalendarSearchResult> {
     this.logger.debug({
       method: 'CalenderService/search',
@@ -43,6 +44,29 @@ export class CalendarService {
       .forEach((availability) => entries.push(availability));
 
     entries.sort((a, b) => a.startDate - b.startDate);
+
+    if (query.maxDayCount) {
+      // group by day
+      const groupedEntries: { [key: string]: { total: number; entries: CalendarEntry[] } } = entries.reduce(
+        (acc: { [key: string]: { total: number; entries: CalendarEntry[] } }, entry) => {
+          const localDate = DateTime.fromJSDate(entry.startDate).toISODate();
+          if (acc[localDate]) {
+            acc[localDate].total++;
+            if (query.maxDayCount >= acc[localDate].total) {
+              acc[localDate].entries.push(entry);
+            }
+          } else {
+            acc[localDate] = { total: 1, entries: [entry] };
+          }
+
+          return acc;
+        },
+        {},
+      );
+
+      return { entries: Object.entries(groupedEntries).map(([key, val]) => ({ date: key, ...val })) };
+    }
+
     return { entries };
   }
 
@@ -65,6 +89,20 @@ export class CalendarService {
       appointmentWhereClauses = {
         ...appointmentWhereClauses,
         ...processFilterIdsInput('staffId', 'staffId', query.staffId),
+      };
+    }
+
+    if (query.appointmentTypeId) {
+      appointmentWhereClauses = {
+        ...appointmentWhereClauses,
+        ...processFilterIdsInput('appointmentTypeId', 'appointmentTypeId', query.appointmentTypeId),
+      };
+    }
+
+    if (query.appointmentStatusId) {
+      appointmentWhereClauses = {
+        ...appointmentWhereClauses,
+        ...processFilterIdsInput('appointmentStatusId', 'appointmentStatusId', query.appointmentStatusId),
       };
     }
 
@@ -153,6 +191,13 @@ export class CalendarService {
       availabilityWhereClauses = {
         ...availabilityWhereClauses,
         ...processFilterIdsInput('staffId', 'staffId', query.staffId),
+      };
+    }
+
+    if (query.appointmentTypeId) {
+      availabilityWhereClauses = {
+        ...availabilityWhereClauses,
+        ...processFilterIdsInput('appointmentTypeId', 'appointmentTypeId', query.appointmentTypeId),
       };
     }
 

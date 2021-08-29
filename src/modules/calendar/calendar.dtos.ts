@@ -16,6 +16,18 @@ export class CalendarSearchDto implements CalendarSearchInput {
   @IsOptional()
   @Type(() => FilterIdsInputDto)
   staffId: FilterIdsInputDto;
+
+  @IsOptional()
+  @Type(() => FilterIdsInputDto)
+  appointmentTypeId: FilterIdsInputDto;
+
+  @IsOptional()
+  @Type(() => FilterIdsInputDto)
+  appointmentStatusId: FilterIdsInputDto;
+
+  @IsOptional()
+  @Type(() => Number)
+  maxDayCount: number;
 }
 
 export class CalendarSearchBodyDto {

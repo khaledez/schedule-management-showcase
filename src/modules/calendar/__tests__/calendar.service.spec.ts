@@ -10,9 +10,9 @@ import { DatabaseModule } from 'modules/database/database.module';
 import { EventsService } from 'modules/events/events.service';
 import { EventModel } from 'modules/events/models';
 import { Sequelize } from 'sequelize-typescript';
+import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 import { CalendarModule } from '../calendar.module';
 import { CalendarService } from '../calendar.service';
-import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 
 const identity: IIdentity = getTestIdentity(17, 18);
 
@@ -88,10 +88,12 @@ describe('Calendar service', () => {
         ne: null,
       },
     });
-    expect(allEvents.entries).toHaveLength(3);
-    allEvents.entries.forEach((entry) => {
-      expect(entry.entryType).toMatch('EVENT');
-    });
+    expect(allEvents.entries).toHaveLength(2);
+    allEvents.entries
+      .flatMap((entry) => entry.entries)
+      .forEach((entry) => {
+        expect(entry.entryType).toMatch('EVENT');
+      });
   });
 
   test('Provisional appointments do not create an event instance', async () => {
@@ -175,7 +177,7 @@ describe('Calendar service', () => {
       },
     });
     expect(allEvents.entries).toHaveLength(3);
-    const entryTypes = allEvents.entries.map((entry) => entry.entryType);
+    const entryTypes = allEvents.entries.flatMap((entry) => entry.entries).map((entry) => entry.entryType);
     const expectedAppointmentEntries = ['APPOINTMENT', 'EVENT', 'EVENT'];
     expect(entryTypes.sort()).toEqual(expectedAppointmentEntries.sort());
   });

@@ -1,14 +1,22 @@
-import { FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
-import { FilterAvailabilityInputDto, FilterDateInputDto, ResultWithErrors } from 'common/dtos';
+import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
+import { ResultWithErrors } from 'common/dtos';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 
+export interface DayCalendarEntry {
+  date: string;
+  entries: CalendarEntry[];
+  total: number;
+}
+
 export interface CalendarSearchResult extends ResultWithErrors {
-  entries?: CalendarEntry[];
+  entries?: DayCalendarEntry[] | CalendarEntry[];
 }
 
 export interface CalendarSearchInput {
   entryType?: FilterStringInputDto;
   dateRange?: FilterDateInputDto;
   staffId?: FilterIdsInputDto;
-  availabilityFilter?: FilterAvailabilityInputDto;
+  appointmentTypeId?: FilterIdsInputDto;
+  appointmentStatusId?: FilterIdsInputDto;
+  maxDayCount?: number;
 }
