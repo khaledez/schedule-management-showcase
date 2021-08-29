@@ -170,8 +170,8 @@ export class AppointmentsController {
   @Post('cancel')
   // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
-    await this.appointmentsService.cancelAndCreateAppointment(identity, cancelDto);
-    return {};
+    const appointment = await this.appointmentsService.cancelAndCreateAppointment(identity, cancelDto);
+    return { appointment };
   }
 
   /**

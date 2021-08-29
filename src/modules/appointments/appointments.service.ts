@@ -307,8 +307,11 @@ export class AppointmentsService {
     return this.appointmentsRepository.sequelize.transaction(procedureInTx);
   }
 
-  async cancelAndCreateAppointment(identity: IIdentity, cancelDto: CancelAppointmentDto): Promise<void> {
-    await this.appointmentsRepository.sequelize.transaction(async (transaction: Transaction) => {
+  cancelAndCreateAppointment(
+    identity: IIdentity,
+    cancelDto: CancelAppointmentDto,
+  ): Promise<AppointmentsModelAttributes> {
+    return this.appointmentsRepository.sequelize.transaction(async (transaction: Transaction) => {
       const cancelResult = await this.cancelAppointments(identity, [cancelDto], transaction);
       const result = cancelResult && cancelResult[0] ? cancelResult[0] : null;
       if (!result || result.status === 'FAIL') {
@@ -319,8 +322,7 @@ export class AppointmentsService {
       }
 
       const canceledAppt = await this.findOne(identity, result.appointmentId);
-
-      await this.createAppointment(
+      return this.createAppointment(
         identity,
         {
           patientId: canceledAppt.patientId,
@@ -376,7 +378,7 @@ export class AppointmentsService {
       // 1.1 Is provisional and patient has provisional
       const [isProvisional, provisionalAppointment] = await Promise.all([
         this.isProvisional(identity, dto),
-        this.getPatientProvisionalAppointment(identity, dto.patientId),
+        this.getPatientProvisionalAppointment(identity, dto.patientId, transaction),
       ]);
 
       if (isProvisional && provisionalAppointment) {
