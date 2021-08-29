@@ -63,9 +63,9 @@ export class PatientInfoListener {
         await this.patientInfoSvc.update(patientAttr);
       }
 
-      if (patientAttr.statusCode === 'RELEASED') {
+      if (['INACTIVE', 'RELEASED', 'DECEASED'].includes(patientAttr.statusCode)) {
         //Release patient appointment
-        //await this.appointmentsService.releasePatientAppointments(patientAttr);
+        await this.appointmentsService.releasePatientAppointments(patientAttr);
       }
     } catch (error) {
       this.logger.error(error, 'while handlePatientProfileUpdatedEvent', JSON.stringify(payload));
