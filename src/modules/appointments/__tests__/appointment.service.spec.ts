@@ -431,8 +431,8 @@ describe('# Cancel appointment', () => {
         {
           appointmentId: appt.id,
           provisionalDate: '2091-10-10',
-          reasonText: 'Bye Bye',
-          reasonId: 10,
+          cancelReasonText: 'Bye Bye',
+          cancelReasonId: 10,
           keepAvailabiltySlot: true,
         },
       ]),
@@ -447,9 +447,12 @@ describe('# Cancel appointment', () => {
         {
           appointmentId: 9999,
           provisionalDate: '2091-10-10',
-          reasonText: 'ByeBye',
+          cancelReasonText: 'ByeBye',
           keepAvailabiltySlot: true,
-          reasonId: await lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.RELEASE),
+          cancelReasonId: await lookupsService.getCancelRescheduleReasonByCode(
+            identity,
+            CancelRescheduleReasonCode.RELEASE,
+          ),
         },
       ]),
     ).resolves.toMatchObject([{ status: 'FAIL' }]);
@@ -473,9 +476,12 @@ describe('# Cancel appointment', () => {
       apptService.cancelAppointments(identity, [
         {
           appointmentId: appt.id,
-          reasonText: 'ByeBye',
+          cancelReasonText: 'ByeBye',
           keepAvailabiltySlot: true,
-          reasonId: await lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.RELEASE),
+          cancelReasonId: await lookupsService.getCancelRescheduleReasonByCode(
+            identity,
+            CancelRescheduleReasonCode.RELEASE,
+          ),
         },
       ]),
     ).resolves.toMatchObject([{ appointmentId: appt.id, status: 'OK' }]);

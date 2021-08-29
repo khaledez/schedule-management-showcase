@@ -449,8 +449,8 @@ export class AppointmentsService {
       (appointment): CancelAppointmentDto => ({
         appointmentId: appointment.id,
         keepAvailabiltySlot: true,
-        reasonText: cancelReasonText,
-        reasonId: cancelReasonId,
+        cancelReasonText: cancelReasonText,
+        cancelReasonId: cancelReasonId,
       }),
     );
     await this.cancelAppointments(identity, appointmentsToCancel, transaction);
@@ -874,8 +874,8 @@ export class AppointmentsService {
               {
                 appointmentId: appointment.id,
                 keepAvailabiltySlot: dto.keepAvailabilitySlot,
-                reasonId: dto.rescheduleReason,
-                reasonText: dto.rescheduleText,
+                cancelReasonId: dto.rescheduleReason,
+                cancelReasonText: dto.rescheduleText,
               },
             ],
             transaction,
@@ -956,7 +956,7 @@ export class AppointmentsService {
       // 1. validate input
       await this.lookupsService.validateAppointmentCancelRescheduleReason(
         identity,
-        cancelDto.map((d) => d.reasonId),
+        cancelDto.map((d) => d.cancelReasonId),
         transaction,
       );
 
@@ -1018,8 +1018,8 @@ export class AppointmentsService {
         .filter((t) => t.appointment)
         .map(({ cancelReq, appointment }) => {
           appointment.appointmentStatusId = statusCanceledId;
-          appointment.cancelRescheduleReasonId = cancelReq.reasonId;
-          appointment.cancelRescheduleText = cancelReq.reasonText;
+          appointment.cancelRescheduleReasonId = cancelReq.cancelReasonId;
+          appointment.cancelRescheduleText = cancelReq.cancelReasonText;
           appointment.upcomingAppointment = false;
           appointment.updatedAt = new Date();
           appointment.updatedBy = identity.userId;

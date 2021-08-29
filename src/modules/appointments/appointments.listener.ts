@@ -164,8 +164,8 @@ export class AppointmentsListener {
             {
               appointmentId: payload.data.visit.appointmentId,
               keepAvailabiltySlot: false,
-              reasonId: cancelReasonId,
-              reasonText: 'visit aborted',
+              cancelReasonId: cancelReasonId,
+              cancelReasonText: 'visit aborted',
               visitId: payload.data.visit.id,
             },
           ],

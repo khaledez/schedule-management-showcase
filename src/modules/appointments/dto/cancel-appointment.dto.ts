@@ -11,11 +11,11 @@ export class CancelAppointmentDto {
   provisionalDate?: string;
 
   @IsString()
-  reasonText: string;
+  cancelReasonText: string;
 
   @IsNumber()
   @Type(() => Number)
-  reasonId: number;
+  cancelReasonId: number;
 
   @IsOptional()
   @IsBoolean()
