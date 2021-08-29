@@ -213,7 +213,7 @@ export class CalendarService {
     if (query.dateRange) {
       availabilityWhereClauses = {
         ...availabilityWhereClauses,
-        ...processFilterDatesInput('date', 'dateRange', query.dateRange),
+        ...processFilterDatesInput(AvailabilityModel.DATE_COLUMN, 'dateRange', query.dateRange),
       };
     }
 

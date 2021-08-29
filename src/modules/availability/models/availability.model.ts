@@ -36,6 +36,8 @@ import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './a
 export class AvailabilityModel
   extends BaseModel<AvailabilityModelAttributes, AvailabilityCreationAttributes>
   implements AvailabilityModelAttributes {
+  public static DATE_COLUMN = 'start_date';
+
   @Column
   staffId: number;
 
@@ -47,7 +49,7 @@ export class AvailabilityModel
   isOccupied: boolean;
 
   @IsDate
-  @Column({ field: 'date' })
+  @Column
   startDate: Date;
 
   @IsDate

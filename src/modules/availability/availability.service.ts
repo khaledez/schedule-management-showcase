@@ -314,14 +314,19 @@ export class AvailabilityService {
         isOccupied: false,
         clinicId,
         appointmentTypeId,
-        date: dateWhereClause,
+        [AvailabilityModel.DATE_COLUMN]: dateWhereClause,
         staffId: staffIWhereClause,
       },
       order: [
         [
           sequelize.fn(
             'ABS',
-            sequelize.fn('TIMESTAMPDIFF', sequelize.literal('SECOND'), sequelize.col('date'), referenceDate),
+            sequelize.fn(
+              'TIMESTAMPDIFF',
+              sequelize.literal('SECOND'),
+              sequelize.col(AvailabilityModel.DATE_COLUMN),
+              referenceDate,
+            ),
           ),
           'ASC',
         ],
@@ -372,11 +377,11 @@ export class AvailabilityService {
       where: {
         isOccupied: false,
         appointmentTypeId: appointmentTypeIdWhereClause,
-        date: dateWhereClause,
+        [AvailabilityModel.DATE_COLUMN]: dateWhereClause,
         staffId: staffIdWhereClause,
         clinicId: identity.clinicId,
       },
-      order: [['date', 'ASC']],
+      order: [[AvailabilityModel.DATE_COLUMN, 'ASC']],
     };
     let result = await this.availabilityRepository.findAll(options);
     if (payload.timeGroup) {

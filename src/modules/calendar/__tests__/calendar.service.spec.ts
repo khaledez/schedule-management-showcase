@@ -88,12 +88,10 @@ describe('Calendar service', () => {
         ne: null,
       },
     });
-    expect(allEvents.entries).toHaveLength(2);
-    allEvents.entries
-      .flatMap((entry) => entry.entries)
-      .forEach((entry) => {
-        expect(entry.entryType).toMatch('EVENT');
-      });
+    expect(allEvents.entries).toHaveLength(3);
+    allEvents.entries.forEach((entry) => {
+      expect(entry.entryType).toMatch('EVENT');
+    });
   });
 
   test('Provisional appointments do not create an event instance', async () => {
@@ -177,7 +175,7 @@ describe('Calendar service', () => {
       },
     });
     expect(allEvents.entries).toHaveLength(3);
-    const entryTypes = allEvents.entries.flatMap((entry) => entry.entries).map((entry) => entry.entryType);
+    const entryTypes = allEvents.entries.map((entry) => entry.entryType);
     const expectedAppointmentEntries = ['APPOINTMENT', 'EVENT', 'EVENT'];
     expect(entryTypes.sort()).toEqual(expectedAppointmentEntries.sort());
   });
