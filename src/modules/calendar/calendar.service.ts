@@ -14,7 +14,7 @@ import { Op, WhereOptions } from 'sequelize';
 import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { EventModel } from '../events/models';
-import { CalendarSearchInput, CalendarSearchResult } from './calendar.interface';
+import { CalendarSearchInput, CalendarSearchResult, DayCalendarEntry } from './calendar.interface';
 
 @Injectable()
 export class CalendarService {
@@ -47,7 +47,7 @@ export class CalendarService {
 
     if (query.maxDayCount) {
       // group by day
-      const groupedEntries: { [key: string]: { total: number; entries: CalendarEntry[] } } = entries.reduce(
+      const groupedEntries: { [key: string]: Partial<DayCalendarEntry> } = entries.reduce(
         (acc: { [key: string]: { total: number; entries: CalendarEntry[] } }, entry) => {
           const localDate = DateTime.fromJSDate(entry.startDate).toISODate();
           if (acc[localDate]) {
@@ -64,7 +64,16 @@ export class CalendarService {
         {},
       );
 
-      return { entries: Object.entries(groupedEntries).map(([key, val]) => ({ date: key, ...val })) };
+      return {
+        entries: Object.entries(groupedEntries).map(
+          ([key, val]) =>
+            ({
+              date: key,
+              ...val,
+              __typename: 'DayCalendarEntry',
+            } as DayCalendarEntry),
+        ),
+      };
     }
 
     return { entries };

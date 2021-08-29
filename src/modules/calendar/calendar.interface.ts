@@ -3,6 +3,7 @@ import { ResultWithErrors } from 'common/dtos';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 
 export interface DayCalendarEntry {
+  __typename: 'DayCalendarEntry';
   date: string;
   entries: CalendarEntry[];
   total: number;
