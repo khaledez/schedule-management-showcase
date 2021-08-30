@@ -1,8 +1,8 @@
 import { IIdentity } from '@dashps/monmedx-common';
 import {
   BadRequestException,
-  CACHE_MANAGER,
   CacheInterceptor,
+  CACHE_MANAGER,
   Inject,
   Injectable,
   Logger,
@@ -287,6 +287,14 @@ export class LookupsService {
         error,
       });
     }
+  }
+
+  public getFinalStatusIds(identity: IIdentity): Promise<number[]> {
+    return Promise.all([
+      this.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
+      this.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE),
+      this.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED),
+    ]);
   }
 
   @Cached(({ clinicId }: IIdentity, code: AppointmentStatusEnum) => `apptstatusid-${clinicId}-${code.toString()}`)

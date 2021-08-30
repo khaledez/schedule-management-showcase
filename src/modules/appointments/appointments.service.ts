@@ -108,7 +108,8 @@ export class AppointmentsService {
     const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(
       queryParams.filter?.appointmentTypeId || { or: null },
     );
-    const appointmentStatusIdWhereClause = this.getAppointmentStatusIdWhereClause(
+    const appointmentStatusIdWhereClause = await this.getAppointmentStatusIdWhereClause(
+      identity,
       queryParams.filter?.appointmentStatusId || { or: null },
     );
     const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null });
@@ -209,14 +210,15 @@ export class AppointmentsService {
     return { [Op.notIn]: [] };
   }
 
-  getAppointmentStatusIdWhereClause(entity: FilterIdsInputDto) {
+  async getAppointmentStatusIdWhereClause(identity: IIdentity, entity: FilterIdsInputDto) {
     if (entity && entity.in) {
       return { [Op.in]: entity.in };
     } else if (entity && entity.eq) {
       return { [Op.eq]: entity.eq };
     }
-    // TODO This is as bad as it can gets, refactor
-    return { [Op.notIn]: [6, 7] };
+    // get final states for appointments
+    const idsToExclude = await this.lookupsService.getFinalStatusIds(identity);
+    return { [Op.notIn]: idsToExclude };
   }
 
   getStartDateWhereClause(dateRange: FilterDateInputDto) {
@@ -1021,7 +1023,7 @@ export class AppointmentsService {
       const availabilitiesToUpdate = actionTuples
         .filter((t) => t.appointment?.availability)
         .map(({ cancelReq, appointment }) => {
-          if (cancelReq.keepAvailabiltySlot && appointment.availability) {
+          if (cancelReq.keepAvailabiltySlot !== false && appointment.availability) {
             appointment.availability.updatedAt = new Date();
             appointment.availability.updatedBy = identity.userId;
             appointment.availability.isOccupied = false;
@@ -1052,6 +1054,9 @@ export class AppointmentsService {
           appointment.cancelRescheduleReasonId = cancelReq.cancelReasonId;
           appointment.cancelRescheduleText = cancelReq.cancelReasonText;
           appointment.upcomingAppointment = false;
+          if (cancelReq.keepAvailabiltySlot !== false) {
+            appointment.availabilityId = null;
+          }
           appointment.updatedAt = new Date();
           appointment.updatedBy = identity.userId;
           appointment.canceledAt = new Date();
@@ -1070,6 +1075,7 @@ export class AppointmentsService {
             'cancelRescheduleReasonId',
             'cancelRescheduleText',
             'upcomingAppointment',
+            'availabilityId',
             'updatedAt',
             'updatedBy',
             'canceledAt',

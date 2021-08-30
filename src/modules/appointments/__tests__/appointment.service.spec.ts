@@ -583,6 +583,7 @@ describe('# reschedule appointment', () => {
         identity,
         CancelRescheduleReasonCode.RESCHEDULE,
       ),
+      keepAvailabilitySlot: false,
       rescheduleText: 'Missed the appointment',
       durationMinutes: appt.durationMinutes,
       startDate: newDate.toISODate(),
@@ -646,6 +647,95 @@ describe('# reschedule appointment', () => {
       staffId: 333,
       availabilityId: availability.id,
     });
+  });
+
+  test('reschedule appointment to a new doctor should cancel the current appointments doctor', async () => {
+    // Given ..
+    const readyStatus = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+    const appt = await apptService.createAppointment(
+      identity,
+      {
+        patientId: 500,
+        staffId: 345,
+        appointmentStatusId: readyStatus,
+        appointmentTypeId: 1,
+        startDate: '2021-09-10T12:00:00.000Z',
+        durationMinutes: 30,
+      },
+      true,
+    );
+
+    // When ..
+    const changeDoctorReason = await lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.DOCTOR_CHANGE,
+    );
+    const rescheduled = await apptService.rescheduleAppointment(identity, {
+      appointmentId: appt.id,
+      rescheduleReason: changeDoctorReason,
+      durationMinutes: 30,
+      startDate: '2021-09-10T12:00:00.000Z',
+      staffId: 542,
+    });
+
+    // Then ..
+    const canceled = await apptService.findOne(identity, appt.id);
+    const canceledStatus = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
+    expect(rescheduled.staffId).toBe(542);
+    expect(canceled.appointmentStatusId).toBe(canceledStatus);
+  });
+
+  test('reschedule appointment to a new doctor using availability should cancel the current appointments doctor and freeup the availability', async () => {
+    // Given ..
+    const readyStatus = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+    const appt = await apptService.createAppointment(
+      identity,
+      {
+        patientId: 600,
+        staffId: 620,
+        appointmentStatusId: readyStatus,
+        appointmentTypeId: 1,
+        startDate: '2021-09-10T12:00:00.000Z',
+        durationMinutes: 30,
+      },
+      true,
+    );
+
+    const staff2Availability = await availabilitySvc.createSingleAvailability(identity, {
+      appointmentTypeId: 1,
+      durationMinutes: 30,
+      startDate: '2021-09-11T11:00:00.000Z',
+      staffId: 630,
+    });
+
+    // When ..
+    const changeDoctorReason = await lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.DOCTOR_CHANGE,
+    );
+    const rescheduled = await apptService.rescheduleAppointment(identity, {
+      appointmentId: appt.id,
+      rescheduleReason: changeDoctorReason,
+      availabilityId: staff2Availability.id,
+    });
+
+    // Then ..
+    const canceled = await apptService.findOne(identity, appt.id);
+    const [canceledStatus, scheduleStatus] = await Promise.all([
+      lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
+      lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE),
+    ]);
+    expect(rescheduled.staffId).toBe(630);
+    expect(rescheduled.appointmentStatusId).toBe(scheduleStatus);
+    expect(canceled.appointmentStatusId).toBe(canceledStatus);
+    expect(canceled.availabilityId).toBeNull();
+
+    // And ..
+    const canceledAvailability = await availabilitySvc.findOne(appt.availabilityId);
+    const usedAvailability = await availabilitySvc.findOne(staff2Availability.id);
+    expect(canceledAvailability.isOccupied).toBeFalsy;
+    expect(usedAvailability.isOccupied).toBeTruthy;
+    expect(rescheduled.availabilityId).toBe(staff2Availability.id);
   });
 });
 

@@ -87,10 +87,9 @@ export class CalendarService {
     if (!queryType.hasType(CalendarType.APPOINTMENT)) {
       return [];
     }
-    const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
     let appointmentWhereClauses: WhereOptions<AppointmentsModel> = {
       clinicId: { [Op.eq]: identity.clinicId },
-      appointmentStatusId: { [Op.ne]: provisionalStatusId },
+
       deletedBy: { [Op.is]: null },
     };
 
@@ -108,10 +107,17 @@ export class CalendarService {
       };
     }
 
+    const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
     if (query.appointmentStatusId) {
       appointmentWhereClauses = {
         ...appointmentWhereClauses,
         ...processFilterIdsInput('appointmentStatusId', 'appointmentStatusId', query.appointmentStatusId),
+      };
+    } else {
+      const finalStatuses = await this.lookupService.getFinalStatusIds(identity);
+      appointmentWhereClauses = {
+        ...appointmentWhereClauses,
+        appointmentStatusId: { [Op.notIn]: [provisionalStatusId, ...finalStatuses] },
       };
     }
 
