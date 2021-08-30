@@ -88,9 +88,10 @@ export class AppointmentsCron {
   ) {
     // Arrange
     const promises = eventAppointments.map((appt) => {
+      // You must map the sequelize model to plain object to destruct data from it
+      const planAppointment = appt.get({ plain: true });
       const eventPayload = this.mapPayloadToNotificationEvent(eventName, {
-        ...appt,
-        startDate: appt.startDate, // For somereason, not including this in destructuring returns it to string value
+        ...planAppointment,
         ...eventExtraAttributes,
       });
       return snsTopic.sendSnsMessage(SCHEDULE_MGMT_TOPIC, eventPayload);
