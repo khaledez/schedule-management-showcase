@@ -52,8 +52,18 @@ module.exports = {
         { transaction: t },
       );
 
-      await queryInterface.addIndex(tableName, ['clinic_id'], { transaction: t });
       await queryInterface.addIndex(tableName, ['code'], { transaction: t });
+
+      await queryInterface.bulkInsert(
+        tableName,
+        [
+          { name_en: 'Fullfilled', name_fr: 'Fullfilled', code: 'FULLFILLED' },
+          { name_en: 'Canceled', name_fr: 'Canceled', code: 'CANCELED' },
+          { name_en: 'Pending', name_fr: 'Pending', code: 'PENDING' },
+          { name_en: 'Rejected', name_fr: 'Rejected', code: 'REJECTED' },
+        ],
+        { transaction: t },
+      );
     });
   },
 

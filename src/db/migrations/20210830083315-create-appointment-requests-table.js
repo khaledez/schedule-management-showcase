@@ -2,8 +2,8 @@
 const tableName = 'AppointmentRequests';
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface
-      .createTable(tableName, {
+    return queryInterface.sequelize.transaction(async (t) => {
+      await queryInterface.createTable(tableName, {
         id: {
           allowNull: false,
           autoIncrement: true,
@@ -87,12 +87,12 @@ module.exports = {
         deleted_by: {
           type: Sequelize.INTEGER,
         },
-      })
-      .then(
-        () => queryInterface.addIndex(tableName, ['clinic_id']),
-        queryInterface.addIndex(tableName, ['patient_id']),
-        queryInterface.addIndex(tableName, ['original_appointment_id']),
-      );
+      });
+
+      await queryInterface.addIndex(tableName, ['clinic_id'], { transaction: t });
+      await queryInterface.addIndex(tableName, ['patient_id'], { transaction: t });
+      await queryInterface.addIndex(tableName, ['original_appointment_id'], { transaction: t });
+    });
   },
 
   down: (queryInterface) => {
