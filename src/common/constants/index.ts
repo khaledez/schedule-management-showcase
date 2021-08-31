@@ -38,7 +38,7 @@ export const BAD_REQUEST = 'BAD_REQUEST';
 export const VISIT_COMPLETE_EVENT_NAME = 'visit_complete';
 export const ABORT_VISIT_EVENT_NAME = 'ABORT_VISIT_EVENT';
 export const APPOINTMENT_CHECKIN_STATUS_EVENT = 'appointment_checkin';
-export const APPOINTMENT_CHANGE_PATIENT_ASSIGNED_DOCTOR = 'APPOINTMENT_CHANGE_PATIENT_ASSIGNED_DOCTOR';
+export const PATIENT_UPDATE_REQUEST_EVENT_NAME = 'patient_profile_update';
 
 export const SCHEDULE_MGMT_TOPIC = 'schedule-management';
 export const VISIT_MGMT_TOPIC = 'visit-management';

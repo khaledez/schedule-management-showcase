@@ -1,10 +1,6 @@
 import { HttpException, HttpService, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  APPOINTMENT_CHANGE_PATIENT_ASSIGNED_DOCTOR,
-  PATIENT_INFO_REPOSITORY,
-  SCHEDULE_MGMT_TOPIC,
-} from 'common/constants';
+import { PATIENT_INFO_REPOSITORY, PATIENT_UPDATE_REQUEST_EVENT_NAME, SCHEDULE_MGMT_TOPIC } from 'common/constants';
 import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
 import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
 import { Op } from 'sequelize';
@@ -52,12 +48,12 @@ export class PatientInfoService {
       );
 
       await snsTopic.sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
-        eventName: APPOINTMENT_CHANGE_PATIENT_ASSIGNED_DOCTOR,
+        eventName: PATIENT_UPDATE_REQUEST_EVENT_NAME,
         source: SCHEDULE_MGMT_TOPIC,
         clinicId,
         patientId,
         doctorId,
-        data: payload,
+        data: { patientId, doctorId },
       });
 
       return affected_rows[0]?.get({ plain: true });
