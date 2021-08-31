@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsISO8601, IsNumber, IsOptional } from 'class-validator';
+import { IsBoolean, IsISO8601, IsNumber, IsOptional } from 'class-validator';
 // this dto for the body comes from the request
 export class CreateAppointmentDto {
   /* Base attributes */
@@ -48,4 +48,9 @@ export class CreateAppointmentDto {
 
   @IsOptional()
   complaintsNotes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  staffChangedPermanent?: boolean;
 }

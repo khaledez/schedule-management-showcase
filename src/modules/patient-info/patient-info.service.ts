@@ -1,12 +1,20 @@
-import { HttpException, HttpService, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { HttpException, HttpService, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PATIENT_INFO_REPOSITORY } from 'common/constants';
+import {
+  APPOINTMENT_CHANGE_PATIENT_ASSIGNED_DOCTOR,
+  PATIENT_INFO_REPOSITORY,
+  SCHEDULE_MGMT_TOPIC,
+} from 'common/constants';
 import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
 import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
 import { Op } from 'sequelize';
+import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { snsTopic } = require('pubsub-service');
 
 @Injectable()
 export class PatientInfoService {
+  private readonly logger = new Logger(PatientInfoService.name);
   patientMgmtBaseURL: URL;
   constructor(
     @Inject(PATIENT_INFO_REPOSITORY)
@@ -21,6 +29,45 @@ export class PatientInfoService {
     const [patient] = await this.patientRepo.upsert(patientInfo);
 
     return patient.get({ plain: true });
+  }
+
+  async changeAssignedDoctor(payload: ChangeAssingedDoctorPayload) {
+    try {
+      this.logger.debug({
+        method: 'changeAssignedDoctor',
+        payload,
+      });
+
+      const { clinicId, patientId, doctorId } = payload;
+
+      const [affected_count, affected_rows] = await this.patientRepo.update(
+        {
+          doctorId: doctorId,
+        },
+        {
+          where: {
+            id: patientId,
+          },
+        },
+      );
+
+      await snsTopic.sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
+        eventName: APPOINTMENT_CHANGE_PATIENT_ASSIGNED_DOCTOR,
+        source: SCHEDULE_MGMT_TOPIC,
+        clinicId,
+        patientId,
+        doctorId,
+        data: payload,
+      });
+
+      return affected_rows[0]?.get({ plain: true });
+    } catch (error) {
+      this.logger.error({
+        method: 'appointmentsService/changePatientAssignedDoctor',
+        error,
+      });
+    }
+    return false;
   }
 
   /**

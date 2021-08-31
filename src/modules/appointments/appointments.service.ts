@@ -50,6 +50,8 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
+import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
+import { PatientInfoService } from '../patient-info';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -82,6 +84,8 @@ export class AppointmentsService {
     private readonly lookupsService: LookupsService,
     @Inject(forwardRef(() => AvailabilityService))
     private readonly availabilityService: AvailabilityService,
+    @Inject(forwardRef(() => PatientInfoService))
+    private readonly patientInfoSvc: PatientInfoService,
   ) {}
 
   private readonly associationFieldsSortNames: AssociationFieldsSortCriteria = {
@@ -440,6 +444,18 @@ export class AppointmentsService {
         },
         { transaction },
       );
+
+      if (dto.staffChangedPermanent) {
+        //change assigned doctor
+        await this.changePatientAssignedDoctor({
+          patientId: dto.patientId,
+          doctorId: dto.staffId,
+          clinicId: identity.clinicId,
+          appointmentId: createdAppointment.id,
+          reason: 'createAppointment-staffChangedPermanent',
+        });
+      }
+
       return createdAppointment;
     };
 
@@ -447,6 +463,14 @@ export class AppointmentsService {
       return this.appointmentsRepository.sequelize.transaction(validateInputThenArrangeAttributesAndCommit);
     }
     return validateInputThenArrangeAttributesAndCommit(transaction);
+  }
+
+  async changePatientAssignedDoctor(payload: ChangeAssingedDoctorPayload) {
+    try {
+      await this.patientInfoSvc.changeAssignedDoctor(payload);
+    } catch (error) {
+      this.logger.error(error, 'while changePatientAssignedDoctor', JSON.stringify(payload));
+    }
   }
 
   async cancelAllOpenAppointments(
@@ -886,7 +910,7 @@ export class AppointmentsService {
           const availabiity = await this.availabilityService.findOne(dto.availabilityId);
           staffId = availabiity.staffId;
         }
-        if ((appointment.staffId !== staffId && dto.staffChangedPermanent) || dto.removeFutureAppointments) {
+        if (appointment.staffId !== staffId && dto.staffChangedPermanent) {
           // cancel all future appointments with the current doctor
           await this.cancelAllOpenAppointments(
             identity,
@@ -895,6 +919,15 @@ export class AppointmentsService {
             'doctor changed permanently',
             transaction,
           );
+
+          //change assigned doctor
+          await this.changePatientAssignedDoctor({
+            patientId: appointment.patientId,
+            doctorId: appointment.staffId,
+            clinicId: identity.clinicId,
+            appointmentId: appointment.id,
+            reason: 'rescheduleAppointment-staffChangedPermanent',
+          });
         }
 
         // 3. cancel appointment and create a new appointment
