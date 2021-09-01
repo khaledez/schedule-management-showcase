@@ -910,7 +910,7 @@ export class AppointmentsService {
           const availabiity = await this.availabilityService.findOne(dto.availabilityId);
           staffId = availabiity.staffId;
         }
-        if (appointment.staffId !== staffId && dto.staffChangedPermanent) {
+        if (dto.removeFutureAppointments) {
           // cancel all future appointments with the current doctor
           await this.cancelAllOpenAppointments(
             identity,
@@ -919,11 +919,12 @@ export class AppointmentsService {
             'doctor changed permanently',
             transaction,
           );
-
+        }
+        if (dto.staffChangedPermanent) {
           //change assigned doctor
           await this.changePatientAssignedDoctor({
             patientId: appointment.patientId,
-            doctorId: appointment.staffId,
+            doctorId: staffId,
             clinicId: identity.clinicId,
             appointmentId: appointment.id,
             reason: 'rescheduleAppointment-staffChangedPermanent',
