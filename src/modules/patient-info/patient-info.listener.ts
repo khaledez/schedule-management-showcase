@@ -14,6 +14,7 @@ export interface PatientInfoPayload {
   lastName: string;
   primaryHealthPlanNumber: string;
   doctorId: number;
+  legacyId: number;
   statusHistory: {
     status: {
       code: string;
@@ -29,6 +30,7 @@ interface PatientProfileUpdatedEvent {
   source: string;
   clinicId: number;
   patientId: number;
+  legacyId: number;
   data: PatientInfoPayload;
 }
 

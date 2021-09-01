@@ -52,7 +52,7 @@ export class PatientInfoService {
         source: SCHEDULE_MGMT_TOPIC,
         clinicId,
         patientId,
-        doctorId,
+        credentials: '',
         data: { patientId, doctorId },
       });
 
