@@ -135,6 +135,7 @@ export class AppointmentsService {
           staffId: staffIdWhereClause,
           clinicId: identity.clinicId,
           deletedBy: null,
+          upcomingAppointment: true,
         },
         order,
         limit,
