@@ -77,7 +77,7 @@ export class AppointmentsListener {
       // cancel all patient future appointments including provisional
       const releaseReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
         identity,
-        CancelRescheduleReasonCode.RELEASE,
+        CancelRescheduleReasonCode.RELEASE_PATIENT,
       );
       await this.appointmentsService.cancelAllOpenAppointments(
         identity,

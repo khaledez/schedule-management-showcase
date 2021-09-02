@@ -11,7 +11,7 @@ import {
 import { Cache } from 'cache-manager';
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
-  APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY,
+  APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
@@ -51,7 +51,7 @@ export class LookupsService {
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
     @Inject(APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY)
     private readonly appointmentVisitModeRepository: typeof AppointmentVisitModeLookupModel,
-    @Inject(APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY)
+    @Inject(APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY)
     private readonly appointmentCancelRescheduleReasonRepo: typeof AppointmentCancelRescheduleReasonLookupModel,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
@@ -105,6 +105,7 @@ export class LookupsService {
    * Find Appointment types
    * @param identity
    * example: NEW, FUP
+   * @param transaction
    */
   @Cached(({ clinicId = 0 }: IIdentity) => `appttypes-${clinicId}`)
   public findAllAppointmentTypesLookups(
@@ -128,6 +129,7 @@ export class LookupsService {
    * Find Appointment status
    * @param identity
    * example: READY, CHECK-IN
+   * @param transaction
    */
   @Cached(({ clinicId }: IIdentity) => `apptstatus-${clinicId}`)
   public findAllAppointmentStatusLookups(
@@ -160,7 +162,7 @@ export class LookupsService {
     });
   }
 
-  @Cached(({ clinicId }: IIdentity) => `cancelreschedule-${clinicId}`)
+  @Cached(({ clinicId }: IIdentity) => `cancel-reschedule-${clinicId}`)
   public findAllAppointmentCancelRescheduleReasons({
     clinicId,
   }: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
@@ -168,6 +170,50 @@ export class LookupsService {
       where: {
         clinicId: {
           [Op.or]: [null, clinicId],
+        },
+      },
+    });
+  }
+
+  public getCancelReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
+    return this.getCancelRescheduleReasons(identity, [
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
+      CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
+      CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
+      CancelRescheduleReasonCode.NO_SHOW_UP,
+      CancelRescheduleReasonCode.RELEASE_PATIENT,
+      CancelRescheduleReasonCode.OTHER,
+    ]);
+  }
+
+  public getRescheduleReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
+    return this.getCancelRescheduleReasons(identity, [
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
+      CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
+      CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
+      CancelRescheduleReasonCode.NO_SHOW_UP,
+      CancelRescheduleReasonCode.OTHER,
+    ]);
+  }
+
+  @Cached(({ clinicId }: IIdentity, codes) => `cancel-reschedule-${clinicId}-${codes}`)
+  public getCancelRescheduleReasons(
+    { clinicId }: IIdentity,
+    codes: CancelRescheduleReasonCode[],
+  ): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
+    if (!codes || codes.length === 0) {
+      throw new BadRequestException({
+        message: "Codes can't be null or empty",
+        code: BAD_REQUEST,
+      });
+    }
+    return this.appointmentCancelRescheduleReasonRepo.findAll({
+      where: {
+        clinicId: {
+          [Op.or]: [null, clinicId],
+        },
+        code: {
+          [Op.in]: codes,
         },
       },
     });
@@ -374,11 +420,8 @@ export class LookupsService {
       .then((model) => model?.id);
   }
 
-  @Cached((id: number) => `apptcancelres-${id}`)
-  getCancelRescheduleReasonById(
-    id: number,
-    transaction?: Transaction,
-  ): Promise<AppointmentCancelRescheduleReasonLookupModel> {
+  @Cached((id: number) => `cancel-reschedule-reason-by-${id}`)
+  getCancelReasonById(id: number, transaction?: Transaction): Promise<AppointmentCancelRescheduleReasonLookupModel> {
     return this.appointmentCancelRescheduleReasonRepo.findByPk(id, { transaction, plain: true });
   }
 
@@ -397,6 +440,7 @@ export class LookupsService {
    *
    * @param identity
    * @param appointmentTypesIds List of the appointment ids to be validated
+   * @param transaction
    */
   public async validateAppointmentsTypes(
     identity: IIdentity,
@@ -453,16 +497,16 @@ export class LookupsService {
 
   async validateAppointmentCancelRescheduleReason(
     identity: IIdentity,
-    appointmentCancelReschReasonIds: number[],
+    appointmentCancelRescheduleReasonIds: number[],
     transaction?: Transaction,
   ): Promise<void> {
-    if (!appointmentCancelReschReasonIds || appointmentCancelReschReasonIds.length === 0) {
+    if (!appointmentCancelRescheduleReasonIds || appointmentCancelRescheduleReasonIds.length === 0) {
       return;
     }
 
     const lookupData = await this.appointmentCancelRescheduleReasonRepo.findAll({
       where: {
-        id: appointmentCancelReschReasonIds,
+        id: appointmentCancelRescheduleReasonIds,
         clinicId: {
           [Op.or]: [null, identity?.clinicId],
         },
@@ -470,7 +514,7 @@ export class LookupsService {
       transaction,
     });
 
-    const distinctIds = [...new Set(appointmentCancelReschReasonIds)];
+    const distinctIds = [...new Set(appointmentCancelRescheduleReasonIds)];
 
     if (distinctIds.length !== lookupData.length && distinctIds.length > 0) {
       const returnedIds = lookupData.map((lookup) => lookup.id);
@@ -479,6 +523,23 @@ export class LookupsService {
         code: ErrorCodes.BAD_REQUEST,
         message: `unknown cancel reschedule reason ID`,
         fields: ['cancel_reschedule_reason_id', 'reasonId'],
+        unknownIds,
+      });
+    }
+  }
+
+  async validateAppointmentRescheduleReasons(identity: IIdentity, rescheduleReasonIds: number[]): Promise<void> {
+    if (!rescheduleReasonIds || rescheduleReasonIds.length === 0) {
+      return;
+    }
+    const returnedIds = (await this.getRescheduleReasons(identity)).map((reason) => reason.id);
+    const distinctIds = [...new Set(rescheduleReasonIds)];
+    const unknownIds = distinctIds.filter((id) => !returnedIds.includes(id));
+    if (unknownIds.length !== 0) {
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: `unknown reschedule reason ID`,
+        fields: ['reschedule_reason_id'],
         unknownIds,
       });
     }
@@ -547,14 +608,6 @@ export class LookupsService {
       attributes: ['id'],
     });
     return result.map((status) => status.id);
-  }
-
-  getReadyAppointmentStatusId(identity: IIdentity): Promise<number> {
-    return this.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
-  }
-
-  getScheduleAppointmentStatusId(identity: IIdentity): Promise<number> {
-    return this.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
   }
 
   getFUBAppointmentTypeId(identity: IIdentity): Promise<number> {

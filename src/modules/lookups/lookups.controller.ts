@@ -40,8 +40,21 @@ export class LookupsController {
     return this.lookupsService.findAllAppointmentVisitModes(identity);
   }
 
+  /**
+   * @deprecated use {@link getCancelReasons} and {@link getRescheduleReasons} instead
+   */
   @Get('/cancel-reschedule-reason')
   public findAppointmentCancelRescheduleReasons(@Identity() identity: IIdentity) {
     return this.lookupsService.findAllAppointmentCancelRescheduleReasons(identity);
+  }
+
+  @Get('/cancel-reasons')
+  public getCancelReasons(@Identity() identity: IIdentity) {
+    return this.lookupsService.getCancelReasons(identity);
+  }
+
+  @Get('/reschedule-reasons')
+  public getRescheduleReasons(@Identity() identity: IIdentity) {
+    return this.lookupsService.getRescheduleReasons(identity);
   }
 }

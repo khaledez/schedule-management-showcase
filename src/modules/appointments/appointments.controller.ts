@@ -146,9 +146,10 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData });
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    // TODO: The cancel reason should be optional in the dto
     const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
       identity,
-      CancelRescheduleReasonCode.RESCHEDULE,
+      CancelRescheduleReasonCode.OTHER,
     );
     return {
       appointment: await this.appointmentsService.cancelAllAndCreateAppointment(

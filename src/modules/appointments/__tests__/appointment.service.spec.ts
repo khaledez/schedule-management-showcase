@@ -485,7 +485,7 @@ describe('# Cancel appointment', () => {
           keepAvailabiltySlot: true,
           cancelReasonId: await lookupsService.getCancelRescheduleReasonByCode(
             identity,
-            CancelRescheduleReasonCode.RELEASE,
+            CancelRescheduleReasonCode.RELEASE_PATIENT,
           ),
         },
       ]),
@@ -514,7 +514,7 @@ describe('# Cancel appointment', () => {
           keepAvailabiltySlot: true,
           cancelReasonId: await lookupsService.getCancelRescheduleReasonByCode(
             identity,
-            CancelRescheduleReasonCode.RELEASE,
+            CancelRescheduleReasonCode.RELEASE_PATIENT,
           ),
         },
       ]),
@@ -631,7 +631,7 @@ describe('# reschedule appointment', () => {
       appointmentId: appt.id,
       rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode(
         identity,
-        CancelRescheduleReasonCode.RESCHEDULE,
+        CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
       ),
       keepAvailabilitySlot: false,
       rescheduleText: 'Missed the appointment',
@@ -687,7 +687,7 @@ describe('# reschedule appointment', () => {
       appointmentId: appt.id,
       rescheduleReason: await lookupsService.getCancelRescheduleReasonByCode(
         identity,
-        CancelRescheduleReasonCode.RESCHEDULE,
+        CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
       ),
       rescheduleText: 'Missed the appointment',
     });
@@ -718,7 +718,7 @@ describe('# reschedule appointment', () => {
     // When ..
     const changeDoctorReason = await lookupsService.getCancelRescheduleReasonByCode(
       identity,
-      CancelRescheduleReasonCode.DOCTOR_CHANGE,
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
     );
     const rescheduled = await apptService.rescheduleAppointment(identity, {
       appointmentId: appt.id,
@@ -761,7 +761,7 @@ describe('# reschedule appointment', () => {
     // When ..
     const changeDoctorReason = await lookupsService.getCancelRescheduleReasonByCode(
       identity,
-      CancelRescheduleReasonCode.DOCTOR_CHANGE,
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
     );
     const rescheduled = await apptService.rescheduleAppointment(identity, {
       appointmentId: appt.id,

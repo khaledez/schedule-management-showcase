@@ -52,6 +52,7 @@ import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
 import { PatientInfoService } from '../patient-info';
+import { Includeable } from 'sequelize/types/lib/model';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -529,8 +530,8 @@ export class AppointmentsService {
 
   /**
    * Returns availability attributes. creates one and returns if non existent
-   * @param id Availability Id
    * @param identity Used to create an availability if needed
+   * @param data
    * @param transaction ^^
    */
   private async getAvailabilityOrCreateOne(
@@ -758,7 +759,7 @@ export class AppointmentsService {
       this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.VISIT),
       this.lookupsService.getFUBAppointmentTypeId(identity),
       this.lookupsService.getVisitModeByCode(appointmentData.modeCode || AppointmentVisitModeEnum.IN_PERSON),
-      this.lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.RELEASE),
+      this.lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.RELEASE_PATIENT),
     ]);
 
     const procedureInTx = async (transaction: Transaction) => {
@@ -869,7 +870,7 @@ export class AppointmentsService {
       async (transaction): Promise<AppointmentsModelAttributes> => {
         // 0. validate
         await Promise.all([
-          this.lookupsService.validateAppointmentCancelRescheduleReason(identity, [dto.rescheduleReason], transaction),
+          this.lookupsService.validateAppointmentRescheduleReasons(identity, [dto.rescheduleReason]),
           this.lookupsService.validateAppointmentVisitModes(
             identity,
             dto.appointmentVisitModeId ? [dto.appointmentVisitModeId] : [],
@@ -892,24 +893,18 @@ export class AppointmentsService {
         }
 
         // 1. fetch appointment
-        const appointment = await this.appointmentsRepository.findOne({
+        const appointment = await this.getAppointmentById(
+          identity,
+          dto.appointmentId,
+          { model: AvailabilityModel, required: true },
           transaction,
-          where: { id: dto.appointmentId, clinicId: identity.clinicId },
-          include: { model: AvailabilityModel, required: true },
-        });
-        if (!appointment) {
-          throw new NotFoundException({
-            fields: ['appointmentId'],
-            message: `Appointment with id = ${dto.appointmentId} not found`,
-            error: 'NOT_FOUND',
-          });
-        }
+        );
 
         // 2. check if we need to change the doctor permanently
         let staffId = dto.staffId ?? appointment.staffId;
         if (dto.availabilityId) {
-          const availabiity = await this.availabilityService.findOne(dto.availabilityId);
-          staffId = availabiity.staffId;
+          const availability = await this.availabilityService.findOne(dto.availabilityId);
+          staffId = availability.staffId;
         }
         if (dto.removeFutureAppointments) {
           // cancel all future appointments with the current doctor
@@ -935,20 +930,20 @@ export class AppointmentsService {
         // 3. cancel appointment and create a new appointment
         // TODO check if we can use "cancelAllAndCreateAppointment"
         const scheduleStatusId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
+        const rescheduleStatusId = await this.lookupsService.getStatusIdByCode(
+          identity,
+          AppointmentStatusEnum.RESCHEDULED,
+        );
         const [cancelResult, createResult] = await Promise.all([
-          this.cancelAppointments(
-            identity,
-            [
-              {
-                appointmentId: appointment.id,
-                keepAvailabiltySlot: dto.keepAvailabilitySlot,
-                cancelReasonId: dto.rescheduleReason,
-                cancelReasonText: dto.rescheduleText,
-              },
-            ],
-            transaction,
+          AppointmentsModel.update(
+            {
+              appointmentStatusId: rescheduleStatusId,
+              cancelRescheduleReasonId: dto.rescheduleReason,
+              cancelRescheduleText: dto.rescheduleText,
+              upcomingAppointment: false,
+            },
+            { where: { id: appointment.id }, transaction },
           ),
-
           // this will create an availability in the same time
           this.createAppointment(
             identity,
@@ -976,6 +971,27 @@ export class AppointmentsService {
         return createResult;
       },
     );
+  }
+
+  async getAppointmentById(
+    identity: IIdentity,
+    appointmentId: number,
+    include?: Includeable | Includeable[],
+    transaction?: Transaction,
+  ) {
+    const appointment = await this.appointmentsRepository.findOne({
+      where: { id: appointmentId, clinicId: identity.clinicId },
+      include: { model: AvailabilityModel, required: true },
+      transaction: transaction,
+    });
+    if (!appointment) {
+      throw new NotFoundException({
+        fields: ['appointmentId'],
+        message: `Appointment with id = ${appointmentId} not found`,
+        error: 'NOT_FOUND',
+      });
+    }
+    return appointment;
   }
 
   async completeAppointment(

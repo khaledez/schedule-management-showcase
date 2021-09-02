@@ -1,7 +1,7 @@
 import { BadRequestException, CacheModule } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY,
+  APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
@@ -19,6 +19,8 @@ import {
   appointmentVisitModeLookupData,
 } from 'modules/lookups/__tests__/lookups.data';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { IIdentity } from '@dashps/monmedx-common';
+import { CancelRescheduleReasonCode } from '../../../common/enums';
 
 describe('LookupsService', () => {
   let lookupsService: LookupsService;
@@ -27,7 +29,7 @@ describe('LookupsService', () => {
     { provide: APPOINTMENT_TYPES_LOOKUPS_REPOSITORY, data: appointmentTypesLookupData() },
     { provide: APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY, data: appointmentVisitModeLookupData() },
     { provide: APPOINTMENT_STATUS_LOOKUPS_REPOSITORY, data: appointmentStatusLookupData() },
-    { provide: APPOINTMENT_CANCEL_RESCHEDUEL_REASON_REPOSITORY, data: appointmentCancelRescheduleReasonLookups() },
+    { provide: APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY, data: appointmentCancelRescheduleReasonLookups() },
   ].map((entry: { provide: string; data: any[] }) => {
     return {
       ...entry,
@@ -151,5 +153,95 @@ describe('LookupsService with sequelize', () => {
   test('# getNewAppointmentTypeId: will return result', async () => {
     const result = await lookupsService.getFUBAppointmentTypeId(getTestIdentity(155, 155));
     expect(result).toBeDefined();
+  });
+});
+
+describe('# Cancel Reschedule Reasons', () => {
+  let service: LookupsService;
+  let testModule: TestingModule;
+  const identity: IIdentity = getTestIdentity(161, 161);
+
+  beforeAll(async () => {
+    testModule = await Test.createTestingModule({
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule],
+    }).compile();
+    service = await testModule.get<LookupsService>(LookupsService);
+  });
+
+  afterAll(async () => {
+    await testModule.close();
+  });
+
+  test('# validateAppointmentRescheduleReasons: passing null or empty array', async () => {
+    await service.validateAppointmentRescheduleReasons(identity, null);
+    await service.validateAppointmentRescheduleReasons(identity, []);
+  });
+
+  test('# validateAppointmentRescheduleReasons: valid input', async () => {
+    const rescheduleReasonsCodes = [
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
+      CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
+      CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
+      CancelRescheduleReasonCode.NO_SHOW_UP,
+      CancelRescheduleReasonCode.OTHER,
+    ].map((code) => code.toString());
+    const reasons = await service.findAllAppointmentCancelRescheduleReasons(identity);
+    const ids = reasons.filter((reason) => rescheduleReasonsCodes.includes(reason.code)).map((reason) => reason.id);
+    await service.validateAppointmentRescheduleReasons(identity, ids);
+  });
+
+  test('# validateAppointmentRescheduleReasons: invalid input', async () => {
+    const rescheduleReasonsCodes = [
+      CancelRescheduleReasonCode.ABORT_VISIT,
+      CancelRescheduleReasonCode.RELEASE_PATIENT,
+    ].map((code) => code.toString());
+    const reasons = await service.findAllAppointmentCancelRescheduleReasons(identity);
+    const ids = reasons.filter((reason) => rescheduleReasonsCodes.includes(reason.code)).map((reason) => reason.id);
+    try {
+      await service.validateAppointmentRescheduleReasons(identity, ids);
+      fail("Shouldn't have made it here");
+    } catch (error) {
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error.response).toHaveProperty('message', `unknown reschedule reason ID`);
+      expect(error.response).toHaveProperty('code', BAD_REQUEST);
+      expect(error.response).toHaveProperty('fields', ['reschedule_reason_id']);
+      expect(error.response).toHaveProperty('unknownIds', [9, 11]);
+    }
+  });
+
+  test('# getCancelRescheduleReasons: null input', async () => {
+    try {
+      await service.getCancelRescheduleReasons(identity, null);
+      fail("Shouldn't have made it here");
+    } catch (error) {
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error.response).toHaveProperty('message', "Codes can't be null or empty");
+      expect(error.response).toHaveProperty('code', BAD_REQUEST);
+    }
+  });
+
+  test('# getCancelRescheduleReasons: empty array input', async () => {
+    try {
+      await service.getCancelRescheduleReasons(identity, []);
+      fail("Shouldn't have made it here");
+    } catch (error) {
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error.response).toHaveProperty('message', "Codes can't be null or empty");
+      expect(error.response).toHaveProperty('code', BAD_REQUEST);
+    }
+  });
+
+  test('# getCancelRescheduleReasons: valid input', async () => {
+    const codes = [
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
+      CancelRescheduleReasonCode.NO_SHOW_UP,
+      CancelRescheduleReasonCode.ABORT_VISIT,
+    ];
+    const result = await service.getCancelRescheduleReasons(identity, codes);
+    expect(result.length).toEqual(codes.length);
+    const resultCodes = result.map((reason) => reason.code);
+    codes.forEach((code) => {
+      expect(resultCodes.includes(code)).toBeTruthy();
+    });
   });
 });
