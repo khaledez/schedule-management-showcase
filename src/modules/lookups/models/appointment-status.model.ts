@@ -8,4 +8,7 @@ export class AppointmentStatusLookupsModel
   implements LookupWithCodeAttributes {
   @Column
   code: string;
+
+  @Column
+  inTransit: boolean;
 }
