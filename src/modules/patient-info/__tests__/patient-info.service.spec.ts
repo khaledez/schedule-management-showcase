@@ -40,13 +40,14 @@ describe('patient-info service', () => {
       dob: '1988-11-01',
       primaryHealthPlanNumber: '123AB',
       statusCode: 'RELEASED',
+      legacyId: 'legacyId-1',
     };
 
     await patientInfoSvc.create(patientInfo);
     createdPatientInfoIds.push(patientInfo.id);
     const result = await patientInfoSvc.getById(patientInfo.id);
 
-    expect(result).toStrictEqual(patientInfo);
+    expect(result).toStrictEqual({ ...patientInfo, userId: null });
   });
 
   test('update patient', async () => {

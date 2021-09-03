@@ -5,18 +5,17 @@ import { availabilityProviders } from 'modules/availability/availability.provide
 import { DatabaseModule } from 'modules/database/database.module';
 import { EventsModule } from 'modules/events/events.module';
 import { LookupsModule } from 'modules/lookups/lookups.module';
-import { forwardRef } from '@nestjs/common';
-import { AppointmentsModule } from 'modules/appointments/appointments.module';
 import { ConfigurationModule } from 'modules/config/config.module';
+import { AppointmentsService } from '../../appointments/appointments.service';
 
 describe('AvailabilityController', () => {
   let controller: AvailabilityController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [DatabaseModule, EventsModule, LookupsModule, forwardRef(() => AppointmentsModule), ConfigurationModule],
+      imports: [DatabaseModule, EventsModule, LookupsModule, ConfigurationModule],
       controllers: [AvailabilityController],
-      providers: [AvailabilityService, ...availabilityProviders],
+      providers: [AvailabilityService, ...availabilityProviders, { provide: AppointmentsService, useValue: {} }],
     }).compile();
 
     controller = module.get<AvailabilityController>(AvailabilityController);

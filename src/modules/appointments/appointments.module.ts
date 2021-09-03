@@ -6,8 +6,6 @@ import { DatabaseModule } from '../database/database.module';
 import { EventsModule } from '../events/events.module';
 import { LookupsModule } from '../lookups/lookups.module';
 import { AppointmentsController } from './appointments.controller';
-import { AppointmentsCron } from './appointments.cron';
-import { AppointmentsListener } from './appointments.listener';
 import { appointmentsProviders } from './appointments.provider';
 import { AppointmentsService } from './appointments.service';
 
@@ -21,7 +19,7 @@ import { AppointmentsService } from './appointments.service';
     ScheduleModule.forRoot(),
   ],
   controllers: [AppointmentsController],
-  providers: [AppointmentsService, AppointmentsListener, AppointmentsCron, ...appointmentsProviders],
+  providers: [...appointmentsProviders],
   exports: [AppointmentsService],
 })
 export class AppointmentsModule {}

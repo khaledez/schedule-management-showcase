@@ -32,6 +32,7 @@ import { EventsModule } from 'modules/events/events.module';
 import { LookupsModule } from 'modules/lookups/lookups.module';
 import { Op } from 'sequelize';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { AvailabilityModel } from '../models/availability.model';
 
 describe('# AvailabilityService', () => {
   let module: TestingModule;
@@ -44,6 +45,7 @@ describe('# AvailabilityService', () => {
       providers: [AvailabilityService, ...availabilityProviders],
     }).compile();
     availabilityService = module.get<AvailabilityService>(AvailabilityService);
+    await AvailabilityModel.destroy({ where: {} });
   });
 
   afterAll(async (done) => {

@@ -1,6 +1,11 @@
 import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { APPOINTMENTS_REPOSITORY, DEFAULT_APPOINTMENT_THRESHOLD_DAYS, SEQUELIZE } from 'common/constants';
+import {
+  APPOINTMENTS_REPOSITORY,
+  AVAILABILITY_REPOSITORY,
+  DEFAULT_APPOINTMENT_THRESHOLD_DAYS,
+  SEQUELIZE,
+} from 'common/constants';
 import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
 import { DateTime } from 'luxon';
 import {
@@ -24,6 +29,17 @@ import { AppointmentsModule } from '../appointments.module';
 import { AppointmentsService } from '../appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
+import { forwardRef, Inject } from '@nestjs/common';
+import { AvailabilityModule } from '../../availability/availability.module';
+import { EventsModule } from '../../events/events.module';
+import { PatientInfoModule, PatientInfoService } from '../../patient-info';
+import { ScheduleModule } from '@nestjs/schedule';
+import { AppointmentsController } from '../appointments.controller';
+import { AppointmentsListener } from '../appointments.listener';
+import { AppointmentsCron } from '../appointments.cron';
+import { appointmentsProviders } from '../appointments.provider';
+import { AvailabilityModel } from '../../availability/models/availability.model';
+import { AvailabilityValidator } from '../../availability/availability.validator';
 
 const identity: IIdentity = {
   // clinicId: Math.floor(Math.random() * 1000),
@@ -63,6 +79,7 @@ describe('Appointment Actions', () => {
     expect(actionsCodes.sort()).toEqual(testCase.Secondary.sort());
   });
 });
+
 describe('Appointment service', () => {
   let apptService: AppointmentsService;
   let moduleRef: TestingModule;
@@ -72,7 +89,15 @@ describe('Appointment service', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule, EventsModule],
+      providers: [
+        { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
+        { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
+        { provide: 'PatientInfoService', useValue: {} },
+        { provide: 'AppointmentsService', useClass: AppointmentsService },
+        { provide: 'AvailabilityService', useClass: AvailabilityService },
+        AvailabilityValidator,
+      ],
     }).compile();
 
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
@@ -98,6 +123,7 @@ describe('Appointment service', () => {
     await sequelize.query(`DELETE FROM Availability WHERE clinic_id = ${identity.clinicId}`);
     await sequelize.query('SET FOREIGN_KEY_CHECKS=1;');
   });
+
   test('should be defined', () => {
     expect(apptService).toBeDefined();
   });
@@ -171,11 +197,11 @@ describe('Appointment service', () => {
         true,
       );
 
-      await expect(createdAppointment.staffId).toBe(333);
-      await expect(createdAppointment.appointmentTypeId).toBe(2);
+      expect(createdAppointment.staffId).toBe(333);
+      expect(createdAppointment.appointmentTypeId).toBe(2);
 
       const availabilityAfterUpdate = await availabilityService.findOne(createdAvailability.id);
-      await expect(availabilityAfterUpdate.isOccupied).toBe(true);
+      expect(availabilityAfterUpdate.isOccupied).toBe(true);
     });
 
     test('Fails if creating a provisional appointment while the patient has an existent one', async (done) => {
@@ -185,7 +211,7 @@ describe('Appointment service', () => {
       try {
         await apptService.createAppointment(identity, apptAttributes, true);
       } catch (err) {
-        expect(err.message).toMatch('Patient already has a provisional appointment');
+        expect(err.message).toEqual('Patient already has a provisional appointment');
       }
       done();
     });
@@ -397,7 +423,15 @@ describe('# Cancel appointment', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule, EventsModule],
+      providers: [
+        { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
+        { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
+        { provide: 'PatientInfoService', useValue: {} },
+        { provide: 'AppointmentsService', useClass: AppointmentsService },
+        { provide: 'AvailabilityService', useClass: AvailabilityService },
+        AvailabilityValidator,
+      ],
     }).compile();
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
@@ -503,7 +537,15 @@ describe('Patient appointment history tests', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule, EventsModule],
+      providers: [
+        { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
+        { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
+        { provide: 'PatientInfoService', useValue: {} },
+        { provide: 'AppointmentsService', useClass: AppointmentsService },
+        { provide: 'AvailabilityService', useClass: AvailabilityService },
+        AvailabilityValidator,
+      ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
@@ -546,7 +588,15 @@ describe('# reschedule appointment', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule, LookupsModule],
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule, EventsModule],
+      providers: [
+        { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
+        { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
+        { provide: 'PatientInfoService', useValue: {} },
+        { provide: 'AppointmentsService', useClass: AppointmentsService },
+        { provide: 'AvailabilityService', useClass: AvailabilityService },
+        AvailabilityValidator,
+      ],
     }).compile();
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
     availabilitySvc = moduleRef.get<AvailabilityService>(AvailabilityService);
@@ -748,7 +798,15 @@ describe('Patient upcoming and next appointments tests', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [AppointmentsModule, ConfigurationModule, DatabaseModule],
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule, EventsModule],
+      providers: [
+        { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
+        { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
+        { provide: 'PatientInfoService', useValue: {} },
+        { provide: 'AppointmentsService', useClass: AppointmentsService },
+        { provide: 'AvailabilityService', useClass: AvailabilityService },
+        AvailabilityValidator,
+      ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
