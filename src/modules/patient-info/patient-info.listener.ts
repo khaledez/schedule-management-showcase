@@ -3,6 +3,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { PatientInfoAttributes } from './patient-info.model';
 import { PatientInfoService } from './patient-info.service';
+import { patientInactiveStatuses } from '../../common/enums/patient-status';
 
 const PATIENT_PROFILE_UPDATED_EVENT = 'patient_profile_updated';
 
@@ -65,7 +66,7 @@ export class PatientInfoListener {
         await this.patientInfoSvc.update(patientAttr);
       }
 
-      if (['INACTIVE', 'RELEASED', 'DECEASED'].includes(patientAttr.statusCode)) {
+      if (patientInactiveStatuses.includes(patientAttr.statusCode)) {
         //Release patient appointment
         await this.appointmentsService.releasePatientAppointments(patientAttr);
       }

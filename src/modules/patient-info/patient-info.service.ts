@@ -3,8 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { PATIENT_INFO_REPOSITORY, PATIENT_UPDATE_REQUEST_EVENT_NAME, SCHEDULE_MGMT_TOPIC } from 'common/constants';
 import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
 import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
+import { PatientStatus } from '../../common/enums/patient-status';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -21,9 +22,8 @@ export class PatientInfoService {
     this.patientMgmtBaseURL = new URL('/patient-management/patients', configService.get<string>('apiURL'));
   }
 
-  async update(patientInfo: PatientInfoAttributes): Promise<PatientInfoAttributes> {
-    const [patient] = await this.patientRepo.upsert(patientInfo);
-
+  async update(patientInfo: PatientInfoAttributes, transaction?: Transaction): Promise<PatientInfoAttributes> {
+    const [patient] = await this.patientRepo.upsert(patientInfo, { transaction });
     return patient.get({ plain: true });
   }
 
@@ -75,8 +75,8 @@ export class PatientInfoService {
     return this.patientRepo.create(patientInfo);
   }
 
-  getById(id: number): Promise<PatientInfoAttributes | null> {
-    return this.patientRepo.findByPk(id).then((model) => (model ? model.get({ plain: true }) : model));
+  getById(id: number, transaction?: Transaction): Promise<PatientInfoAttributes | null> {
+    return this.patientRepo.findByPk(id, { transaction }).then((model) => (model ? model.get({ plain: true }) : model));
   }
 
   async deleteById(id: number): Promise<void> {
@@ -123,5 +123,11 @@ export class PatientInfoService {
     } catch (error) {
       throw new InternalServerErrorException({ description: 'Unable to fetch patient Info', error });
     }
+  }
+
+  async releasePatient(patientId: number) {
+    const patientInfo = await this.getById(patientId);
+    patientInfo.statusCode = PatientStatus.RELEASED;
+    return this.update(patientInfo);
   }
 }

@@ -4,8 +4,9 @@ import { ConfigurationModule } from 'modules/config/config.module';
 import { getTestPatientInfoResponse } from 'modules/patient-info/__tests__/patient-info.data';
 import * as nock from 'nock';
 import { PatientInfoService } from '..';
-import { PatientInfoAttributes } from '../patient-info.model';
+import { PatientInfoAttributes, PatientInfoModel } from '../patient-info.model';
 import { PatientInfoModule } from '../patient-info.module';
+import { PatientStatus } from '../../../common/enums/patient-status';
 
 describe('patient-info service', () => {
   let patientInfoSvc: PatientInfoService;
@@ -87,5 +88,25 @@ describe('patient-info service', () => {
       primaryHealthPlanNumber: 'MOX-patient09',
       statusCode: 'ACTIVE',
     });
+  });
+
+  test('# Release patient test', async () => {
+    const patientInfo: PatientInfoAttributes = {
+      id: 95,
+      clinicId: 96,
+      fullName: 'Patient to be released',
+      doctorId: 98,
+      dob: '1988-11-01',
+      primaryHealthPlanNumber: '123AB',
+      statusCode: PatientStatus.ACTIVE,
+      legacyId: 'legacyId-1',
+    };
+
+    await patientInfoSvc.create(patientInfo);
+    createdPatientInfoIds.push(patientInfo.id);
+    const result = await patientInfoSvc.getById(patientInfo.id);
+    expect(result).toStrictEqual({ ...patientInfo, userId: null });
+    const releasedPatient = await patientInfoSvc.releasePatient(patientInfo.id);
+    expect(releasedPatient).toStrictEqual({ ...patientInfo, userId: null, statusCode: PatientStatus.RELEASED });
   });
 });

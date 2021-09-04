@@ -105,11 +105,11 @@ export class AppointmentsController {
    * Create a provisional appointment
    * @deprecated
    * @param identity
+   * @param authToken
    * @param appointmentData
    * @returns Created Appointment
    */
   @Post('provisional')
-  // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createProvisionalAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
@@ -169,9 +169,8 @@ export class AppointmentsController {
   }
 
   @Post('cancel')
-  // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
-    const appointment = await this.appointmentsService.cancelAndCreateAppointment(identity, cancelDto);
+    const appointment = await this.appointmentsService.cancelAppointment(identity, cancelDto);
     return { appointment };
   }
 

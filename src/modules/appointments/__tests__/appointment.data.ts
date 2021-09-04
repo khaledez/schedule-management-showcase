@@ -1,8 +1,79 @@
-import { IIdentity } from '@monmedx/monmedx-common';
+import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
 import { AppointmentActionEnum, Order } from 'common/enums';
 import { AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
 import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
 import { Key } from 'modules/appointments/dto/appointment-sort-dto';
+import { PatientInfoAttributes } from '../../patient-info/patient-info.model';
+
+export function getReleasePatientInfoAfterCompleteVisit() {
+  return {
+    id: 10,
+    clinicId: 11,
+    fullName: 'Release patient after complete visit',
+    primaryHealthPlanNumber: 'AAB12',
+    dob: '2021-10-25',
+    statusCode: 'ACTIVE',
+  };
+}
+
+export function getProvisionalPatientInfoAfterCompleteVisit() {
+  return {
+    id: 21,
+    clinicId: 22,
+    fullName: 'Create provisional for patient after complete visit',
+    primaryHealthPlanNumber: 'AAB12',
+    dob: '2021-10-25',
+    statusCode: 'ACTIVE',
+  };
+}
+
+export function buildIConfirmCompleteVisitEvent(
+  patientInfo: PatientInfoAttributes,
+  appointment: AppointmentsModelAttributes,
+  upcomingAppointment: AppointmentsModelAttributes,
+  release: boolean,
+): IConfirmCompleteVisitEvent {
+  return {
+    eventName: 'visit_complete',
+    userId: patientInfo.id,
+    source: 'visit-management',
+    patientId: patientInfo.id,
+    clinicId: patientInfo.clinicId,
+    staffId: 103,
+    langCode: 'EN',
+    data: {
+      patient: {
+        id: patientInfo.id,
+        release: release,
+        displayName: patientInfo.fullName,
+      },
+      visit: {
+        id: 1,
+        documentId: 'asd',
+        appointment: {
+          id: appointment.id,
+          typeId: appointment.appointmentTypeId,
+          startDate: appointment.startDate,
+          actualStartDate: appointment.startDate.toISOString(),
+          modeCode: 'IN-PERSON',
+          amended: false,
+          completedBy: 103,
+          completedAt: appointment.endDate,
+        },
+      },
+      requisition: {},
+      billing: {
+        services: [],
+      },
+      upcomingAppointment: {
+        id: upcomingAppointment.id,
+        typeId: upcomingAppointment.appointmentTypeId,
+        date: upcomingAppointment.startDate.toISOString(),
+        release: release,
+      },
+    },
+  };
+}
 
 export function getQueryGenericSortMapperTestCases() {
   const associationFields: AssociationFieldsSortCriteria = {
@@ -304,6 +375,11 @@ export function getAppointmentWithActionsTestCases() {
     },
     {
       statusId: 10, //RELEASED
+      Primary: [],
+      Secondary: [],
+    },
+    {
+      statusId: 11, //RESCHEDULED
       Primary: [],
       Secondary: [],
     },

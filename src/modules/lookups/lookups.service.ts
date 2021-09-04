@@ -304,6 +304,10 @@ export class LookupsService {
           Primary: [],
           Secondary: [],
         },
+        [AppointmentStatusEnum.RESCHEDULED]: {
+          Primary: [],
+          Secondary: [],
+        },
       };
 
       const internalStatuses = internalAppointmentsStatus.map((el) => el.get({ plain: true }));
@@ -421,7 +425,10 @@ export class LookupsService {
   }
 
   @Cached((id: number) => `cancel-reschedule-reason-by-${id}`)
-  getCancelReasonById(id: number, transaction?: Transaction): Promise<AppointmentCancelRescheduleReasonLookupModel> {
+  getCancelRescheduleReasonById(
+    id: number,
+    transaction?: Transaction,
+  ): Promise<AppointmentCancelRescheduleReasonLookupModel> {
     return this.appointmentCancelRescheduleReasonRepo.findByPk(id, { transaction, plain: true });
   }
 
@@ -583,13 +590,6 @@ export class LookupsService {
   getActiveAppointmentsStatuses(identity: IIdentity) {
     return this.getStatusesIdsNotInCodesGroup(identity, [
       AppointmentStatusEnum.WAIT_LIST,
-      AppointmentStatusEnum.CANCELED,
-      AppointmentStatusEnum.COMPLETE,
-    ]);
-  }
-
-  getUpcomingAppointmentsStatuses(identity: IIdentity) {
-    return this.getStatusesIdsNotInCodesGroup(identity, [
       AppointmentStatusEnum.CANCELED,
       AppointmentStatusEnum.COMPLETE,
     ]);

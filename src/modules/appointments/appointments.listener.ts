@@ -1,5 +1,5 @@
-import { IConfirmCompleteVisitEvent, IIdentity } from '@monmedx/monmedx-common';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   ABORT_VISIT_EVENT_NAME,
@@ -7,11 +7,13 @@ import {
   SEQUELIZE,
   VISIT_COMPLETE_EVENT_NAME,
 } from 'common/constants';
-import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
 import { DateTime } from 'luxon';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
+import { PatientInfoService } from '../patient-info';
+import { PatientStatus } from '../../common/enums/patient-status';
 
 interface AbortVisitMessage {
   eventName: 'ABORT_VISIT_EVENT';
@@ -45,6 +47,8 @@ export class AppointmentsListener {
     private readonly sequelizeInstance: Sequelize,
     private readonly appointmentsService: AppointmentsService,
     private readonly lookupsService: LookupsService,
+    @Inject(forwardRef(() => PatientInfoService))
+    private readonly patientInfoService: PatientInfoService,
   ) {}
 
   @OnEvent(VISIT_COMPLETE_EVENT_NAME, { async: true })
@@ -63,65 +67,33 @@ export class AppointmentsListener {
         userId,
         data: {
           patient: { id: patientId },
-          upcomingAppointment: { typeId: provisionalTypeId, date: provisionalDate, release },
+          upcomingAppointment: { typeId: appointmentTypeId, date: startDate, release },
           visit: {
             id: visitId,
             documentId: documentId,
-            appointment: { id: visitAppointmentId },
+            appointment: { id: appointmentId },
           },
         },
       } = payload;
 
-      const identity: IIdentity = { clinicId, userId, cognitoId: null, userInfo: null, userLang: null };
-
-      // cancel all patient future appointments including provisional
-      const releaseReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
-        identity,
-        CancelRescheduleReasonCode.RELEASE_PATIENT,
-      );
-      await this.appointmentsService.cancelAllOpenAppointments(
-        identity,
-        patientId,
-        releaseReasonId,
-        'visit completed',
-        transaction,
-        [visitAppointmentId],
-      );
-
-      await this.appointmentsService.completeAppointment(
-        identity,
-        visitAppointmentId,
-        visitId,
-        documentId,
-        transaction,
-      );
-
-      const startDateInTheDistantPast = '1988-04-20T00:00:00.000Z';
-      const startDate = release ? startDateInTheDistantPast : provisionalDate;
-
-      // create new provisional appointment
-      const appointmentStatusId = release
-        ? await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED)
-        : await this.lookupsService.getProvisionalAppointmentStatusId(identity);
-
-      const appointmentTypeId = release
-        ? await this.lookupsService.getFUBAppointmentTypeId(identity)
-        : provisionalTypeId;
-
-      await this.appointmentsService.createAppointment(
-        identity,
-        {
-          patientId,
+      if (release) {
+        const patientInfo = await this.patientInfoService.releasePatient(patientId);
+        await this.appointmentsService.releasePatientAppointments(patientInfo, transaction);
+        // TODO: Probably will need to send event to patient management to update their table
+      } else {
+        await this.completeVisitFlow(
+          clinicId,
           staffId,
-          startDate,
-          durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+          userId,
+          patientId,
+          appointmentId,
+          visitId,
+          documentId,
           appointmentTypeId,
-          appointmentStatusId,
-        },
-        true,
-        transaction,
-      );
-
+          startDate,
+          transaction,
+        );
+      }
       await transaction.commit();
     } catch (error) {
       this.logger.error({
@@ -201,5 +173,49 @@ export class AppointmentsListener {
     } catch (error) {
       this.logger.error(error);
     }
+  }
+
+  async completeVisitFlow(
+    clinicId,
+    staffId,
+    userId,
+    patientId,
+    appointmentId,
+    visitId,
+    documentId,
+    appointmentTypeId,
+    startDate,
+    transaction,
+  ) {
+    const identity: IIdentity = { clinicId, userId, cognitoId: null, userInfo: null, userLang: null };
+
+    // cancel all patient future appointments including provisional
+    const releaseReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.RELEASE_PATIENT,
+    );
+    await this.appointmentsService.cancelAllOpenAppointments(
+      identity,
+      patientId,
+      releaseReasonId,
+      'visit completed',
+      transaction,
+      [appointmentId],
+    );
+
+    await this.appointmentsService.completeAppointment(identity, appointmentId, visitId, documentId, transaction);
+    await this.appointmentsService.createAppointment(
+      identity,
+      {
+        patientId,
+        staffId,
+        startDate,
+        durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+        appointmentTypeId,
+        appointmentStatusId: await this.lookupsService.getProvisionalAppointmentStatusId(identity),
+      },
+      true,
+      transaction,
+    );
   }
 }

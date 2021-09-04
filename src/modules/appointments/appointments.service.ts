@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -20,6 +20,7 @@ import {
   PAGING_LIMIT_DEFAULT,
   PAGING_OFFSET_DEFAULT,
   SCHEDULE_MGMT_TOPIC,
+  SEQUELIZE,
 } from 'common/constants';
 import {
   AppointmentStatusEnum,
@@ -36,7 +37,7 @@ import { AvailabilityModelAttributes } from 'modules/availability/models/availab
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoAttributes, PatientInfoModel } from 'modules/patient-info/patient-info.model';
-import sequelize, { FindOptions, Op, QueryTypes, Transaction, WhereOptions } from 'sequelize';
+import sequelize, { FindOptions, Op, QueryTypes, Sequelize, Transaction, WhereOptions } from 'sequelize';
 import { AvailabilityService } from '../availability/availability.service';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
@@ -78,6 +79,8 @@ export class AppointmentsService {
   static readonly DATE_COLUMN = 'start_date';
 
   constructor(
+    @Inject(SEQUELIZE)
+    private readonly sequelizeInstance: Sequelize,
     @Inject(APPOINTMENTS_REPOSITORY)
     private readonly appointmentsRepository: typeof AppointmentsModel,
     @Inject(AVAILABILITY_REPOSITORY)
@@ -346,6 +349,37 @@ export class AppointmentsService {
     });
   }
 
+  async cancelAppointment(identity: IIdentity, cancelDto: CancelAppointmentDto) {
+    const appointment = await AppointmentsModel.findOne({
+      where: { clinicId: identity.clinicId, id: cancelDto.appointmentId },
+    });
+    if (!appointment) {
+      throw new BadRequestException({
+        fields: ['appointmentId'],
+        message: `Appointment not found`,
+        code: ErrorCodes.NOT_FOUND,
+      });
+    }
+
+    const cancelReason = await this.lookupsService.getCancelRescheduleReasonById(cancelDto.cancelReasonId);
+    if (!cancelReason) {
+      throw new BadRequestException({
+        fields: ['cancelReasonId'],
+        message: `Unknown cancel reason`,
+        code: ErrorCodes.BAD_REQUEST,
+      });
+    }
+
+    if (cancelReason.code === CancelRescheduleReasonCode.RELEASE_PATIENT) {
+      const patientInfo = await this.patientInfoSvc.releasePatient(appointment.patientId);
+      // TODO: Probably will need to send event to patient management to update their table
+      await this.releasePatientAppointments(patientInfo);
+      return AppointmentsModel.findOne({ where: { id: appointment.id } });
+    }
+
+    return this.cancelAndCreateAppointment(identity, cancelDto);
+  }
+
   /**
    * Handles provisional or non-provisional appointment corresponding to patient
    * references to an availability slot (created if non-existent)
@@ -575,6 +609,7 @@ export class AppointmentsService {
    * Validates in parallel appointment type, visitmodes, statuses
    * @param identity
    * @param dto
+   * @param transaction
    */
   private async validateLookupIds(
     identity: IIdentity,
@@ -606,7 +641,6 @@ export class AppointmentsService {
   /**
    * Handles appointmentVisitModeId attribute
    * @param identity
-   * @param dto
    * @returns default id (IN_PERSON) or provided id
    */
   private getAppointmentVisitModeId({ appointmentVisitModeId }: CreateAppointmentDto): Promise<number> {
@@ -1325,14 +1359,15 @@ export class AppointmentsService {
   };
 
   async getAppointmentByPatientId(identity: IIdentity, patientId: number) {
-    const activeStatuses = await this.lookupsService.getUpcomingAppointmentsStatuses(identity);
+    const activeStatuses = await this.lookupsService.getFinalStatusIds(identity);
     const options: FindOptions = {
       where: {
         patientId: patientId,
         clinicId: identity.clinicId,
         appointmentStatusId: {
-          [Op.in]: activeStatuses,
+          [Op.notIn]: activeStatuses,
         },
+        upcomingAppointment: true,
       },
       include: [
         {
@@ -1521,7 +1556,7 @@ export class AppointmentsService {
     }
   }
 
-  async releasePatientAppointments(patientAttr: PatientInfoAttributes) {
+  async releasePatientAppointments(patientAttr: PatientInfoAttributes, transaction?: Transaction) {
     const { id: patientId, clinicId, statusCode } = patientAttr;
     const identity = {
       cognitoId: null,
@@ -1540,13 +1575,13 @@ export class AppointmentsService {
         cancelRescheduleText: statusCode,
       },
       {
+        transaction,
         where: {
           patientId,
           clinicId,
           appointmentStatusId: {
             [Op.notIn]: [...appointmentFinalStateIds],
           },
-          deletedAt: null,
         },
       },
     );
