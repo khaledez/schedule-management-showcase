@@ -1,4 +1,4 @@
-import { Identity, IIdentity } from '@dashps/monmedx-common';
+import { Identity, IIdentity } from '@monmedx/monmedx-common';
 import { Controller, Get } from '@nestjs/common';
 import { LookupsService } from './lookups.service';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';

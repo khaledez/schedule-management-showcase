@@ -1,4 +1,4 @@
-import { Identity, IIdentity } from '@dashps/monmedx-common';
+import { Identity, IIdentity } from '@monmedx/monmedx-common';
 import {
   BadRequestException,
   Body,

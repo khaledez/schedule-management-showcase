@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { FilterDateInputDto, FilterIdsInputDto } from '@dashps/monmedx-common';
+import { FilterDateInputDto, FilterIdsInputDto } from '@monmedx/monmedx-common';
 import { IsEnum, IsNotEmptyObject, IsOptional } from 'class-validator';
 import { TimeGroupCode } from 'common/enums/time-group';
 import { HasOne } from 'common/decorators/has-one';

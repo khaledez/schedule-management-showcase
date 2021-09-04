@@ -1,4 +1,4 @@
-import { Public } from '@dashps/monmedx-common';
+import { Public } from '@monmedx/monmedx-common';
 import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HealthCheck, HealthCheckService } from '@nestjs/terminus';

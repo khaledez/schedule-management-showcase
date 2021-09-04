@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { FilterDateInputDto, Identity, IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
-import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
+import { FilterDateInputDto, Identity, IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
+import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
   forwardRef,

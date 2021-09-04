@@ -1,4 +1,4 @@
-import { IIdentity } from '@dashps/monmedx-common';
+import { IIdentity } from '@monmedx/monmedx-common';
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { AVAILABILITY_TEMPLATE_REPOSITORY, BAD_REQUEST } from 'common/constants';
 import { ErrorCodes } from 'common/enums/error-code.enum';

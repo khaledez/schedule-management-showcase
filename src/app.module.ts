@@ -1,4 +1,4 @@
-import { AuthModule, requestLoggerMiddleware } from '@dashps/monmedx-common';
+import { AuthModule, requestLoggerMiddleware } from '@monmedx/monmedx-common';
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TerminusModule } from '@nestjs/terminus';

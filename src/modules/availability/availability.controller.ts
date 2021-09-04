@@ -1,4 +1,4 @@
-import { Identity, IIdentity } from '@dashps/monmedx-common';
+import { Identity, IIdentity } from '@monmedx/monmedx-common';
 import { Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { CalendarEntriesCountPayloadDto } from 'common/dtos/calendar/calendar-entries-count-payload-dto';
 import { CalendarEntriesPayloadDto } from 'common/dtos/calendar/calendar-entries-payload-dto';

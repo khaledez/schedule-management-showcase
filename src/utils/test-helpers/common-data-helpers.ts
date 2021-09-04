@@ -1,4 +1,4 @@
-import { IIdentity } from '@dashps/monmedx-common';
+import { IIdentity } from '@monmedx/monmedx-common';
 
 export function getTestIdentity(userId, clinicId): IIdentity {
   return {

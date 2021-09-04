@@ -1,4 +1,4 @@
-import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
+import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@monmedx/monmedx-common';
 import { ResultWithErrors } from 'common/dtos';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 

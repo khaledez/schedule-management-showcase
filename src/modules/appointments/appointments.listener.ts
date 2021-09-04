@@ -1,4 +1,4 @@
-import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
+import { IConfirmCompleteVisitEvent, IIdentity } from '@monmedx/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {

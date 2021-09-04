@@ -1,4 +1,4 @@
-import { Identity, IIdentity } from '@dashps/monmedx-common';
+import { Identity, IIdentity } from '@monmedx/monmedx-common';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { AvailabilityTemplateService } from './availability-template.service';
 import { AvailabilitySlotDto } from './dto/availability-template-slot.dto';

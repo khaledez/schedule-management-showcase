@@ -42,7 +42,7 @@
   "dependencies": {
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
-    "@dashps/monmedx-common": "^3.5.10",
+    "@monmedx/monmedx-common": "^3.5.10",
     "@nestjs/common": "^7.0.1",
     "@nestjs/config": "^0.6.1",
     "@nestjs/core": "^7.0.1",
@@ -63,7 +63,7 @@
     "luxon": "^2.0.1",
     "moment": "^2.29.1",
     "mysql2": "^2.2.5",
-    "pubsub-service": "git+https://pubsub:_yAs4zUjLbpzxPriMj8W@gitlab.com/JSR-EMR/backend/pubsub-service.git",
+    "pubsub-service": "npm:@monmedx/monmedx-pubsub@^1.0.11",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.6.3",
     "sequelize": "6.6.2",

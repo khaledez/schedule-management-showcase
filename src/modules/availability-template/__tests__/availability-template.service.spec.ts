@@ -1,4 +1,4 @@
-import { IIdentity } from '@dashps/monmedx-common';
+import { IIdentity } from '@monmedx/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from 'aws-sdk';
 import { AVAILABILITY_TEMPLATE_REPOSITORY, SEQUELIZE } from 'common/constants';

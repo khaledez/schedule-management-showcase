@@ -1,4 +1,4 @@
-import { FilterDateInputDto, FilterIdsInputDto } from '@dashps/monmedx-common';
+import { FilterDateInputDto, FilterIdsInputDto } from '@monmedx/monmedx-common';
 import { Op, WhereAttributeHash } from 'sequelize';
 import { BadRequestException } from '@nestjs/common';
 import { BAD_REQUEST } from 'common/constants';

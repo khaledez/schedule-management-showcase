@@ -19,7 +19,7 @@ import {
   appointmentVisitModeLookupData,
 } from 'modules/lookups/__tests__/lookups.data';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
-import { IIdentity } from '@dashps/monmedx-common';
+import { IIdentity } from '@monmedx/monmedx-common';
 import { CancelRescheduleReasonCode } from '../../../common/enums';
 
 describe('LookupsService', () => {

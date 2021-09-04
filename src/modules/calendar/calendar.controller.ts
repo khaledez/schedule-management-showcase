@@ -1,4 +1,4 @@
-import { Identity, IIdentity } from '@dashps/monmedx-common';
+import { Identity, IIdentity } from '@monmedx/monmedx-common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { CalendarSearchBodyDto } from './calendar.dtos';
 import { CalendarSearchResult } from './calendar.interface';

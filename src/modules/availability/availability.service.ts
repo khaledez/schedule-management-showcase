@@ -1,5 +1,5 @@
-import { FilterDateInputDto, IIdentity } from '@dashps/monmedx-common';
-import { FilterIdsInputDto } from '@dashps/monmedx-common/src/dto/filter-ids-input.dto';
+import { FilterDateInputDto, IIdentity } from '@monmedx/monmedx-common';
+import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   forwardRef,
   Inject,

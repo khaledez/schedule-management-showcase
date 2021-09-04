@@ -1,4 +1,4 @@
-import { IIdentity } from '@dashps/monmedx-common';
+import { IIdentity } from '@monmedx/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DEFAULT_EVENT_DURATION_MINS, EVENTS_REPOSITORY } from 'common/constants';
 import { CalendarType } from 'common/enums';

@@ -4,7 +4,7 @@ import {
   JwtAuthGuard,
   PermissionsGuard,
   registerApp,
-} from '@dashps/monmedx-common';
+} from '@monmedx/monmedx-common';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';

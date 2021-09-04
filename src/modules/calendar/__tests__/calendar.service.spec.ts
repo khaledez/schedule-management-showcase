@@ -1,4 +1,4 @@
-import { IIdentity } from '@dashps/monmedx-common';
+import { IIdentity } from '@monmedx/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { APPOINTMENTS_REPOSITORY, AVAILABILITY_REPOSITORY, EVENTS_REPOSITORY, SEQUELIZE } from 'common/constants';
 import { AppointmentsModel } from 'modules/appointments/appointments.model';

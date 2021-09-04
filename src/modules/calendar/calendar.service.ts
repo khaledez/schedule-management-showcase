@@ -1,4 +1,4 @@
-import { FilterStringInputDto, IIdentity } from '@dashps/monmedx-common';
+import { FilterStringInputDto, IIdentity } from '@monmedx/monmedx-common';
 import { Injectable, Logger } from '@nestjs/common';
 import { CalendarType } from 'common/enums';
 import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';

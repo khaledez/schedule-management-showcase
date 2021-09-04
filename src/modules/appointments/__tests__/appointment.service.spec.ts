@@ -1,4 +1,4 @@
-import { IIdentity, PagingInfoInterface } from '@dashps/monmedx-common';
+import { IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   APPOINTMENTS_REPOSITORY,

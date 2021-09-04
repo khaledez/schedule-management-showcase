@@ -1,4 +1,4 @@
-import { Identity, IIdentity, PaginationInterceptor, PagingInfo, PagingInfoInterface } from '@dashps/monmedx-common';
+import { Identity, IIdentity, PaginationInterceptor, PagingInfo, PagingInfoInterface } from '@monmedx/monmedx-common';
 import {
   Body,
   Controller,

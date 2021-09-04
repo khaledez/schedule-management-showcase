@@ -1,4 +1,4 @@
-import { FilterIdsInputDto, FilterStringInputDto } from '@dashps/monmedx-common';
+import { FilterIdsInputDto, FilterStringInputDto } from '@monmedx/monmedx-common';
 import { Type } from 'class-transformer';
 import { IsObject, IsOptional, ValidateNested } from 'class-validator';
 import { FilterDateInputDto } from '../../common/dtos';

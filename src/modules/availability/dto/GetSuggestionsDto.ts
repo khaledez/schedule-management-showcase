@@ -1,4 +1,4 @@
-import { FilterIdsInputDto } from '@dashps/monmedx-common';
+import { FilterIdsInputDto } from '@monmedx/monmedx-common';
 import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsISO8601, IsNumber, IsOptional, IsPositive, IsString, ValidateNested } from 'class-validator';
 import { TimeGroupCode } from 'common/enums/time-group';
