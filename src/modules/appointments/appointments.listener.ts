@@ -1,4 +1,4 @@
-import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
+import { IConfirmCompleteVisitEvent, IIdentity } from '@monmedx/monmedx-common';
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
@@ -13,7 +13,6 @@ import { LookupsService } from 'modules/lookups/lookups.service';
 import { Sequelize, Transaction } from 'sequelize';
 import { AppointmentsService } from './appointments.service';
 import { PatientInfoService } from '../patient-info';
-import { PatientStatus } from '../../common/enums/patient-status';
 
 interface AbortVisitMessage {
   eventName: 'ABORT_VISIT_EVENT';

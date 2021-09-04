@@ -1,4 +1,4 @@
-import { IConfirmCompleteVisitEvent, IIdentity } from '@dashps/monmedx-common';
+import { IConfirmCompleteVisitEvent, IIdentity } from '@monmedx/monmedx-common';
 import { AppointmentActionEnum, Order } from 'common/enums';
 import { AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
 import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
