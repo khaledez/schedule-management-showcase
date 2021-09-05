@@ -12,6 +12,8 @@ import { Cache } from 'cache-manager';
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
   APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY,
+  APPOINTMENT_REQUEST_STATUS_LOOKUPS_REPOSITORY,
+  APPOINTMENT_REQUEST_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
@@ -32,6 +34,8 @@ import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
+import { AppointmentRequestStatusLookupsModel } from './models/appointment-request-status.model';
+import { AppointmentRequestTypesLookupsModel } from './models/appointment-request-types.model';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)
@@ -49,6 +53,10 @@ export class LookupsService {
     private readonly appointmentTypesLookupsRepository: typeof AppointmentTypesLookupsModel,
     @Inject(APPOINTMENT_STATUS_LOOKUPS_REPOSITORY)
     private readonly appointmentStatusLookupsRepository: typeof AppointmentStatusLookupsModel,
+    @Inject(APPOINTMENT_REQUEST_STATUS_LOOKUPS_REPOSITORY)
+    private readonly appointmentRequestStatusLookupsRepository: typeof AppointmentRequestStatusLookupsModel,
+    @Inject(APPOINTMENT_REQUEST_TYPES_LOOKUPS_REPOSITORY)
+    private readonly appointmentRequestTypesLookupsRepository: typeof AppointmentRequestTypesLookupsModel,
     @Inject(APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY)
     private readonly appointmentVisitModeRepository: typeof AppointmentVisitModeLookupModel,
     @Inject(APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY)
@@ -612,5 +620,49 @@ export class LookupsService {
 
   getFUBAppointmentTypeId(identity: IIdentity): Promise<number> {
     return this.getTypeByCode(identity, AppointmentTypeEnum.FUP);
+  }
+
+  /**
+   * Find Appointment Request status
+   * @param identity
+   * example: fullfilled,cancelled,pending,rejected
+   * @param transaction
+   */
+  @Cached(({ clinicId }: IIdentity) => `apptRequeststatus-${clinicId}`)
+  public findAllAppointmentRequestStatusLookups(
+    identity,
+    transaction?: Transaction,
+  ): Promise<AppointmentRequestStatusLookupsModel[]> {
+    const { clinicId } = identity;
+    return this.appointmentRequestStatusLookupsRepository.findAll({
+      where: {
+        clinicId: {
+          [Op.or]: [null, clinicId],
+        },
+      },
+      transaction,
+    });
+  }
+
+  /**
+   * Find Appointment Request Types
+   * @param identity
+   * example: schedule,reschedule,cancel
+   * @param transaction
+   */
+  @Cached(({ clinicId }: IIdentity) => `apptRequestTypes-${clinicId}`)
+  public findAllAppointmentRequestTypesLookups(
+    identity,
+    transaction?: Transaction,
+  ): Promise<AppointmentRequestTypesLookupsModel[]> {
+    const { clinicId } = identity;
+    return this.appointmentRequestTypesLookupsRepository.findAll({
+      where: {
+        clinicId: {
+          [Op.or]: [null, clinicId],
+        },
+      },
+      transaction,
+    });
   }
 }

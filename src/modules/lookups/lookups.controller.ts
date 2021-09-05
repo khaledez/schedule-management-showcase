@@ -57,4 +57,14 @@ export class LookupsController {
   public getRescheduleReasons(@Identity() identity: IIdentity) {
     return this.lookupsService.getRescheduleReasons(identity);
   }
+
+  @Get('/appointment-request-types')
+  public getAppintmentRequestTypes(@Identity() identity: IIdentity) {
+    return this.lookupsService.findAllAppointmentRequestTypesLookups(identity);
+  }
+
+  @Get('/appointment-request-status')
+  public getAppintmentRequestStatus(@Identity() identity: IIdentity) {
+    return this.lookupsService.findAllAppointmentRequestStatusLookups(identity);
+  }
 }

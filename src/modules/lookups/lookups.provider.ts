@@ -1,6 +1,8 @@
 import {
   APPOINTMENT_ACTIONS_LOOKUPS_REPOSITORY,
   APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY,
+  APPOINTMENT_REQUEST_STATUS_LOOKUPS_REPOSITORY,
+  APPOINTMENT_REQUEST_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_STATUS_LOOKUPS_REPOSITORY,
   APPOINTMENT_TYPES_LOOKUPS_REPOSITORY,
   APPOINTMENT_VISIT_MODE_LOOKUP_REPOSITORY,
@@ -14,6 +16,8 @@ import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
+import { AppointmentRequestStatusLookupsModel } from './models/appointment-request-status.model';
+import { AppointmentRequestTypesLookupsModel } from './models/appointment-request-types.model';
 
 export const lookupsProviders = [
   {
@@ -41,4 +45,6 @@ export const lookupsProviders = [
     useValue: AppointmentVisitModeLookupModel,
   },
   { provide: APPOINTMENT_CANCEL_RESCHEDULE_REASON_REPOSITORY, useValue: AppointmentCancelRescheduleReasonLookupModel },
+  { provide: APPOINTMENT_REQUEST_STATUS_LOOKUPS_REPOSITORY, useValue: AppointmentRequestStatusLookupsModel },
+  { provide: APPOINTMENT_REQUEST_TYPES_LOOKUPS_REPOSITORY, useValue: AppointmentRequestTypesLookupsModel },
 ];
