@@ -6,6 +6,7 @@ import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
 import { Op, Transaction } from 'sequelize';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
 import { PatientStatus } from '../../common/enums/patient-status';
+import { ErrorCodes } from '../../common/enums';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -47,14 +48,7 @@ export class PatientInfoService {
         },
       );
 
-      await snsTopic.sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
-        eventName: PATIENT_UPDATE_REQUEST_EVENT_NAME,
-        source: SCHEDULE_MGMT_TOPIC,
-        clinicId,
-        patientId,
-        credentials: '',
-        data: { patientId, doctorId },
-      });
+      await this.publishPatientProfileUpdateEvent(clinicId, patientId, { patientId, doctorId });
 
       return affected_rows[0]?.get({ plain: true });
     } catch (error) {
@@ -64,6 +58,17 @@ export class PatientInfoService {
       });
     }
     return false;
+  }
+
+  publishPatientProfileUpdateEvent(clinicId, patientId, data): Promise<unknown> {
+    return snsTopic.sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
+      eventName: PATIENT_UPDATE_REQUEST_EVENT_NAME,
+      source: SCHEDULE_MGMT_TOPIC,
+      clinicId,
+      patientId,
+      credentials: '',
+      data: data,
+    });
   }
 
   /**
@@ -125,9 +130,24 @@ export class PatientInfoService {
     }
   }
 
-  async releasePatient(patientId: number) {
+  async releasePatient(clinicId: number, patientId: number) {
     const patientInfo = await this.getById(patientId);
     patientInfo.statusCode = PatientStatus.RELEASED;
-    return this.update(patientInfo);
+    const updatePatientInfo = await this.update(patientInfo);
+    this.publishPatientProfileUpdateEvent(clinicId, patientId, {
+      patientId,
+      statusHistory: {
+        status: {
+          code: updatePatientInfo.statusCode,
+        },
+      },
+    }).catch((error) => {
+      this.logger.error({
+        message: 'Failed publishing patient update event',
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        error: error,
+      });
+    });
+    return updatePatientInfo;
   }
 }

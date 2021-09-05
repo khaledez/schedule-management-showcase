@@ -76,9 +76,8 @@ export class AppointmentsListener {
       } = payload;
 
       if (release) {
-        const patientInfo = await this.patientInfoService.releasePatient(patientId);
+        const patientInfo = await this.patientInfoService.releasePatient(clinicId, patientId);
         await this.appointmentsService.releasePatientAppointments(patientInfo, transaction);
-        // TODO: Probably will need to send event to patient management to update their table
       } else {
         await this.completeVisitFlow(
           clinicId,

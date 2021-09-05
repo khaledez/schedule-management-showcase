@@ -4,7 +4,7 @@ import { ConfigurationModule } from 'modules/config/config.module';
 import { getTestPatientInfoResponse } from 'modules/patient-info/__tests__/patient-info.data';
 import * as nock from 'nock';
 import { PatientInfoService } from '..';
-import { PatientInfoAttributes, PatientInfoModel } from '../patient-info.model';
+import { PatientInfoAttributes } from '../patient-info.model';
 import { PatientInfoModule } from '../patient-info.module';
 import { PatientStatus } from '../../../common/enums/patient-status';
 
@@ -106,7 +106,7 @@ describe('patient-info service', () => {
     createdPatientInfoIds.push(patientInfo.id);
     const result = await patientInfoSvc.getById(patientInfo.id);
     expect(result).toStrictEqual({ ...patientInfo, userId: null });
-    const releasedPatient = await patientInfoSvc.releasePatient(patientInfo.id);
+    const releasedPatient = await patientInfoSvc.releasePatient(109, patientInfo.id);
     expect(releasedPatient).toStrictEqual({ ...patientInfo, userId: null, statusCode: PatientStatus.RELEASED });
   });
 });

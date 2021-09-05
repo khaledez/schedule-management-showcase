@@ -371,8 +371,7 @@ export class AppointmentsService {
     }
 
     if (cancelReason.code === CancelRescheduleReasonCode.RELEASE_PATIENT) {
-      const patientInfo = await this.patientInfoSvc.releasePatient(appointment.patientId);
-      // TODO: Probably will need to send event to patient management to update their table
+      const patientInfo = await this.patientInfoSvc.releasePatient(identity.clinicId, appointment.patientId);
       await this.releasePatientAppointments(patientInfo);
       return AppointmentsModel.findOne({ where: { id: appointment.id } });
     }
