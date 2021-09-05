@@ -138,6 +138,7 @@ export class PatientInfoService {
   async ensurePatientIsActive(clinicId: number, patientId: number): Promise<PatientInfoAttributes> {
     const patientInfo = await this.getById(patientId);
     if (patientInfo.statusCode !== PatientStatus.ACTIVE) {
+      this.logger.log(`Reactivating patient ${patientInfo.statusCode}`);
       patientInfo.statusCode = PatientStatus.ACTIVE;
       await this.update(patientInfo);
       this.publishPatientProfileUpdateEvent(clinicId, patientId, {
