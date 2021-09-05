@@ -45,6 +45,11 @@ export class AppointmentFilterDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => FilterStringInputDto)
+  displayPatientId?: FilterStringInputDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FilterStringInputDto)
   patientHealthPlanNumber?: FilterStringInputDto;
 
   @IsOptional()
