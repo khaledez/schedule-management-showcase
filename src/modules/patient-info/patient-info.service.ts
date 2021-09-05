@@ -145,7 +145,7 @@ export class PatientInfoService {
         patientId,
         statusHistory: {
           status: {
-            code: patientInfo.statusCode,
+            code: PatientStatus.ACTIVE,
           },
         },
       }).catch((error) => {
