@@ -143,11 +143,7 @@ export class PatientInfoService {
       await this.update(patientInfo);
       this.publishPatientProfileUpdateEvent(clinicId, patientId, {
         patientId,
-        statusHistory: {
-          status: {
-            code: PatientStatus.ACTIVE,
-          },
-        },
+        statusCode: PatientStatus.ACTIVE,
       }).catch((error) => {
         this.logger.error({
           message: 'Failed publishing patient activate event',
@@ -165,11 +161,7 @@ export class PatientInfoService {
     const updatePatientInfo = await this.update(patientInfo);
     this.publishPatientProfileUpdateEvent(clinicId, patientId, {
       patientId,
-      statusHistory: {
-        status: {
-          code: updatePatientInfo.statusCode,
-        },
-      },
+      statusCode: updatePatientInfo.statusCode,
     }).catch((error) => {
       this.logger.error({
         message: 'Failed publishing patient released event',
