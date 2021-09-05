@@ -130,6 +130,34 @@ export class PatientInfoService {
     }
   }
 
+  /**
+   * If patient status code is not {@link PatientStatus#ACTIVE} then it will reactive the patient and publish an event
+   * @param clinicId
+   * @param patientId
+   */
+  async ensurePatientIsActive(clinicId: number, patientId: number): Promise<PatientInfoAttributes> {
+    const patientInfo = await this.getById(patientId);
+    if (patientInfo.statusCode !== PatientStatus.ACTIVE) {
+      patientInfo.statusCode = PatientStatus.ACTIVE;
+      await this.update(patientInfo);
+      this.publishPatientProfileUpdateEvent(clinicId, patientId, {
+        patientId,
+        statusHistory: {
+          status: {
+            code: patientInfo.statusCode,
+          },
+        },
+      }).catch((error) => {
+        this.logger.error({
+          message: 'Failed publishing patient activate event',
+          code: ErrorCodes.INTERNAL_SERVER_ERROR,
+          error: error,
+        });
+      });
+    }
+    return patientInfo;
+  }
+
   async releasePatient(clinicId: number, patientId: number) {
     const patientInfo = await this.getById(patientId);
     patientInfo.statusCode = PatientStatus.RELEASED;
@@ -143,7 +171,7 @@ export class PatientInfoService {
       },
     }).catch((error) => {
       this.logger.error({
-        message: 'Failed publishing patient update event',
+        message: 'Failed publishing patient released event',
         code: ErrorCodes.INTERNAL_SERVER_ERROR,
         error: error,
       });

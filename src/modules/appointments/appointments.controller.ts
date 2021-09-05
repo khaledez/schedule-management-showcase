@@ -128,7 +128,9 @@ export class AppointmentsController {
     dto.appointmentTypeId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    return { appointment: await this.appointmentsService.createAppointment(identity, dto, true) };
+    const appointment = await this.appointmentsService.createAppointment(identity, dto, true);
+    await this.patientSvc.ensurePatientIsActive(identity.clinicId, appointmentData.patientId);
+    return { appointment };
   }
 
   /**
@@ -151,19 +153,18 @@ export class AppointmentsController {
       identity,
       CancelRescheduleReasonCode.OTHER,
     );
-    return {
-      appointment: await this.appointmentsService.cancelAllAndCreateAppointment(
-        identity,
-        appointmentData,
-        true,
-        cancelReasonId,
-        'create new appointment',
-      ),
-    };
+    const appointment = await this.appointmentsService.cancelAllAndCreateAppointment(
+      identity,
+      appointmentData,
+      true,
+      cancelReasonId,
+      'create new appointment',
+    );
+    await this.patientSvc.ensurePatientIsActive(identity.clinicId, appointmentData.patientId);
+    return { appointment };
   }
 
   @Post('reschedule')
-  // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async rescheduleAppointment(@Identity() identity: IIdentity, @Body() rescheduleDto: RescheduleAppointmentDto) {
     return { appointment: await this.appointmentsService.rescheduleAppointment(identity, rescheduleDto) };
   }
@@ -181,19 +182,18 @@ export class AppointmentsController {
    *
    */
   @Post('adhoc')
-  // @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async adhocAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
     @Body() appointmentData: AdhocAppointmentDto,
   ): Promise<AppointmentsModel> {
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-
-    return this.appointmentsService.adhocAppointment(identity, appointmentData);
+    const appointment = await this.appointmentsService.adhocAppointment(identity, appointmentData);
+    await this.patientSvc.ensurePatientIsActive(identity.clinicId, appointmentData.patientId);
+    return appointment;
   }
 
   @Post('forPatient')
-  // @Permissions(PermissionCode.APPOINTMENT_READ)
   @UseInterceptors(PaginationInterceptor)
   async getPatientAppointmentHistory(
     @Identity() identity: IIdentity,

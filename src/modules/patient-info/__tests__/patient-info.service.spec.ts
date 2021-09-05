@@ -101,12 +101,39 @@ describe('patient-info service', () => {
       statusCode: PatientStatus.ACTIVE,
       legacyId: 'legacyId-1',
     };
-
     await patientInfoSvc.create(patientInfo);
     createdPatientInfoIds.push(patientInfo.id);
+
     const result = await patientInfoSvc.getById(patientInfo.id);
     expect(result).toStrictEqual({ ...patientInfo, userId: null });
-    const releasedPatient = await patientInfoSvc.releasePatient(109, patientInfo.id);
+
+    const releasedPatient = await patientInfoSvc.releasePatient(96, patientInfo.id);
     expect(releasedPatient).toStrictEqual({ ...patientInfo, userId: null, statusCode: PatientStatus.RELEASED });
+  });
+
+  test('# Activate patient test', async () => {
+    const patientInfoAttributes: PatientInfoAttributes = {
+      id: 115,
+      clinicId: 116,
+      fullName: 'Patient to be released',
+      doctorId: 98,
+      dob: '1988-11-01',
+      primaryHealthPlanNumber: '123AB',
+      statusCode: PatientStatus.RELEASED,
+      legacyId: 'legacyId-1',
+    };
+    await patientInfoSvc.create(patientInfoAttributes);
+    createdPatientInfoIds.push(patientInfoAttributes.id);
+
+    const patientInfo = await patientInfoSvc.getById(patientInfoAttributes.id);
+    expect(patientInfo).toStrictEqual({ ...patientInfo, userId: null });
+
+    await patientInfoSvc.ensurePatientIsActive(116, patientInfoAttributes.id);
+    const activatedPatient = await patientInfoSvc.getById(patientInfoAttributes.id);
+    expect(activatedPatient).toStrictEqual({
+      ...patientInfoAttributes,
+      userId: null,
+      statusCode: PatientStatus.ACTIVE,
+    });
   });
 });
