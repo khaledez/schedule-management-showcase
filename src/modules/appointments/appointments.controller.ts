@@ -126,7 +126,7 @@ export class AppointmentsController {
     dto.durationMinutes = DEFAULT_EVENT_DURATION_MINS;
     dto.appointmentTypeId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
 
-    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    await this.patientSvc.ensurePatientInfoIsActive(appointmentData.patientId, authToken);
     const appointment = await this.appointmentsService.createAppointment(identity, dto, true);
     return { appointment };
   }
@@ -145,7 +145,7 @@ export class AppointmentsController {
   ): Promise<{ appointment?: AppointmentsModel; errors?: UserError[] }> {
     this.logger.debug({ identity, appointmentData });
 
-    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    await this.patientSvc.ensurePatientInfoIsActive(appointmentData.patientId, authToken);
     // TODO: The cancel reason should be optional in the dto
     const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
       identity,
@@ -184,7 +184,7 @@ export class AppointmentsController {
     @Headers('Authorization') authToken: string,
     @Body() appointmentData: AdhocAppointmentDto,
   ): Promise<AppointmentsModel> {
-    await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
+    await this.patientSvc.ensurePatientInfoIsActive(appointmentData.patientId, authToken);
     return this.appointmentsService.adhocAppointment(identity, appointmentData);
   }
 

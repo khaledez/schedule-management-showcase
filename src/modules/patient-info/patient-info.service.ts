@@ -147,19 +147,24 @@ export class PatientInfoService {
     return patientInfoPayloadToAttributes(result.data);
   }
 
-  async ensurePatientInfoIsAvailable(patientId: number, authorizationToken: string): Promise<void> {
+  async ensurePatientInfoIsActive(patientId: number, authorizationToken: string): Promise<void> {
     // 1. check our local table
-    const localData = await this.getById(patientId);
-    if (localData) {
-      return;
+    let localData = await this.getById(patientId);
+    if (!localData) {
+      // 2. fetch patient info and store it
+      try {
+        const patientData = await this.fetchPatientInfo(authorizationToken, patientId);
+        localData = await this.create(patientData);
+      } catch (error) {
+        throw new InternalServerErrorException({ description: 'Unable to fetch patient Info', error });
+      }
     }
-
-    // 2. fetch patient info and store it
-    try {
-      const patientData = await this.fetchPatientInfo(authorizationToken, patientId);
-      await this.create(patientData);
-    } catch (error) {
-      throw new InternalServerErrorException({ description: 'Unable to fetch patient Info', error });
+    // 3. Check if patient is active
+    if (localData.statusCode !== PatientStatus.ACTIVE) {
+      throw new BadRequestException({
+        message: 'You are attempting to create an appointment for non-active patient',
+        code: ErrorCodes.BAD_REQUEST,
+      });
     }
   }
 
