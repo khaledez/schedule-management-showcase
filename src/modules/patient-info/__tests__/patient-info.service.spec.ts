@@ -7,9 +7,13 @@ import { PatientInfoService } from '..';
 import { PatientInfoAttributes } from '../patient-info.model';
 import { PatientInfoModule } from '../patient-info.module';
 import { PatientStatus } from '../../../common/enums/patient-status';
+import { getTestIdentity } from '../../../utils/test-helpers/common-data-helpers';
+import { AppointmentsService } from '../../appointments/appointments.service';
+import { AppointmentsModel } from '../../appointments/appointments.model';
 
 describe('patient-info service', () => {
   let patientInfoSvc: PatientInfoService;
+  let appointmentsService: AppointmentsService;
   let module: TestingModule;
   let apiURL: string;
   let createdPatientInfoIds = [];
@@ -20,6 +24,7 @@ describe('patient-info service', () => {
     }).compile();
 
     patientInfoSvc = module.get<PatientInfoService>(PatientInfoService);
+    appointmentsService = module.get<AppointmentsService>(AppointmentsService);
     apiURL = module.get<ConfigService>(ConfigService).get<string>('apiURL');
   });
 
@@ -29,6 +34,7 @@ describe('patient-info service', () => {
 
   afterEach(async () => {
     await patientInfoSvc.deleteByIdsList(createdPatientInfoIds);
+    await AppointmentsModel.destroy({ where: {} });
     createdPatientInfoIds = [];
   });
 
@@ -42,13 +48,14 @@ describe('patient-info service', () => {
       primaryHealthPlanNumber: '123AB',
       statusCode: 'RELEASED',
       legacyId: 'legacyId-1',
+      userId: null,
     };
 
     await patientInfoSvc.create(patientInfo);
     createdPatientInfoIds.push(patientInfo.id);
     const result = await patientInfoSvc.getById(patientInfo.id);
 
-    expect(result).toStrictEqual({ ...patientInfo, userId: null });
+    expect(result).toStrictEqual({ ...patientInfo });
   });
 
   test('update patient', async () => {
@@ -100,6 +107,7 @@ describe('patient-info service', () => {
       primaryHealthPlanNumber: '123AB',
       statusCode: PatientStatus.ACTIVE,
       legacyId: 'legacyId-1',
+      userId: null,
     };
     await patientInfoSvc.create(patientInfo);
     createdPatientInfoIds.push(patientInfo.id);
@@ -108,32 +116,42 @@ describe('patient-info service', () => {
     expect(result).toStrictEqual({ ...patientInfo, userId: null });
 
     const releasedPatient = await patientInfoSvc.releasePatient(96, patientInfo.id);
-    expect(releasedPatient).toStrictEqual({ ...patientInfo, userId: null, statusCode: PatientStatus.RELEASED });
+    expect(releasedPatient).toStrictEqual({ ...patientInfo, statusCode: PatientStatus.RELEASED });
   });
 
   test('# Activate patient test', async () => {
+    const identity = getTestIdentity(123, 123);
     const patientInfoAttributes: PatientInfoAttributes = {
       id: 115,
-      clinicId: 116,
+      clinicId: identity.clinicId,
       fullName: 'Patient to be released',
       doctorId: 98,
       dob: '1988-11-01',
       primaryHealthPlanNumber: '123AB',
       statusCode: PatientStatus.RELEASED,
       legacyId: 'legacyId-1',
+      userId: null,
     };
+
+    const payload = {
+      patientId: patientInfoAttributes.id,
+      provisionalDate: new Date('2022-05-25T07:43:40.000Z'),
+      notes: 'test notes',
+    };
+
     await patientInfoSvc.create(patientInfoAttributes);
     createdPatientInfoIds.push(patientInfoAttributes.id);
 
-    const patientInfo = await patientInfoSvc.getById(patientInfoAttributes.id);
-    expect(patientInfo).toStrictEqual({ ...patientInfo, userId: null });
-
-    await patientInfoSvc.ensurePatientIsActive(116, patientInfoAttributes.id);
+    await patientInfoSvc.reactivatePatient(identity, payload);
     const activatedPatient = await patientInfoSvc.getById(patientInfoAttributes.id);
     expect(activatedPatient).toStrictEqual({
       ...patientInfoAttributes,
-      userId: null,
       statusCode: PatientStatus.ACTIVE,
     });
+    const appointment = await appointmentsService.getPatientActiveAppointment(identity, patientInfoAttributes.id);
+    expect(appointment).toBeDefined();
+    expect(appointment.startDate).toEqual(payload.provisionalDate);
+    expect(appointment.staffId).toEqual(patientInfoAttributes.doctorId);
+    expect(appointment.complaintsNotes).toEqual(payload.notes);
   });
 });

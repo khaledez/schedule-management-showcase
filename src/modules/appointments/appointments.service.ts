@@ -171,6 +171,7 @@ export class AppointmentsService {
     }
   }
 
+  // eslint-disable-next-line complexity
   buildAppointmentIncludePatientOption(queryParams: QueryParamsDto) {
     let where: WhereOptions<PatientInfoModel> = {};
 
@@ -754,6 +755,7 @@ export class AppointmentsService {
         createdBy: identity.userId,
         provisionalDate: dto.startDate,
         endDate: addMinutesToDate(dto.startDate, dto.durationMinutes),
+        complaintsNotes: dto.complaintsNotes,
         appointmentStatusId,
       },
       { transaction },

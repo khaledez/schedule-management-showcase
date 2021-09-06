@@ -46,7 +46,6 @@ export class AppointmentsController {
 
   // search using post method
   @Post('search')
-  // @Permissions(PermissionCode.APPOINTMENT_READ)
   @UseInterceptors(PaginationInterceptor)
   async search(
     @Identity() identity: IIdentity,
@@ -129,7 +128,6 @@ export class AppointmentsController {
 
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
     const appointment = await this.appointmentsService.createAppointment(identity, dto, true);
-    await this.patientSvc.ensurePatientIsActive(identity.clinicId, appointmentData.patientId);
     return { appointment };
   }
 
@@ -160,7 +158,6 @@ export class AppointmentsController {
       cancelReasonId,
       'create new appointment',
     );
-    await this.patientSvc.ensurePatientIsActive(identity.clinicId, appointmentData.patientId);
     return { appointment };
   }
 
@@ -188,9 +185,7 @@ export class AppointmentsController {
     @Body() appointmentData: AdhocAppointmentDto,
   ): Promise<AppointmentsModel> {
     await this.patientSvc.ensurePatientInfoIsAvailable(appointmentData.patientId, authToken);
-    const appointment = await this.appointmentsService.adhocAppointment(identity, appointmentData);
-    await this.patientSvc.ensurePatientIsActive(identity.clinicId, appointmentData.patientId);
-    return appointment;
+    return this.appointmentsService.adhocAppointment(identity, appointmentData);
   }
 
   @Post('forPatient')

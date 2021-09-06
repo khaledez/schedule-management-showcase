@@ -1,12 +1,32 @@
-import { HttpException, HttpService, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  HttpException,
+  HttpService,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PATIENT_INFO_REPOSITORY, PATIENT_UPDATE_REQUEST_EVENT_NAME, SCHEDULE_MGMT_TOPIC } from 'common/constants';
+import {
+  DEFAULT_EVENT_DURATION_MINS,
+  PATIENT_INFO_REPOSITORY,
+  PATIENT_UPDATE_REQUEST_EVENT_NAME,
+  SCHEDULE_MGMT_TOPIC,
+} from 'common/constants';
 import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
 import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
 import { Op, Transaction } from 'sequelize';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
 import { PatientStatus } from '../../common/enums/patient-status';
 import { ErrorCodes } from '../../common/enums';
+import { IIdentity } from '@monmedx/monmedx-common';
+import { SEQUELIZE } from 'common/constants';
+import { Sequelize } from 'sequelize-typescript';
+import { AppointmentsService } from '../appointments/appointments.service';
+import { LookupsService } from '../lookups/lookups.service';
+import { ReactivatePatientDto } from './dto/reactivate-patient-dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -17,6 +37,10 @@ export class PatientInfoService {
   constructor(
     @Inject(PATIENT_INFO_REPOSITORY)
     private readonly patientRepo: typeof PatientInfoModel,
+    @Inject(SEQUELIZE) private sequelize: Sequelize,
+    @Inject(forwardRef(() => AppointmentsService))
+    private readonly appointmentsService: AppointmentsService,
+    private readonly lookupsService: LookupsService,
     private readonly httpSvc: HttpService,
     configService: ConfigService<{ apiURL: string }>,
   ) {
@@ -98,6 +122,15 @@ export class PatientInfoService {
     });
   }
 
+  /**
+   * Return patient info by clinicId and patientId
+   */
+  getClinicPatientById(clinicId: number, patientId: number) {
+    return this.patientRepo
+      .findOne({ where: { id: patientId, clinicId: clinicId } })
+      .then((model) => (model ? model.get({ plain: true }) : model));
+  }
+
   async fetchPatientInfo(authorizationToken: string, patientId: number): Promise<PatientInfoAttributes> {
     const reqURL = new URL(`${this.patientMgmtBaseURL}/${patientId}`);
 
@@ -131,16 +164,43 @@ export class PatientInfoService {
   }
 
   /**
-   * If patient status code is not {@link PatientStatus#ACTIVE} then it will reactive the patient and publish an event
-   * @param clinicId
-   * @param patientId
+   * Reactivates patient and create new provisional appointment
+   * @param identity
+   * @param payload
    */
-  async ensurePatientIsActive(clinicId: number, patientId: number): Promise<PatientInfoAttributes> {
-    const patientInfo = await this.getById(patientId);
-    if (patientInfo.statusCode !== PatientStatus.ACTIVE) {
-      this.logger.log(`Reactivating patient ${patientInfo.id}`);
+  async reactivatePatient(identity: IIdentity, payload: ReactivatePatientDto) {
+    const { patientId, provisionalDate, notes } = payload;
+    const { clinicId } = identity;
+    const patientInfo = await this.getClinicPatientById(identity.clinicId, patientId);
+    if (!patientInfo) {
+      throw new BadRequestException({
+        fields: ['patientId'],
+        message: `Unknown patientId ${patientId}`,
+        code: ErrorCodes.NOT_FOUND,
+      });
+    }
+    if (patientInfo.statusCode === PatientStatus.ACTIVE) {
+      throw new BadRequestException({
+        message: `Patient is already active`,
+        code: ErrorCodes.BAD_REQUEST,
+      });
+    }
+
+    return this.sequelize.transaction(async (transaction) => {
       patientInfo.statusCode = PatientStatus.ACTIVE;
-      await this.update(patientInfo);
+      await this.update(patientInfo, transaction);
+      const appointment = await this.appointmentsService.createProvisionalAppointment(
+        identity,
+        {
+          patientId,
+          appointmentTypeId: await this.lookupsService.getFUBAppointmentTypeId(identity),
+          startDate: provisionalDate,
+          durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+          staffId: patientInfo.doctorId,
+          complaintsNotes: notes,
+        },
+        transaction,
+      );
       this.publishPatientProfileUpdateEvent(clinicId, patientId, {
         patientId,
         statusCode: PatientStatus.ACTIVE,
@@ -151,8 +211,8 @@ export class PatientInfoService {
           error: error,
         });
       });
-    }
-    return patientInfo;
+      return { appointment: appointment.get({ plain: true }), patient: patientInfo };
+    });
   }
 
   async releasePatient(clinicId: number, patientId: number) {
