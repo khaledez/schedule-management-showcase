@@ -738,9 +738,10 @@ export class AppointmentsService {
       });
     }
 
-    if (await this.getPatientActiveAppointment(identity, dto.patientId, transaction)) {
+    const appointment = await this.getPatientActiveAppointment(identity, dto.patientId, transaction);
+    if (appointment) {
       throw new BadRequestException({
-        message: `Patient ${dto.patientId} already has an active appointment`,
+        message: `Patient ${dto.patientId} already has an active appointment ${appointment.id}`,
         code: BAD_REQUEST,
       });
     }
