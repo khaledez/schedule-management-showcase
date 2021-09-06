@@ -780,7 +780,6 @@ export class AppointmentsService {
         deletedAt: null,
         patientId,
         appointmentStatusId: waitListStatusId,
-        upcomingAppointment: true,
       },
       transaction,
     };
@@ -908,7 +907,7 @@ export class AppointmentsService {
         deletedAt: null,
         patientId,
         appointmentStatusId: {
-          [Op.notIn]: statuses,
+          [Op.in]: statuses,
         },
       },
       transaction,
@@ -1385,7 +1384,6 @@ export class AppointmentsService {
         appointmentStatusId: {
           [Op.notIn]: activeStatuses,
         },
-        upcomingAppointment: true,
       },
       include: [
         {

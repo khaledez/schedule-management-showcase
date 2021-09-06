@@ -148,7 +148,7 @@ describe('patient-info service', () => {
       ...patientInfoAttributes,
       statusCode: PatientStatus.ACTIVE,
     });
-    const appointment = await appointmentsService.getPatientActiveAppointment(identity, patientInfoAttributes.id);
+    const appointment = await appointmentsService.getPatientProvisionalAppointment(identity, patientInfoAttributes.id);
     expect(appointment).toBeDefined();
     expect(appointment.startDate).toEqual(payload.provisionalDate);
     expect(appointment.staffId).toEqual(patientInfoAttributes.doctorId);
