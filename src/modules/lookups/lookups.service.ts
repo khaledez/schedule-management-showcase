@@ -352,6 +352,7 @@ export class LookupsService {
       this.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
       this.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE),
       this.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED),
+      this.getStatusIdByCode(identity, AppointmentStatusEnum.RESCHEDULED),
     ]);
   }
 
@@ -600,6 +601,8 @@ export class LookupsService {
       AppointmentStatusEnum.WAIT_LIST,
       AppointmentStatusEnum.CANCELED,
       AppointmentStatusEnum.COMPLETE,
+      AppointmentStatusEnum.RESCHEDULED,
+      AppointmentStatusEnum.RELEASED,
     ]);
   }
 
