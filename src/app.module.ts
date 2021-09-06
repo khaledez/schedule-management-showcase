@@ -15,6 +15,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { EventsModule } from './modules/events/events.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
+import { AppointmentRequestsModule } from './modules/appointment-requests/appointment-requests.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LookupsModule } from './modules/lookups/lookups.module';
     CalendarModule,
     AvailabilityTemplateModule,
     PatientInfoModule,
+    AppointmentRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService, GeneralHealthIndicator, FireEventService],

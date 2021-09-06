@@ -12,6 +12,8 @@ import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-ac
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { PatientInfoModel } from '../patient-info/patient-info.model';
+import { AppointmentRequestsModel } from '../appointment-requests/models/appointment-requests.model';
+const { INTEGER, VIRTUAL } = DataType;
 
 export interface AppointmentsModelAttributes extends CalendarEntry {
   patientId: number;
@@ -29,6 +31,7 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
   complaintsNotes?: string;
   visitId?: number;
   visitSummaryDocumentId?: string;
+  requestId?: number;
 
   primaryAction?: LookupWithCodeAttributes;
   secondaryActions?: LookupWithCodeAttributes[];
@@ -151,6 +154,9 @@ export class AppointmentsModel
   visitId?: number;
 
   @Column
+  appointmentRequestId?: number;
+
+  @Column
   visitSummaryDocumentId: string;
 
   @BelongsTo(() => PatientInfoModel, 'patientId')
@@ -168,6 +174,9 @@ export class AppointmentsModel
   @BelongsTo(() => AppointmentVisitModeLookupModel, 'appointmentVisitModeId')
   visitMode: AppointmentVisitModeLookupModel;
 
+  @BelongsTo(() => AppointmentRequestsModel, 'appointmentRequestId')
+  appointmentRequest: AppointmentRequestsModel;
+
   @Column({
     type: DataType.VIRTUAL,
     get() {
@@ -183,4 +192,9 @@ export class AppointmentsModel
     },
   })
   entryType: CalendarType;
+
+  @Column(VIRTUAL(INTEGER))
+  get hasPendingAppointmentRequest() {
+    return !!this.appointmentRequestId;
+  }
 }
