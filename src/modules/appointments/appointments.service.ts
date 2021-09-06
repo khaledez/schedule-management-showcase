@@ -779,6 +779,7 @@ export class AppointmentsService {
         deletedAt: null,
         patientId,
         appointmentStatusId: waitListStatusId,
+        upcomingAppointment: true,
       },
       transaction,
     };
@@ -1589,6 +1590,7 @@ export class AppointmentsService {
       {
         appointmentStatusId: statusReleasedId,
         cancelRescheduleText: statusCode,
+        upcomingAppointment: false,
       },
       {
         transaction,
