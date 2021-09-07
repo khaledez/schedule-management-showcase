@@ -183,6 +183,7 @@ export class LookupsService {
     });
   }
 
+  @Cached(({ clinicId }: IIdentity, codes) => `cancel-reasons-${clinicId}`)
   public getCancelReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
     return this.getCancelRescheduleReasons(identity, [
       CancelRescheduleReasonCode.CHANGE_DOCTOR,
@@ -194,6 +195,7 @@ export class LookupsService {
     ]);
   }
 
+  @Cached(({ clinicId }: IIdentity, codes) => `reschedule-reasons-${clinicId}`)
   public getRescheduleReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
     return this.getCancelRescheduleReasons(identity, [
       CancelRescheduleReasonCode.CHANGE_DOCTOR,
@@ -434,11 +436,20 @@ export class LookupsService {
   }
 
   @Cached((id: number) => `cancel-reschedule-reason-by-${id}`)
-  getCancelRescheduleReasonById(
+  async getCancelRescheduleReasonById(
     id: number,
     transaction?: Transaction,
   ): Promise<AppointmentCancelRescheduleReasonLookupModel> {
-    return this.appointmentCancelRescheduleReasonRepo.findByPk(id, { transaction, plain: true });
+    const cancelReason = await this.appointmentCancelRescheduleReasonRepo.findByPk(id, { transaction, plain: true });
+    if (!cancelReason) {
+      throw new BadRequestException({
+        fields: ['cancel_reschedule_reason_id', 'reasonId'],
+        message: `Unknown cancel reason`,
+        code: ErrorCodes.BAD_REQUEST,
+        unknownId: id,
+      });
+    }
+    return cancelReason;
   }
 
   async getVisitModeByCode(code: AppointmentVisitModeEnum): Promise<number> {

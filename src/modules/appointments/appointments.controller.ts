@@ -151,7 +151,7 @@ export class AppointmentsController {
       identity,
       CancelRescheduleReasonCode.OTHER,
     );
-    const appointment = await this.appointmentsService.cancelAllAndCreateAppointment(
+    const appointment = await this.appointmentsService.createPatientAppointment(
       identity,
       appointmentData,
       true,
