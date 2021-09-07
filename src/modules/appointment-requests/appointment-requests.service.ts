@@ -64,22 +64,30 @@ export class AppointmentRequestsService {
     //If patient has an existing appointment, attempting to schedule a new appointment should instead take him to a view of his existing appointment,
     // and there he can choose to request rescheduling or cancellation.
 
+    const requestTypeId = requestDto.originalAppointmentId ? 1 : 2; //SCHEDULE, RESCHEDULE
+
     //get patient upcoming appointment
     const upcomingAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, patientId);
-    if (upcomingAppointment.availabilityId) {
+    if (upcomingAppointment.availabilityId && !requestDto.originalAppointmentId) {
       throw new BadRequestException({
         fields: ['originalAppointmentId'],
         code: 'Patient_has_appointment',
         message: 'Patient has an existing appointment',
       });
     }
-
-    const appointmentTypeId = await this.getAppointmentTypeIdByPatientId(patientId, identity);
     const originalAppointmentId = upcomingAppointment.id;
+    if (requestDto.originalAppointmentId && requestDto.originalAppointmentId !== originalAppointmentId) {
+      throw new BadRequestException({
+        fields: ['originalAppointmentId'],
+        code: 'Patient_has_appointment',
+        message: 'originalAppointmentId not equal upcomingAppointment Id',
+      });
+    }
+    const appointmentTypeId = await this.getAppointmentTypeIdByPatientId(patientId, identity);
 
     const createdRequest = await this.appointmentRequestsModel.create(
       {
-        requestTypeId: 1, //SCHEDULE
+        requestTypeId,
         requestStatusId: 3, //PENDING
         originalAppointmentId,
         appointmentTypeId,
@@ -91,6 +99,10 @@ export class AppointmentRequestsService {
         transaction,
       },
     );
+
+    //update original appointment
+    await this.appointmentsService.updateAppointmentAddRequestData(originalAppointmentId, createdRequest, transaction);
+
     return createdRequest;
   }
 
