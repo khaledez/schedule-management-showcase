@@ -112,17 +112,35 @@ export class AppointmentsService {
     const { limit, offset } = pagingFilter || { limit: PAGING_LIMIT_DEFAULT, offset: PAGING_OFFSET_DEFAULT };
     const order = getQueryGenericSortMapper(queryParams.sort, this.associationFieldsSortNames);
 
-    const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
-    const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(
-      queryParams.filter?.appointmentTypeId || { or: null },
-    );
-    const appointmentStatusIdWhereClause = await this.getAppointmentStatusIdWhereClause(
-      identity,
-      queryParams.filter?.appointmentStatusId || { or: null },
-    );
-    const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null });
     const patientInfoInclude = this.buildAppointmentIncludePatientOption(queryParams);
     try {
+      const where: any = {
+        clinicId: identity.clinicId,
+        deletedBy: null,
+        upcomingAppointment: true,
+      };
+      if (queryParams.filter?.doctorId) {
+        const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null });
+        where.staffId = staffIdWhereClause;
+      }
+      if (queryParams.filter?.appointmentStatusId) {
+        const appointmentStatusIdWhereClause = await this.getAppointmentStatusIdWhereClause(
+          identity,
+          queryParams.filter?.appointmentStatusId || { or: null },
+        );
+        where.appointmentStatusId = appointmentStatusIdWhereClause;
+      }
+      if (queryParams.filter?.appointmentTypeId) {
+        const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(
+          queryParams.filter?.appointmentTypeId || { or: null },
+        );
+        where.appointmentTypeId = appointmentTypeIdWhereClause;
+      }
+      if (queryParams.filter?.date) {
+        const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
+        where[Op.or] = [{ startDate: startDateWhereClause }, { appointmentRequestDate: startDateWhereClause }];
+      }
+
       const options: FindOptions = {
         include: [
           {
@@ -132,15 +150,7 @@ export class AppointmentsService {
             ...patientInfoInclude,
           },
         ],
-        where: {
-          appointmentTypeId: appointmentTypeIdWhereClause,
-          appointmentStatusId: appointmentStatusIdWhereClause,
-          startDate: startDateWhereClause,
-          staffId: staffIdWhereClause,
-          clinicId: identity.clinicId,
-          deletedBy: null,
-          upcomingAppointment: true,
-        },
+        where,
         order,
         limit,
         offset,
