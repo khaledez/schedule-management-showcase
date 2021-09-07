@@ -8,6 +8,7 @@ import { LookupsModule } from '../lookups/lookups.module';
 import { AppointmentsController } from './appointments.controller';
 import { appointmentsProviders } from './appointments.provider';
 import { AppointmentsService } from './appointments.service';
+import { AppointmentsModel } from './appointments.model';
 
 @Module({
   imports: [

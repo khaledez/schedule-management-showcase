@@ -1540,6 +1540,37 @@ export class AppointmentsService {
       });
     }
   }
+
+  async getLastCompleteAppointment(patientId: number, identity: IIdentity) {
+    const appt_completed_statusId = await this.lookupsService.getStatusIdByCode(
+      identity,
+      AppointmentStatusEnum.COMPLETE,
+    );
+    return this.appointmentsRepository.findOne({
+      where: {
+        patientId,
+        availabilityId: null,
+        appointmentStatusId: appt_completed_statusId, //6
+      },
+      order: [['id', 'DESC']],
+    });
+  }
+
+  async updateAppointmentAddRequestData(appointmentId: number, requestData, transaction: Transaction) {
+    const { id: appointmentRequestId, date: appointmentRequestDate } = requestData;
+    await this.appointmentsRepository.update(
+      {
+        appointmentRequestId,
+        appointmentRequestDate,
+      },
+      {
+        where: {
+          id: appointmentId,
+        },
+        transaction,
+      },
+    );
+  }
 }
 
 function mapUpdateDtoToAttributes(

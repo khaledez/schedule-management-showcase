@@ -318,6 +318,10 @@ export class LookupsService {
           Primary: [],
           Secondary: [],
         },
+        [AppointmentStatusEnum.RELEASED]: {
+          Primary: [AppointmentActionEnum.REACTIVATE],
+          Secondary: [],
+        },
       };
 
       const internalStatuses = internalAppointmentsStatus.map((el) => el.get({ plain: true }));
