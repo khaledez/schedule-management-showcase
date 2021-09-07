@@ -35,7 +35,7 @@ COPY .npmrc ./
 # Only install runtime dependencies, this command alone makes the image size much smaller
 RUN npm ci
 
-RUN cp -R   /usr/src/app/dist .
+RUN cp -R   dist .
 ADD --chown=node entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
