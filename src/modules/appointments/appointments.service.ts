@@ -1618,6 +1618,22 @@ export class AppointmentsService {
       order: [['id', 'DESC']],
     });
   }
+
+  async updateAppointmentAddRequestData(appointmentId: number, requestData, transaction: Transaction) {
+    const { id: appointmentRequestId, date: appointmentRequestDate } = requestData;
+    await this.appointmentsRepository.update(
+      {
+        appointmentRequestId,
+        appointmentRequestDate,
+      },
+      {
+        where: {
+          id: appointmentId,
+        },
+        transaction,
+      },
+    );
+  }
 }
 
 function mapUpdateDtoToAttributes(

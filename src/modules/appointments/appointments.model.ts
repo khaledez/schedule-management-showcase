@@ -31,7 +31,8 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
   complaintsNotes?: string;
   visitId?: number;
   visitSummaryDocumentId?: string;
-  requestId?: number;
+  appointmentRequestId?: number;
+  appointmentRequestDate?: Date;
 
   primaryAction?: LookupWithCodeAttributes;
   secondaryActions?: LookupWithCodeAttributes[];
@@ -155,6 +156,9 @@ export class AppointmentsModel
 
   @Column
   appointmentRequestId?: number;
+
+  @Column
+  appointmentRequestDate?: Date;
 
   @Column
   visitSummaryDocumentId: string;
