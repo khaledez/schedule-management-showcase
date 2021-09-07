@@ -375,7 +375,7 @@ export function getAppointmentWithActionsTestCases() {
     },
     {
       statusId: 10, //RELEASED
-      Primary: [],
+      Primary: [AppointmentActionEnum.REACTIVATE],
       Secondary: [],
     },
     {

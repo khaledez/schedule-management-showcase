@@ -35,17 +35,6 @@ export class AppointmentRequestsController {
     return this.appointmentRequestsService.createScheduleAppointment(requestDto, identity, transaction);
   }
 
-  //@Permissions(PermissionCode.APPT_REQUEST_CREATE)
-  @UseInterceptors(TransactionInterceptor)
-  @Post('appointment/:id')
-  reschedule(
-    @TransactionParam() transaction: Transaction,
-    @Body() requestDto: RescheduleAppointmentRequestDto,
-    @Identity() identity: IIdentity,
-  ) {
-    return this.appointmentRequestsService.rescheduleAppointmentRequest(requestDto, identity, transaction);
-  }
-
   //@Permissions(PermissionCode.APPT_REQUEST_UPDATE)
   @UseInterceptors(TransactionInterceptor)
   @Patch('id')

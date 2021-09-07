@@ -115,43 +115,22 @@ export class AppointmentsListener {
       await this.sequelizeInstance.transaction(async (transaction: Transaction) => {
         // 1. get appointment info
         const appointment = await this.appointmentsService.findOne(identity, payload.data.visit.appointmentId);
-
-        if (!appointment) {
-          this.logger.error({
-            message: `cannot find appointment with id: ${payload.data?.visit?.appointmentId}`,
-            payload,
-          });
-          return;
-        }
         // 2. cancel the appointment
         const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
           identity,
           CancelRescheduleReasonCode.ABORT_VISIT,
         );
-        const [cancelResult] = await this.appointmentsService.cancelAppointments(
+        await this.appointmentsService.cancelAppointment(
           identity,
-          [
-            {
-              appointmentId: payload.data.visit.appointmentId,
-              keepAvailabiltySlot: false,
-              cancelReasonId: cancelReasonId,
-              cancelReasonText: 'visit aborted',
-              visitId: payload.data.visit.id,
-            },
-          ],
+          {
+            appointmentId: payload.data.visit.appointmentId,
+            keepAvailabiltySlot: false,
+            cancelReasonId: cancelReasonId,
+            cancelReasonText: 'visit aborted',
+            visitId: payload.data.visit.id,
+          },
           transaction,
         );
-
-        if (cancelResult.status === 'FAIL') {
-          this.logger.error(cancelResult.error, 'appointmentListner/handleAbortVisit');
-          throw new Error(`failed to cancel appointment`);
-        } else {
-          this.logger.debug({
-            message: 'canceled appointment after visit',
-            visitId: payload.data.visit.id,
-            appointmentId: payload.data.visit.appointmentId,
-          });
-        }
         // 3. create a provisional appointment with the same date as the cancelled appointment
         const newAppt = await this.appointmentsService.createAppointment(
           identity,
@@ -169,6 +148,7 @@ export class AppointmentsListener {
         this.logger.debug({ newAppt, message: 'created a new provisional appointment' });
       });
     } catch (error) {
+      this.logger.error('appointmentListener/abortVisit failure');
       this.logger.error(error);
     }
   }
@@ -192,13 +172,14 @@ export class AppointmentsListener {
       identity,
       CancelRescheduleReasonCode.RELEASE_PATIENT,
     );
-    await this.appointmentsService.cancelAllOpenAppointments(
+    await this.appointmentsService.cancelPatientAppointments(
       identity,
       patientId,
       releaseReasonId,
       'visit completed',
+      true,
+      null,
       transaction,
-      [appointmentId],
     );
 
     await this.appointmentsService.completeAppointment(identity, appointmentId, visitId, documentId, transaction);

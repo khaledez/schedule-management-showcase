@@ -7,7 +7,7 @@ import { APPOINTMENT_REQUEST_REPOSITORY, SEQUELIZE } from '../../common/constant
 import { AppointmentsService } from '../appointments/appointments.service';
 import * as moment from 'moment';
 import { LookupsService } from '../lookups/lookups.service';
-import { AppointmentTypesEnum } from '../../common/enums';
+import { AppointmentStatusEnum, AppointmentTypesEnum } from '../../common/enums';
 
 @Injectable()
 export class AppointmentRequestsService {
@@ -64,15 +64,20 @@ export class AppointmentRequestsService {
     //If patient has an existing appointment, attempting to schedule a new appointment should instead take him to a view of his existing appointment,
     // and there he can choose to request rescheduling or cancellation.
 
-    const requestTypeId = requestDto.originalAppointmentId ? 1 : 2; //SCHEDULE, RESCHEDULE
+    const requestTypeId = !requestDto.originalAppointmentId ? 1 : 2; //SCHEDULE, RESCHEDULE
+    const appt_status_Waitlist_id = await this.lookupsService.getStatusIdByCode(
+      identity,
+      AppointmentStatusEnum.WAIT_LIST,
+    );
 
     //get patient upcoming appointment
     const upcomingAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, patientId);
-    if (upcomingAppointment.availabilityId && !requestDto.originalAppointmentId) {
+    if (upcomingAppointment.appointmentStatusId !== appt_status_Waitlist_id && !requestDto.originalAppointmentId) {
       throw new BadRequestException({
         fields: ['originalAppointmentId'],
         code: 'Patient_has_appointment',
         message: 'Patient has an existing appointment',
+        data: [{ upcomingAppointment }],
       });
     }
     const originalAppointmentId = upcomingAppointment.id;
@@ -103,52 +108,6 @@ export class AppointmentRequestsService {
     //update original appointment
     await this.appointmentsService.updateAppointmentAddRequestData(originalAppointmentId, createdRequest, transaction);
 
-    return createdRequest;
-  }
-
-  async rescheduleAppointmentRequest(
-    requestDto: RescheduleAppointmentRequestDto,
-    identity: IIdentity,
-    transaction: Transaction,
-  ) {
-    this.logger.log({ function: 'RescheduleAppointmentRequestDto', requestDto });
-
-    const { clinicId, userId } = identity;
-
-    const baseCreate = { createdBy: userId, updatedBy: userId, clinicId };
-    const { patientId, originalAppointmentId } = requestDto;
-
-    await this.checkPatientHasRequest(patientId, clinicId);
-
-    //get patient upcoming appointment
-    const upcomingAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, patientId);
-    if (upcomingAppointment.id !== originalAppointmentId) {
-      throw new BadRequestException({
-        fields: ['originalAppointmentId'],
-        code: 'Patient_has_appointment',
-        message: 'originalAppointmentId not equal upcomingAppointment Id',
-      });
-    }
-
-    const appointmentTypeId = upcomingAppointment.appointmentTypeId;
-
-    const createdRequest = await this.appointmentRequestsModel.create(
-      {
-        requestTypeId: 2, //RESCHEDULE
-        requestStatusId: 3, //PENDING
-        originalAppointmentId,
-        appointmentTypeId,
-        userId,
-        doctorId: upcomingAppointment.staffId,
-        appointmentVisitModeId: requestDto.appointmentVisitModeId || upcomingAppointment.appointmentVisitModeId,
-        complaints: requestDto.complaints || upcomingAppointment.complaintsNotes,
-        ...requestDto,
-        ...baseCreate,
-      },
-      {
-        transaction,
-      },
-    );
     return createdRequest;
   }
 

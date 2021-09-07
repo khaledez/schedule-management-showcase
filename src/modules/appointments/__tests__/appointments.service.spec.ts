@@ -7,7 +7,7 @@ import {
   PATIENT_INFO_REPOSITORY,
   SEQUELIZE,
 } from 'common/constants';
-import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode, ErrorCodes } from 'common/enums';
 import { DateTime } from 'luxon';
 import {
   getAppointmentByPatientIdTestCases,
@@ -35,7 +35,7 @@ import { PatientInfoService } from '../../patient-info';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 import { AvailabilityValidator } from '../../availability/availability.validator';
 import { PatientInfoModel } from '../../patient-info/patient-info.model';
-import { HttpModule } from '@nestjs/common';
+import { BadRequestException, HttpModule, NotFoundException } from '@nestjs/common';
 import { PatientStatus } from '../../../common/enums/patient-status';
 
 const identity: IIdentity = {
@@ -65,13 +65,11 @@ describe('Appointment Actions', () => {
 
   test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Primary: %p', async (testCase) => {
     const actionsResult: any = await lookupsService.findAppointmentsActions([testCase.statusId]);
-    //console.log(util.inspect(actionsResult));
     expect(actionsResult[0]?.nextAction?.code).toEqual(testCase.Primary[0]);
   });
 
   test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Secondary: %p', async (testCase) => {
     const actionsResult: any = await lookupsService.findAppointmentsActions([testCase.statusId]);
-    //console.log(util.inspect(actionsResult));
     const actionsCodes = actionsResult[0]?.secondaryActions.map((el) => el.code);
     expect(actionsCodes.sort()).toEqual(testCase.Secondary.sort());
   });
@@ -140,7 +138,7 @@ describe('Appointment service', () => {
     let appointmentAttributes: CreateAppointmentDto;
     beforeEach(async () => {
       appointmentAttributes = {
-        appointmentStatusId: 1,
+        appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY),
         appointmentTypeId: 1,
         patientId: 15,
         staffId: 20,
@@ -457,7 +455,7 @@ describe('# Cancel appointment', () => {
     return appointmentsService.createAppointment(
       identity,
       {
-        appointmentStatusId: 1,
+        appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY),
         appointmentTypeId: 3,
         patientId: 15,
         staffId: 10,
@@ -469,21 +467,24 @@ describe('# Cancel appointment', () => {
   }
 
   test('# cancelReason does not exist', async () => {
-    const appt = await createAppointment();
+    const appointment = await createAppointment();
     const unknownId = 1000;
-    await expect(
-      appointmentsService.cancelAppointments(identity, [
-        {
-          appointmentId: appt.id,
-          provisionalDate: '2091-10-10',
-          cancelReasonText: 'Bye Bye',
-          cancelReasonId: unknownId,
-          keepAvailabiltySlot: true,
-        },
-      ]),
-    ).rejects.toMatchObject({
-      response: { fields: ['cancel_reschedule_reason_id', 'reasonId'], unknownIds: [unknownId] },
-    });
+    try {
+      await appointmentsService.cancelAppointment(identity, {
+        appointmentId: appointment.id,
+        provisionalDate: '2091-10-10',
+        cancelReasonText: 'Bye Bye',
+        cancelReasonId: unknownId,
+        keepAvailabiltySlot: true,
+      });
+      fail("Shouldn't have made it here");
+    } catch (error) {
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error.response).toHaveProperty('message', `Unknown cancel reason`);
+      expect(error.response).toHaveProperty('code', ErrorCodes.BAD_REQUEST);
+      expect(error.response).toHaveProperty('fields', ['cancel_reschedule_reason_id', 'reasonId']);
+      expect(error.response).toHaveProperty('unknownId', unknownId);
+    }
   });
 
   test('# Services defined', () => {
@@ -494,20 +495,26 @@ describe('# Cancel appointment', () => {
   });
 
   test('# appointment does not exist', async () => {
-    await expect(
-      appointmentsService.cancelAppointments(identity, [
-        {
-          appointmentId: 9999,
-          provisionalDate: '2091-10-10',
-          cancelReasonText: 'ByeBye',
-          keepAvailabiltySlot: true,
-          cancelReasonId: await lookupsService.getCancelRescheduleReasonByCode(
-            identity,
-            CancelRescheduleReasonCode.RELEASE_PATIENT,
-          ),
-        },
-      ]),
-    ).resolves.toMatchObject([{ status: 'FAIL' }]);
+    const appointmentId = 99999;
+    try {
+      const cancelReasonId = await lookupsService.getCancelRescheduleReasonByCode(
+        identity,
+        CancelRescheduleReasonCode.RELEASE_PATIENT,
+      );
+      await appointmentsService.cancelAppointment(identity, {
+        appointmentId,
+        provisionalDate: '2091-10-10',
+        cancelReasonText: 'ByeBye',
+        keepAvailabiltySlot: true,
+        cancelReasonId,
+      });
+      fail("Shouldn't have made it here");
+    } catch (error) {
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect(error.response).toHaveProperty('message', `Appointment with id = ${appointmentId} not found`);
+      expect(error.response).toHaveProperty('code', ErrorCodes.NOT_FOUND);
+      expect(error.response).toHaveProperty('fields', ['appointmentId']);
+    }
   });
 
   test('# appointment canceled and availability is still active', async () => {
@@ -524,19 +531,24 @@ describe('# Cancel appointment', () => {
       },
       true,
     );
-    await expect(
-      appointmentsService.cancelAppointments(identity, [
-        {
-          appointmentId: appt.id,
-          cancelReasonText: 'ByeBye',
-          keepAvailabiltySlot: true,
-          cancelReasonId: await lookupsService.getCancelRescheduleReasonByCode(
-            identity,
-            CancelRescheduleReasonCode.RELEASE_PATIENT,
-          ),
-        },
-      ]),
-    ).resolves.toMatchObject([{ appointmentId: appt.id, status: 'OK' }]);
+
+    const cancelReasonText = 'ByeBye';
+    const cancelReasonId = await lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.RELEASE_PATIENT,
+    );
+
+    await appointmentsService.cancelPatientAppointments(
+      identity,
+      appt.patientId,
+      cancelReasonId,
+      cancelReasonText,
+      true,
+      null,
+    );
+    const updatedAppointment = await appointmentsService.findOne(identity, appt.id);
+    expect(updatedAppointment.cancelRescheduleReasonId).toEqual(cancelReasonId);
+    expect(updatedAppointment.cancelRescheduleText).toEqual(cancelReasonText);
 
     await expect(availabilityService.findOne(appt.availabilityId)).resolves.toMatchObject({
       isOccupied: false,
@@ -577,6 +589,39 @@ describe('# Cancel appointment', () => {
     expect(updatedAppointment.appointmentStatusId).toEqual(releasedStatusId);
     const updatedPatientInfo = await patientInfoService.getById(patientInfo.id);
     expect(updatedPatientInfo.statusCode).toEqual(PatientStatus.RELEASED);
+  });
+
+  test('# Reschedule current active appointment and create a new one', async () => {
+    const appointment = await createAppointment();
+    const appointmentTypeId = await lookupsService.getFUBAppointmentTypeId(identity);
+    const readyStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+    const rescheduledId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RESCHEDULED);
+    const rescheduleReasonText = 'create new appointment';
+    const rescheduleReasonId = await lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
+    );
+    const newAppointment = await appointmentsService.createPatientAppointment(
+      identity,
+      {
+        patientId: appointment.patientId,
+        staffId: 606,
+        appointmentTypeId,
+        appointmentStatusId: readyStatusId,
+        startDate: appointment.startDate.toISOString(),
+        durationMinutes: 20,
+      },
+      true,
+      rescheduleReasonId,
+      rescheduleReasonText,
+    );
+
+    expect(newAppointment.appointmentStatusId).toEqual(readyStatusId);
+
+    const rescheduledAppointment = await appointmentsService.findOne(identity, appointment.id);
+    expect(rescheduledAppointment.cancelRescheduleText).toEqual(rescheduleReasonText);
+    expect(rescheduledAppointment.cancelRescheduleReasonId).toEqual(rescheduleReasonId);
+    expect(rescheduledAppointment.appointmentStatusId).toEqual(rescheduledId);
   });
 });
 
