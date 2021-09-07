@@ -46,7 +46,7 @@ ADD --chown=node .sequelizerc-prod .sequelizerc
 
 # nest build command doesn't copy migrations files into dist folder,
 # we need to copy them manually
-ADD --chown=node src/db/migrations src/db/migrations
+#ADD --chown=node src/db/migrations src/db/migrations
 
 EXPOSE 3000
 
