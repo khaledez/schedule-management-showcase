@@ -43,10 +43,10 @@ RUN chmod +x entrypoint.sh
 # but there is no TypeScript in the final image, so we need to
 # reference the compiled version of config.ts which is config.js
 ADD --chown=node .sequelizerc-prod .sequelizerc
-
 # nest build command doesn't copy migrations files into dist folder,
 # we need to copy them manually
 ADD --chown=node src/db/migrations src/db/migrations
+RUN rm src/db/migrations/*.d.ts
 
 EXPOSE 3000
 
