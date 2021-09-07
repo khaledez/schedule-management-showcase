@@ -601,6 +601,20 @@ export class AppointmentsService {
         });
       }
 
+      if (isProvisional) {
+        return this.createProvisionalAppointment(
+          identity,
+          {
+            patientId: dto.patientId,
+            staffId: dto.staffId,
+            appointmentTypeId: dto.appointmentTypeId,
+            startDate: new Date(dto.startDate),
+            durationMinutes: dto.durationMinutes,
+          },
+          transaction,
+        );
+      }
+
       /* 2. Arrange attributes */
       const { availability, appointmentStatusId, appointmentVisitModeId } = await Promise.all([
         this.getAvailabilityOrCreateOne(identity, { ...dto }, transaction),

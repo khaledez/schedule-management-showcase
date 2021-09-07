@@ -70,7 +70,6 @@ describe('Appointment Actions', () => {
 
   test.each(getAppointmentWithActionsTestCases())('#checkAppointmentsActions Secondary: %p', async (testCase) => {
     const actionsResult: any = await lookupsService.findAppointmentsActions([testCase.statusId]);
-    //console.log(util.inspect(actionsResult));
     const actionsCodes = actionsResult[0]?.secondaryActions.map((el) => el.code);
     expect(actionsCodes.sort()).toEqual(testCase.Secondary.sort());
   });
@@ -139,7 +138,7 @@ describe('Appointment service', () => {
     let appointmentAttributes: CreateAppointmentDto;
     beforeEach(async () => {
       appointmentAttributes = {
-        appointmentStatusId: 1,
+        appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY),
         appointmentTypeId: 1,
         patientId: 15,
         staffId: 20,
@@ -456,7 +455,7 @@ describe('# Cancel appointment', () => {
     return appointmentsService.createAppointment(
       identity,
       {
-        appointmentStatusId: 1,
+        appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY),
         appointmentTypeId: 3,
         patientId: 15,
         staffId: 10,
