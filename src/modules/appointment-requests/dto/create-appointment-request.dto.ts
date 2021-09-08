@@ -1,5 +1,6 @@
 import { IsDate, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsPastDate } from '../../../utils/IsPastDate';
 
 export class CreateAppointmentRequestDto {
   @IsNumber()
@@ -37,6 +38,7 @@ export class CreateAppointmentRequestDto {
 
   @IsDate()
   @Type(() => Date)
+  @IsPastDate()
   date: Date;
 
   @IsOptional()

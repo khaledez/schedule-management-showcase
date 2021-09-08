@@ -13,6 +13,8 @@ import * as moment from 'moment';
 import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusEnum, AppointmentTypesEnum } from '../../common/enums';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
+import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
+import { featureStatusDto } from './dto/feature-status.dto';
 
 @Injectable()
 export class AppointmentRequestsService {
@@ -60,7 +62,7 @@ export class AppointmentRequestsService {
     const baseCreate = { createdBy: userId, updatedBy: userId, clinicId };
     const { patientId } = requestDto;
 
-    await this.checkPatientHasRequest(patientId, clinicId);
+    await this.checkPatientHasRequest(patientId, identity);
 
     //If patient has an existing appointment, attempting to schedule a new appointment should instead take him to a view of his existing appointment,
     // and there he can choose to request rescheduling or cancellation.
@@ -73,6 +75,9 @@ export class AppointmentRequestsService {
 
     //get patient upcoming appointment
     const upcomingAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, patientId);
+    if (requestDto.originalAppointmentId) {
+      await this.checkIfCanRescheduleAppointment(upcomingAppointment);
+    }
     if (upcomingAppointment.appointmentStatusId !== appt_status_Waitlist_id && !requestDto.originalAppointmentId) {
       throw new BadRequestException({
         fields: ['originalAppointmentId'],
@@ -89,8 +94,21 @@ export class AppointmentRequestsService {
         message: 'originalAppointmentId not equal upcomingAppointment Id',
       });
     }
+
+    //Patient can request to reschedule the appointment to another date time (not in the past)
+    if (requestDto.originalAppointmentId && upcomingAppointment.startDate === requestDto.date) {
+      throw new BadRequestException({
+        fields: ['date'],
+        code: 'date',
+        message: 'you must change appointment date',
+      });
+    }
+
     const appointmentTypeId = await this.getAppointmentTypeIdByPatientId(patientId, identity);
-    const request_status_PENDING_id = 3; //PENDING
+    const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.PENDING,
+      identity,
+    ); //3
     const createdRequest = await this.appointmentRequestsModel.create(
       {
         requestTypeId,
@@ -115,7 +133,7 @@ export class AppointmentRequestsService {
   async update(requestDto: UpdateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'create', requestDto });
 
-    const { clinicId, userId } = identity;
+    const { userId } = identity;
 
     const baseUpdate = { updatedBy: userId };
 
@@ -154,8 +172,14 @@ export class AppointmentRequestsService {
       });
     }
 
-    const request_status_PENDING_id = 3; //PENDING
-    const request_status_CANCELED_id = 2; //CANCELED
+    const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.PENDING,
+      identity,
+    ); //3
+    const request_status_CANCELED_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.CANCELED,
+      identity,
+    ); //2
     if (createdRequest.requestStatusId !== request_status_PENDING_id) {
       throw new BadRequestException({
         fields: ['requestStatusId'],
@@ -188,7 +212,7 @@ export class AppointmentRequestsService {
     return createdRequest.reload({ transaction });
   }
 
-  async cancelAppointment(
+  public async cancelAppointment(
     requestDto: AppointmentRequestCancelAppointmentDto,
     identity: IIdentity,
     transaction: Transaction,
@@ -198,6 +222,7 @@ export class AppointmentRequestsService {
     const { appointmentId, cancelReason } = requestDto;
 
     const { userId, clinicId } = identity;
+
     //get patient upcoming appointment
     const appointment = await this.appointmentsService.getAppointmentById(
       identity,
@@ -206,35 +231,16 @@ export class AppointmentRequestsService {
       transaction,
     );
 
-    //TODO check if patient has permission to cancel his appointment
-    if (!appointment) {
-      throw new BadRequestException({
-        fields: ['id'],
-        code: '404',
-        message: 'NotFound',
-      });
-    }
+    await this.checkIfCanRescheduleAppointment(appointment);
 
-    //Appointment has to be scheduled (scheduled, confirmed, reminded, checked-in, ready)
-    const appointmentStatusCode = appointment?.status?.code;
-    if (
-      ![
-        AppointmentStatusEnum.SCHEDULE,
-        AppointmentStatusEnum.CONFIRM1,
-        AppointmentStatusEnum.CONFIRM2,
-        AppointmentStatusEnum.CHECK_IN,
-        AppointmentStatusEnum.READY,
-      ].includes(appointmentStatusCode as AppointmentStatusEnum)
-    ) {
-      throw new BadRequestException({
-        fields: ['appointmentStatusId'],
-        code: '401',
-        message: `Cannot Cancel appointment with status: ${appointmentStatusCode}`,
-      });
-    }
-
-    const request_status_PENDING_id = 3; //PENDING
-    const request_status_CANCELED_id = 2; //CANCELED
+    const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.PENDING,
+      identity,
+    ); //3
+    const request_status_CANCELED_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.CANCELED,
+      identity,
+    ); //2
 
     //Request to cancel the appointment to cancel any in-flight rescheduling request.
     if (appointment.appointmentRequestId) {
@@ -279,16 +285,54 @@ export class AppointmentRequestsService {
     return createdRequest;
   }
 
+  public featureStatus(requestDto: featureStatusDto, identity: IIdentity, transaction: Transaction) {
+    this.logger.log({ function: 'featureStatusDto', requestDto });
+
+    const { clinicId, doctorId } = requestDto;
+    return true;
+  }
+
   //===========================  Private Functions  ===========================
-  private async checkPatientHasRequest(patientId: number, clinicId: number) {
+  private checkIfCanRescheduleAppointment(appointment) {
+    if (!appointment) {
+      throw new BadRequestException({
+        fields: ['id'],
+        code: '404',
+        message: 'NotFound',
+      });
+    }
+    //Appointment has to be scheduled (scheduled, confirmed, reminded, checked-in, ready)
+    const appointmentStatusCode = appointment?.status?.code;
+    if (
+      ![
+        AppointmentStatusEnum.SCHEDULE,
+        AppointmentStatusEnum.CONFIRM1,
+        AppointmentStatusEnum.CONFIRM2,
+        AppointmentStatusEnum.CHECK_IN,
+        AppointmentStatusEnum.READY,
+      ].includes(appointmentStatusCode as AppointmentStatusEnum)
+    ) {
+      throw new BadRequestException({
+        fields: ['appointmentStatusId'],
+        code: '401',
+        message: `Cannot Cancel appointment with status: ${appointmentStatusCode}`,
+      });
+    }
+  }
+
+  private async checkPatientHasRequest(patientId: number, identity: IIdentity) {
     //TODO check patientId in the clinic
+
+    const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.PENDING,
+      identity,
+    ); //3
 
     //Can only make a single request, cannot make additional requests to book an appointment if there is a pending request.
     const checkIfHasRequest = await this.appointmentRequestsModel.findOne({
       where: {
         patientId,
-        clinicId,
-        requestStatusId: 3, //PENDING
+        requestStatusId: request_status_PENDING_id,
       },
     });
     if (checkIfHasRequest) {

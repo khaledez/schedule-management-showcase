@@ -36,6 +36,7 @@ import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
 import { AppointmentRequestStatusLookupsModel } from './models/appointment-request-status.model';
 import { AppointmentRequestTypesLookupsModel } from './models/appointment-request-types.model';
+import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)
@@ -682,5 +683,15 @@ export class LookupsService {
       },
       transaction,
     });
+  }
+
+  public async getApptRequestStatusIdByCode(
+    code: ApptRequestStatusEnum,
+    identity,
+    transaction?: Transaction,
+  ): Promise<number> {
+    const statuses = await this.findAllAppointmentRequestStatusLookups(identity, transaction);
+    const status: any = statuses.filter((el) => el.code === code);
+    return status.id || null;
   }
 }

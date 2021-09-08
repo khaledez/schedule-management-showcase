@@ -5,14 +5,26 @@ import { AppointmentRequestsService } from './appointment-requests.service';
 import {
   AppointmentRequestCancelAppointmentDto,
   CreateAppointmentRequestDto,
+  featureStatusDto,
   UpdateAppointmentRequestDto,
 } from './dto';
-import { RescheduleAppointmentRequestDto } from './dto/reschedule-appointment-request.dto';
-import { DataResponseInterceptor } from '../../common/intercepter/data-response.interceptor';
+import { DataResponseInterceptor } from '../../common/intercepter';
 
 @Controller('appointment-requests')
 export class AppointmentRequestsController {
   constructor(private readonly appointmentRequestsService: AppointmentRequestsService) {}
+
+  //@Permissions(PermissionCode.APPT_REQUEST_CREATE)
+  @UseInterceptors(TransactionInterceptor)
+  @UseInterceptors(DataResponseInterceptor)
+  @Get('feature-status')
+  featureStatus(
+    @TransactionParam() transaction: Transaction,
+    @Body() requestDto: featureStatusDto,
+    @Identity() identity: IIdentity,
+  ) {
+    return this.appointmentRequestsService.featureStatus(requestDto, identity, transaction);
+  }
 
   //@Permissions(PermissionCode.APPT_REQUEST_READ)
   @UseInterceptors(DataResponseInterceptor)
