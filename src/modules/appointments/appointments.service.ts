@@ -879,6 +879,7 @@ export class AppointmentsService {
         endDate: addMinutesToDate(dto.startDate, dto.durationMinutes),
         complaintsNotes: dto.complaintsNotes,
         appointmentStatusId,
+        upcomingAppointment: true,
       },
       { transaction },
     );
@@ -1369,13 +1370,13 @@ export class AppointmentsService {
   };
 
   async getAppointmentByPatientId(identity: IIdentity, patientId: number) {
-    const activeStatuses = await this.lookupsService.getFinalStatusIds(identity);
+    const finalStatusId = await this.lookupsService.getFinalStatusIds(identity);
     const options: FindOptions = {
       where: {
         patientId: patientId,
         clinicId: identity.clinicId,
         appointmentStatusId: {
-          [Op.notIn]: activeStatuses,
+          [Op.notIn]: finalStatusId,
         },
       },
       include: [
