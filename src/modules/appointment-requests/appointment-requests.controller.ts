@@ -8,12 +8,14 @@ import {
   UpdateAppointmentRequestDto,
 } from './dto';
 import { RescheduleAppointmentRequestDto } from './dto/reschedule-appointment-request.dto';
+import { DataResponseInterceptor } from '../../common/intercepter/data-response.interceptor';
 
 @Controller('appointment-requests')
 export class AppointmentRequestsController {
   constructor(private readonly appointmentRequestsService: AppointmentRequestsService) {}
 
   //@Permissions(PermissionCode.APPT_REQUEST_READ)
+  @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Get(':id')
   getRequestById(
@@ -25,6 +27,7 @@ export class AppointmentRequestsController {
   }
 
   //@Permissions(PermissionCode.APPT_REQUEST_CREATE)
+  @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Post()
   create(
@@ -32,10 +35,11 @@ export class AppointmentRequestsController {
     @Body() requestDto: CreateAppointmentRequestDto,
     @Identity() identity: IIdentity,
   ) {
-    return this.appointmentRequestsService.createScheduleAppointment(requestDto, identity, transaction);
+    return this.appointmentRequestsService.create(requestDto, identity, transaction);
   }
 
   //@Permissions(PermissionCode.APPT_REQUEST_UPDATE)
+  @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Patch('id')
   update(
@@ -47,6 +51,7 @@ export class AppointmentRequestsController {
   }
 
   //@Permissions(PermissionCode.APPT_REQUEST_CANCEL)
+  @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Delete(':id')
   cancelRequest(
@@ -54,17 +59,18 @@ export class AppointmentRequestsController {
     @Param('id', ParseIntPipe) id: number,
     @Identity() identity: IIdentity,
   ) {
-    //return this.appointmentRequestsService.cancelRequest(id, identity, transaction);
+    return this.appointmentRequestsService.cancelRequest(id, identity, transaction);
   }
 
   //@Permissions(PermissionCode.APPT_REQUEST_CANCEL)
   @UseInterceptors(TransactionInterceptor)
-  @Delete('appointment/:id')
+  @UseInterceptors(DataResponseInterceptor)
+  @Post('appointment/:id')
   cancelAppointment(
     @TransactionParam() transaction: Transaction,
     @Body() requestDto: AppointmentRequestCancelAppointmentDto,
     @Identity() identity: IIdentity,
   ) {
-    //return this.appointmentRequestsService.cancelAppointment(requestDto, identity, transaction);
+    return this.appointmentRequestsService.cancelAppointment(requestDto, identity, transaction);
   }
 }

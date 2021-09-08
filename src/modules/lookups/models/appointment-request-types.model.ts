@@ -8,4 +8,10 @@ export class AppointmentRequestTypesLookupsModel
   implements LookupWithCodeAttributes {
   @Column
   code: string;
+
+  @Column
+  apptStatusNameEn: string;
+
+  @Column
+  apptStatusNameFr: string;
 }
