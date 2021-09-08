@@ -27,8 +27,8 @@ export const config = () => ({
   },
   topicList: [VISIT_MGMT_TOPIC, PATIENT_MGMT_TOPIC],
   cognito: {
-    userPoolId: process.env.userPoolId || 'ca-central-1_QdrFL8ZgJ',
-    clientId: process.env.clientId || 'pjlj97r3fkhoibcv2t7ln8doi',
+    userPoolId: process.env.userPoolId || 'ca-central-1_QCH72QhGJ',
+    clientId: process.env.clientId || '4ot8uiknlo3l77dansic1u2vt3',
     region: 'ca-central-1',
   },
   paginationInfo: {

@@ -1146,7 +1146,7 @@ export class AppointmentsService {
   ) {
     const appointment = await this.appointmentsRepository.findOne({
       where: { id: appointmentId, clinicId: identity.clinicId },
-      include: { model: AvailabilityModel, required: true },
+      include,
       transaction: transaction,
     });
     if (!appointment) {

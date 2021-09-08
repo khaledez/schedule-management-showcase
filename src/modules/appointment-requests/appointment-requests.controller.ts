@@ -35,7 +35,7 @@ export class AppointmentRequestsController {
     @Body() requestDto: CreateAppointmentRequestDto,
     @Identity() identity: IIdentity,
   ) {
-    return this.appointmentRequestsService.createScheduleAppointment(requestDto, identity, transaction);
+    return this.appointmentRequestsService.create(requestDto, identity, transaction);
   }
 
   //@Permissions(PermissionCode.APPT_REQUEST_UPDATE)
@@ -59,18 +59,18 @@ export class AppointmentRequestsController {
     @Param('id', ParseIntPipe) id: number,
     @Identity() identity: IIdentity,
   ) {
-    //return this.appointmentRequestsService.cancelRequest(id, identity, transaction);
+    return this.appointmentRequestsService.cancelRequest(id, identity, transaction);
   }
 
   //@Permissions(PermissionCode.APPT_REQUEST_CANCEL)
   @UseInterceptors(TransactionInterceptor)
   @UseInterceptors(DataResponseInterceptor)
-  @Delete('appointment/:id')
+  @Post('appointment/:id')
   cancelAppointment(
     @TransactionParam() transaction: Transaction,
     @Body() requestDto: AppointmentRequestCancelAppointmentDto,
     @Identity() identity: IIdentity,
   ) {
-    //return this.appointmentRequestsService.cancelAppointment(requestDto, identity, transaction);
+    return this.appointmentRequestsService.cancelAppointment(requestDto, identity, transaction);
   }
 }

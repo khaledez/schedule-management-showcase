@@ -26,6 +26,7 @@ export interface AppointmentsRequestModelAttributes extends BaseModelAttributes 
   complaints?: string;
   requestReason?: string;
   rejectionReason?: string;
+  updatedAt?: Date;
 }
 
 @DefaultScope(() => ({
