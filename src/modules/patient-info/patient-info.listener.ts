@@ -84,6 +84,7 @@ export function patientInfoPayloadToAttributes(payload: PatientInfoPayload): Pat
     fullName: `${payload.firstName} ${payload.lastName}`,
     primaryHealthPlanNumber: payload.primaryHealthPlanNumber,
     doctorId: payload.doctorId,
+    legacyId: payload.legacyId || null,
     statusCode: payload.statusHistory.status.code,
   };
 }

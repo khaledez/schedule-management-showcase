@@ -266,20 +266,13 @@ export class AppointmentsService {
   buildAppointmentIncludePatientOption(queryParams: QueryParamsDto) {
     let where: WhereOptions<PatientInfoModel> = {};
 
-    if (queryParams?.filter?.displayPatientId) {
-      const displayPatientId = queryParams?.filter?.displayPatientId.eq;
-      if (displayPatientId.includes('mmx-')) {
-        where = {
-          ...where,
-          id: +displayPatientId.replace('mmx-', ''),
-        };
-      } else {
-        where = {
-          ...where,
-          legacyId: displayPatientId,
-        };
-      }
+    if (queryParams?.filter?.displayPatientId?.contains) {
+      where = {
+        ...where,
+        displayPatientId: { [Op.like]: `%${queryParams.filter.displayPatientId.contains}%` },
+      };
     }
+
 
     if (queryParams?.filter?.patientFullName?.contains) {
       where = {

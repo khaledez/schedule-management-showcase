@@ -52,4 +52,7 @@ export class PatientInfoModel
 
   @Column
   userId: number;
+
+  @Column
+  displayPatientId: string;
 }
