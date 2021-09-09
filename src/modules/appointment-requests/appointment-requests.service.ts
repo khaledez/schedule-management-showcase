@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import { fn, Sequelize, Transaction } from 'sequelize';
+import { fn, Op, Sequelize, Transaction } from 'sequelize';
 import {
   AppointmentRequestCancelAppointmentDto,
   CreateAppointmentRequestDto,
@@ -31,10 +31,22 @@ export class AppointmentRequestsService {
 
   public async getRequestById(id: number, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'getRequestById', id });
+    const {
+      userInfo: { patientIds, clinicIds },
+      userId,
+    } = identity;
 
-    const { clinicId } = identity;
-
-    const apptRequest = await this.appointmentRequestsModel.findByPk(id, {
+    const apptRequest = await this.appointmentRequestsModel.findOne({
+      where: {
+        id,
+        userId,
+        patientId: {
+          [Op.in]: patientIds,
+        },
+        clinicId: {
+          [Op.in]: clinicIds,
+        },
+      },
       transaction,
     });
     if (!apptRequest) {
@@ -44,7 +56,10 @@ export class AppointmentRequestsService {
         message: 'appointmentRequest not found',
       });
     }
-    if (clinicId !== apptRequest?.clinicId) {
+    const clinicId = apptRequest.clinicId;
+    identity.clinicId = clinicId;
+
+    if (!clinicIds.includes(clinicId)) {
       throw new BadRequestException({
         fields: ['clinicId'],
         code: '401',
@@ -57,8 +72,13 @@ export class AppointmentRequestsService {
   public async create(requestDto: CreateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'CreateAppointmentRequestDto', requestDto });
 
-    const { clinicId, userId } = identity;
+    const {
+      userInfo: { patientIds, clinicIds },
+      userId,
+    } = identity;
 
+    const { clinicId } = requestDto;
+    identity.clinicId = clinicId;
     const baseCreate = { createdBy: userId, updatedBy: userId, clinicId };
     const { patientId } = requestDto;
 
@@ -76,7 +96,7 @@ export class AppointmentRequestsService {
     //get patient upcoming appointment
     const upcomingAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, patientId);
     if (requestDto.originalAppointmentId) {
-      await this.checkIfCanRescheduleAppointment(upcomingAppointment);
+      await this.checkIfCanRescheduleAppointment(upcomingAppointment, identity);
     }
     if (upcomingAppointment.appointmentStatusId !== appt_status_Waitlist_id && !requestDto.originalAppointmentId) {
       throw new BadRequestException({
@@ -124,7 +144,10 @@ export class AppointmentRequestsService {
   public async update(requestDto: UpdateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'create', requestDto });
 
-    const { userId } = identity;
+    const {
+      userInfo: { patientIds, clinicIds },
+      userId,
+    } = identity;
 
     const baseUpdate = { updatedBy: userId };
 
@@ -138,6 +161,7 @@ export class AppointmentRequestsService {
       {
         where: {
           id: requestDto.id,
+          userId,
         },
         transaction,
       },
@@ -149,8 +173,12 @@ export class AppointmentRequestsService {
     this.logger.log({ function: 'cancelRequest', id });
 
     const { userId } = identity;
-    const createdRequest = await this.appointmentRequestsModel.findByPk(id);
-
+    const createdRequest = await this.appointmentRequestsModel.findOne({
+      where: {
+        id,
+        userId,
+      },
+    });
     //TODO check if patient has permission to cancel his appointment
     if (!createdRequest) {
       throw new BadRequestException({
@@ -159,6 +187,7 @@ export class AppointmentRequestsService {
         message: 'NotFound',
       });
     }
+    identity.clinicId = createdRequest.clinicId;
 
     const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
       ApptRequestStatusEnum.PENDING,
@@ -209,7 +238,10 @@ export class AppointmentRequestsService {
 
     const { appointmentId, cancelReason } = requestDto;
 
-    const { userId, clinicId } = identity;
+    const {
+      userInfo: { patientIds, clinicIds },
+      userId,
+    } = identity;
 
     //get patient upcoming appointment
     const appointment = await this.appointmentsService.getAppointmentById(
@@ -218,8 +250,10 @@ export class AppointmentRequestsService {
       { model: AppointmentStatusLookupsModel },
       transaction,
     );
+    const clinicId = appointment.clinicId;
+    identity.clinicId = clinicId;
 
-    await this.checkIfCanRescheduleAppointment(appointment);
+    await this.checkIfCanRescheduleAppointment(appointment, identity);
 
     const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
       ApptRequestStatusEnum.PENDING,
@@ -281,12 +315,24 @@ export class AppointmentRequestsService {
   }
 
   //===========================  Private Functions  ===========================
-  private checkIfCanRescheduleAppointment(appointment) {
+
+  protected checkIfCanRescheduleAppointment(appointment, identity) {
     if (!appointment) {
       throw new BadRequestException({
         fields: ['id'],
         code: '404',
         message: 'NotFound',
+      });
+    }
+
+    const {
+      userInfo: { patientIds, clinicIds },
+    } = identity;
+    if (!patientIds.includes(appointment.patientId) || !clinicIds.includes(appointment.clinicId)) {
+      throw new BadRequestException({
+        fields: ['patientId'],
+        code: '401',
+        message: `No Permission`,
       });
     }
     //Appointment has to be scheduled (scheduled, confirmed, reminded, checked-in, ready)
@@ -308,8 +354,18 @@ export class AppointmentRequestsService {
     }
   }
 
-  private async checkPatientHasRequest(patientId: number, identity: IIdentity) {
-    //TODO check patientId in the clinic
+  protected async checkPatientHasRequest(patientId: number, identity: IIdentity) {
+    const {
+      userInfo: { patientIds, clinicIds },
+      userId,
+    } = identity;
+    if (!patientIds.includes(patientId)) {
+      throw new BadRequestException({
+        fields: ['patientId'],
+        code: '410',
+        message: 'No Permission',
+      });
+    }
 
     const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
       ApptRequestStatusEnum.PENDING,
@@ -331,7 +387,7 @@ export class AppointmentRequestsService {
       });
     }
   }
-  private async getAppointmentTypeIdByPatientId(patientId: number, identity: IIdentity) {
+  protected async getAppointmentTypeIdByPatientId(patientId: number, identity: IIdentity) {
     /**
      If this patient has had NO previous appointments whatsoever (new patient): Appointment Type = New.
      If this patient has had a previous appointment within the last 3 months, Appointment Type = Control Visit (FUP)

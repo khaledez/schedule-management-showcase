@@ -114,8 +114,8 @@ export class AppointmentsService {
       const {
         userInfo: { patientIds, clinicIds },
       } = identity;
-
       identity.clinicId = clinicIds[0];
+
       let where = await this.appointmentSearchWhere(queryParams, identity);
       const appt_status_Waitlist = await this.lookupsService.getStatusIdByCode(
         identity,

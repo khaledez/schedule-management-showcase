@@ -203,7 +203,7 @@ export class AppointmentsController {
   }
 
   // search using post method
-  @Post('user/:id/search')
+  @Post('user-appointments')
   @UseInterceptors(PaginationInterceptor)
   async userAppointments(
     @Identity() identity: IIdentity,
@@ -211,7 +211,7 @@ export class AppointmentsController {
     @Body() body: QueryParamsDto,
   ): Promise<unknown> {
     this.logger.debug({
-      function: 'controller/appointment/search',
+      function: 'controller/appointment/user-appointments',
       identity,
       body,
     });
