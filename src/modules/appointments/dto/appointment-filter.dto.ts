@@ -2,6 +2,7 @@ import { FilterDateInputDto, FilterIdsInputDto, FilterStringInputDto } from '@mo
 import { Type } from 'class-transformer';
 import { IsArray, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { FilterTimeInputDto } from '../../../common/dtos';
+import { TimeScopesEnum } from '../../../common/enums';
 
 enum AppointmentCategoryKeys {
   WAITLIST,
@@ -96,4 +97,8 @@ export class AppointmentFilterDto {
   @ValidateNested()
   @Type(() => FilterDateInputDto)
   dob?: FilterDateInputDto;
+
+  @IsOptional()
+  @IsEnum(TimeScopesEnum)
+  timeScope?: TimeScopesEnum;
 }

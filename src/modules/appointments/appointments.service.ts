@@ -28,6 +28,7 @@ import {
   CancelRescheduleReasonCode,
   ErrorCodes,
   isInTimeGroup,
+  TimeScopesEnum,
 } from 'common/enums';
 import { addMinutesToDate } from 'common/helpers/date-time-helpers';
 import { DateTime } from 'luxon';
@@ -102,9 +103,114 @@ export class AppointmentsService {
     },
   };
 
+  public async userPatientsAppointments(
+    identity: IIdentity,
+    queryParams: QueryParamsDto,
+    pagingFilter: PagingInfoInterface,
+  ): Promise<[AppointmentsModelAttributes[], number]> {
+    const { limit, offset } = pagingFilter || { limit: PAGING_LIMIT_DEFAULT, offset: PAGING_OFFSET_DEFAULT };
+    const order = getQueryGenericSortMapper(queryParams.sort, this.associationFieldsSortNames);
+    try {
+      const {
+        userInfo: { patientIds, clinicIds },
+      } = identity;
+
+      identity.clinicId = clinicIds[0];
+      let where = await this.appointmentSearchWhere(queryParams, identity);
+      const appt_status_Waitlist = await this.lookupsService.getStatusIdByCode(
+        identity,
+        AppointmentStatusEnum.WAIT_LIST,
+      );
+      delete where.upcomingAppointment;
+      where = {
+        ...where,
+        patientId: {
+          [Op.in]: patientIds,
+        },
+        clinicId: {
+          [Op.in]: clinicIds,
+        },
+        [Op.or]: [
+          { appointmentStatusId: { [Op.not]: appt_status_Waitlist } },
+          { appointmentRequestId: { [Op.not]: null } },
+        ],
+      };
+      if (queryParams.filter?.timeScope) {
+        const appintmentFinalStatuses = await this.lookupsService.getFinalStatusIds(identity);
+        const appointmentStatusIdFilter =
+          queryParams.filter.timeScope === TimeScopesEnum.PAST
+            ? {
+                [Op.in]: appintmentFinalStatuses,
+              }
+            : {
+                [Op.notIn]: appintmentFinalStatuses,
+              };
+
+        where = {
+          ...where,
+          appointmentStatusId: appointmentStatusIdFilter,
+        };
+      }
+      const options: FindOptions = {
+        include: [
+          {
+            all: true,
+          },
+        ],
+        where,
+        order,
+        limit,
+        offset,
+      };
+      const { rows: appointments } = await this.appointmentsRepository.findAndCountAll(options);
+      const searchResult = await this.buildAppointmentConnectionResponse(appointments);
+
+      return [searchResult, appointments.length];
+    } catch (error) {
+      this.logger.error({
+        function: 'service/appt/findall catch error',
+        error,
+      });
+      throw new BadRequestException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: 'Failed to find the appointments',
+        error: error.message,
+      });
+    }
+  }
+
+  private async appointmentSearchWhere(queryParams, identity: IIdentity) {
+    const where: any = {
+      clinicId: identity.clinicId,
+      deletedBy: null,
+      upcomingAppointment: true,
+    };
+    if (queryParams.filter?.doctorId) {
+      const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId);
+      where.staffId = staffIdWhereClause;
+    }
+    if (queryParams.filter?.appointmentStatusId) {
+      const appointmentStatusIdWhereClause = await this.getAppointmentStatusIdWhereClause(
+        identity,
+        queryParams.filter.appointmentStatusId,
+      );
+      where.appointmentStatusId = appointmentStatusIdWhereClause;
+    }
+    if (queryParams.filter?.appointmentTypeId) {
+      const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.appointmentTypeId);
+      where.appointmentTypeId = appointmentTypeIdWhereClause;
+    }
+    if (queryParams.filter?.date) {
+      const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
+      where[Op.or] = [{ startDate: startDateWhereClause }, { appointmentRequestDate: startDateWhereClause }];
+    }
+
+    return where;
+  }
+
   // TODO refactor this as well
   // eslint-disable-next-line complexity
-  async searchWithPatientInfo(
+  public async searchWithPatientInfo(
     identity: IIdentity,
     queryParams: QueryParamsDto,
     pagingFilter: PagingInfoInterface,
@@ -114,32 +220,7 @@ export class AppointmentsService {
 
     const patientInfoInclude = this.buildAppointmentIncludePatientOption(queryParams);
     try {
-      const where: any = {
-        clinicId: identity.clinicId,
-        deletedBy: null,
-        upcomingAppointment: true,
-      };
-      if (queryParams.filter?.doctorId) {
-        const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId || { or: null });
-        where.staffId = staffIdWhereClause;
-      }
-      if (queryParams.filter?.appointmentStatusId) {
-        const appointmentStatusIdWhereClause = await this.getAppointmentStatusIdWhereClause(
-          identity,
-          queryParams.filter?.appointmentStatusId || { or: null },
-        );
-        where.appointmentStatusId = appointmentStatusIdWhereClause;
-      }
-      if (queryParams.filter?.appointmentTypeId) {
-        const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(
-          queryParams.filter?.appointmentTypeId || { or: null },
-        );
-        where.appointmentTypeId = appointmentTypeIdWhereClause;
-      }
-      if (queryParams.filter?.date) {
-        const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
-        where[Op.or] = [{ startDate: startDateWhereClause }, { appointmentRequestDate: startDateWhereClause }];
-      }
+      const where = await this.appointmentSearchWhere(queryParams, identity);
 
       const options: FindOptions = {
         include: [

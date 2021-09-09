@@ -201,4 +201,25 @@ export class AppointmentsController {
       count,
     };
   }
+
+  // search using post method
+  @Post('user/:id/search')
+  @UseInterceptors(PaginationInterceptor)
+  async userAppointments(
+    @Identity() identity: IIdentity,
+    @PagingInfo() pagingInfo: PagingInfoInterface,
+    @Body() body: QueryParamsDto,
+  ): Promise<unknown> {
+    this.logger.debug({
+      function: 'controller/appointment/search',
+      identity,
+      body,
+    });
+    const [data, count] = await this.appointmentsService.userPatientsAppointments(identity, body, pagingInfo);
+
+    return {
+      data,
+      count,
+    };
+  }
 }

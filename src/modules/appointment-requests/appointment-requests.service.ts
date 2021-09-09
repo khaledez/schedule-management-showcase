@@ -29,7 +29,7 @@ export class AppointmentRequestsService {
     private readonly lookupsService: LookupsService,
   ) {}
 
-  async getRequestById(id: number, identity: IIdentity, transaction: Transaction) {
+  public async getRequestById(id: number, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'getRequestById', id });
 
     const { clinicId } = identity;
@@ -54,7 +54,7 @@ export class AppointmentRequestsService {
     return apptRequest;
   }
 
-  async create(requestDto: CreateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
+  public async create(requestDto: CreateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'CreateAppointmentRequestDto', requestDto });
 
     const { clinicId, userId } = identity;
@@ -95,15 +95,6 @@ export class AppointmentRequestsService {
       });
     }
 
-    //Patient can request to reschedule the appointment to another date time (not in the past)
-    if (requestDto.originalAppointmentId && upcomingAppointment.startDate === requestDto.date) {
-      throw new BadRequestException({
-        fields: ['date'],
-        code: 'date',
-        message: 'you must change appointment date',
-      });
-    }
-
     const appointmentTypeId = await this.getAppointmentTypeIdByPatientId(patientId, identity);
     const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
       ApptRequestStatusEnum.PENDING,
@@ -130,17 +121,14 @@ export class AppointmentRequestsService {
     return createdRequest;
   }
 
-  async update(requestDto: UpdateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
+  public async update(requestDto: UpdateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'create', requestDto });
 
     const { userId } = identity;
 
     const baseUpdate = { updatedBy: userId };
 
-    const appointmentTypeId = 0;
-
     const data = {
-      appointmentTypeId,
       ...requestDto,
       ...baseUpdate,
     };
@@ -157,7 +145,7 @@ export class AppointmentRequestsService {
     return createdRequest;
   }
 
-  async cancelRequest(id: number, identity: IIdentity, transaction: Transaction) {
+  public async cancelRequest(id: number, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'cancelRequest', id });
 
     const { userId } = identity;

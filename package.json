@@ -42,7 +42,7 @@
   "dependencies": {
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
-    "@monmedx/monmedx-common": "^3.6.5",
+    "@monmedx/monmedx-common": "^4.1.2",
     "@nestjs/common": "^7.0.1",
     "@nestjs/config": "^0.6.1",
     "@nestjs/core": "^7.0.1",

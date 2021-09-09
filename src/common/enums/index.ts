@@ -7,3 +7,4 @@ export * from './cancel-reschedule-reason.enum';
 export * from './error-code.enum';
 export * from './order.enum';
 export * from './time-group';
+export * from './time-scope.enum';
