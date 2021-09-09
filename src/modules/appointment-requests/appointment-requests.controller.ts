@@ -6,6 +6,7 @@ import {
   AppointmentRequestCancelAppointmentDto,
   CreateAppointmentRequestDto,
   featureStatusDto,
+  RejectAppointmentRequestDto,
   UpdateAppointmentRequestDto,
 } from './dto';
 import { DataResponseInterceptor } from '../../common/intercepter';
@@ -84,5 +85,17 @@ export class AppointmentRequestsController {
     @Identity() identity: IIdentity,
   ) {
     return this.appointmentRequestsService.cancelAppointment(requestDto, identity, transaction);
+  }
+
+  //@Permissions(PermissionCode.APPT_REQUEST_Reject)
+  @UseInterceptors(TransactionInterceptor)
+  @UseInterceptors(DataResponseInterceptor)
+  @Post('/:id/reject')
+  RejectAppointmentRequest(
+    @TransactionParam() transaction: Transaction,
+    @Body() requestDto: RejectAppointmentRequestDto,
+    @Identity() identity: IIdentity,
+  ) {
+    return this.appointmentRequestsService.RejectAppointmentRequest(requestDto, identity, transaction);
   }
 }

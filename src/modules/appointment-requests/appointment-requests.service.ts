@@ -3,6 +3,7 @@ import { fn, Op, Sequelize, Transaction } from 'sequelize';
 import {
   AppointmentRequestCancelAppointmentDto,
   CreateAppointmentRequestDto,
+  RejectAppointmentRequestDto,
   UpdateAppointmentRequestDto,
 } from './dto';
 import { IIdentity } from '@monmedx/monmedx-common';
@@ -95,8 +96,17 @@ export class AppointmentRequestsService {
 
     //get patient upcoming appointment
     const upcomingAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, patientId);
+    const originalAppointmentId = upcomingAppointment?.id;
     if (requestDto.originalAppointmentId) {
       await this.checkIfCanRescheduleAppointment(upcomingAppointment, identity);
+
+      if (requestDto.originalAppointmentId !== originalAppointmentId) {
+        throw new BadRequestException({
+          fields: ['originalAppointmentId'],
+          code: 'Patient_has_appointment',
+          message: 'originalAppointmentId not equal upcomingAppointment Id',
+        });
+      }
     }
     if (upcomingAppointment.appointmentStatusId !== appt_status_Waitlist_id && !requestDto.originalAppointmentId) {
       throw new BadRequestException({
@@ -104,14 +114,6 @@ export class AppointmentRequestsService {
         code: 'Patient_has_appointment',
         message: 'Patient has an existing appointment',
         data: [{ upcomingAppointment }],
-      });
-    }
-    const originalAppointmentId = upcomingAppointment.id;
-    if (requestDto.originalAppointmentId && requestDto.originalAppointmentId !== originalAppointmentId) {
-      throw new BadRequestException({
-        fields: ['originalAppointmentId'],
-        code: 'Patient_has_appointment',
-        message: 'originalAppointmentId not equal upcomingAppointment Id',
       });
     }
 
@@ -305,6 +307,61 @@ export class AppointmentRequestsService {
     await this.appointmentsService.updateAppointmentAddRequestData(appointmentId, createdRequest, transaction);
 
     return createdRequest;
+  }
+
+  public async RejectAppointmentRequest(
+    requestDto: RejectAppointmentRequestDto,
+    identity: IIdentity,
+    transaction: Transaction,
+  ) {
+    this.logger.log({ function: 'RejectAppointmentRequest', requestDto });
+
+    const { id, rejectionReason } = requestDto;
+
+    const { userId, clinicId } = identity;
+
+    const appointmentRequest = await this.appointmentRequestsModel.findOne({
+      where: {
+        id,
+        clinicId,
+      },
+    });
+    if (!appointmentRequest) {
+      throw new BadRequestException({
+        fields: ['id'],
+        code: '404',
+        message: 'NotFound',
+      });
+    }
+
+    const request_status_REJECTED_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.REJECTED,
+      identity,
+    ); //
+
+    const [affectedCounts, updatedRequest] = await this.appointmentRequestsModel.update(
+      {
+        requestStatusId: request_status_REJECTED_id,
+        rejectionReason,
+        updatedBy: userId,
+        updatedAt: new Date(),
+      },
+      {
+        where: {
+          id: id,
+        },
+        transaction,
+      },
+    );
+
+    //update original appointment
+    /*await this.appointmentsService.updateAppointmentAddRequestData(
+      appointmentRequest.originalAppointmentId,
+      updatedRequest,
+      transaction,
+    );*/
+
+    return appointmentRequest.reload({ plain: true });
   }
 
   public featureStatus(requestDto: featureStatusDto, identity: IIdentity, transaction: Transaction) {
