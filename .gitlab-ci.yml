@@ -81,30 +81,7 @@ QA:
     - "aws --version"
   script:
     - export env=QA
-    - export $CLOUDFORMATION_STACK_NAME=$CLOUDFORMATION_STACK_NAME_QA
-    - . gitlab.sh
-    - aws ecs register-task-definition --family "${env}${service_name}" --cli-input-json "file://task-definition.json"
-    - aws ecs update-service --cluster $clusterName --service "${service_name}" --desired-count 1 --task-definition "${env}${service_name}"  --force-new-deployment
-# QA
-#=========
-QA:
-  stage: QA
-  when: manual
-  image: python:3.7.3
-  environment:
-    name: qa
-    url: http://api.qa.monmedx.com
-  only:
-    - "qa"
-    - "development"
-
-  before_script:
-    - "pip install awscli --upgrade --user"
-    - "export PATH=~/.local/bin:$PATH"
-    - "aws --version"
-  script:
-    - export env=QA
-    - export $CLOUDFORMATION_STACK_NAME=$CLOUDFORMATION_STACK_NAME_QA
+    - export CLOUDFORMATION_STACK_NAME=$CLOUDFORMATION_STACK_NAME_QA
     - . gitlab.sh
     - aws ecs register-task-definition --family "${env}${service_name}" --cli-input-json "file://task-definition.json"
     - aws ecs update-service --cluster $clusterName --service "${service_name}" --desired-count 1 --task-definition "${env}${service_name}"  --force-new-deployment
@@ -129,7 +106,7 @@ staging:
     - "aws --version"
   script:
     - export env=stage
-    - export $CLOUDFORMATION_STACK_NAME=$CLOUDFORMATION_STACK_NAME_stage
+    - export CLOUDFORMATION_STACK_NAME=$CLOUDFORMATION_STACK_NAME_stage
     - . gitlab.sh
     - aws ecs register-task-definition --family "${env}${service_name}" --cli-input-json "file://task-definition.json"
     - aws ecs update-service --cluster $clusterName --service "${service_name}" --desired-count 1 --task-definition "${env}${service_name}"  --force-new-deployment
@@ -153,7 +130,7 @@ PROD:
     - "aws --version"
   script:
     - export env=prod
-    - export $CLOUDFORMATION_STACK_NAME=$CLOUDFORMATION_STACK_NAME_PROD
+    - export CLOUDFORMATION_STACK_NAME=$CLOUDFORMATION_STACK_NAME_PROD
     - . gitlab.sh
     - aws ecs register-task-definition --family "${env}${service_name}" --cli-input-json "file://task-definition.json"
     - aws ecs update-service --cluster $clusterName --service "${service_name}" --desired-count 1 --task-definition "${env}${service_name}"  --force-new-deployment
