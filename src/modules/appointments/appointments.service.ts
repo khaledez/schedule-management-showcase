@@ -273,7 +273,6 @@ export class AppointmentsService {
       };
     }
 
-
     if (queryParams?.filter?.patientFullName?.contains) {
       where = {
         ...where,
@@ -715,14 +714,14 @@ export class AppointmentsService {
       const createdAppointment = await this.appointmentsRepository.create(
         {
           ...dto,
-          staffId: availability.staffId,
-          appointmentTypeId: availability.appointmentTypeId,
+          staffId: dto.staffId ?? availability.staffId,
+          appointmentTypeId: dto.appointmentTypeId ?? availability.appointmentTypeId,
           clinicId: identity.clinicId,
           createdBy: identity.userId,
           provisionalDate,
-          startDate: availability.startDate,
+          startDate: dto.startDate ? new Date(dto.startDate) : availability.startDate,
           endDate: availability.endDate,
-          durationMinutes: availability.durationMinutes,
+          durationMinutes: dto.durationMinutes ?? availability.durationMinutes,
           appointmentVisitModeId,
           appointmentStatusId,
           availabilityId: availability.id,
@@ -1108,8 +1107,15 @@ export class AppointmentsService {
       // eslint-disable-next-line complexity
       async (transaction): Promise<AppointmentsModelAttributes> => {
         // 0. validate
+        const rescheduleReasonId =
+          dto.rescheduleReason ??
+          (await this.lookupsService.getCancelRescheduleReasonByCode(
+            identity,
+            CancelRescheduleReasonCode.OTHER,
+            transaction,
+          ));
         await Promise.all([
-          this.lookupsService.validateAppointmentRescheduleReasons(identity, [dto.rescheduleReason]),
+          this.lookupsService.validateAppointmentRescheduleReasons(identity, [rescheduleReasonId]),
           this.lookupsService.validateAppointmentVisitModes(
             identity,
             dto.appointmentVisitModeId ? [dto.appointmentVisitModeId] : [],
@@ -1140,17 +1146,18 @@ export class AppointmentsService {
         );
 
         // 2. check if we need to change the doctor permanently
-        let staffId = dto.staffId ?? appointment.staffId;
+        let staffId = dto.staffId;
         if (dto.availabilityId) {
           const availability = await this.availabilityService.findOne(dto.availabilityId);
-          staffId = availability.staffId;
+          staffId = staffId ?? availability.staffId;
         }
+        staffId = staffId ?? appointment.staffId;
         if (dto.removeFutureAppointments) {
           // cancel all future appointments with the current doctor
           await this.cancelPatientAppointments(
             identity,
             appointment.patientId,
-            dto.rescheduleReason,
+            rescheduleReasonId,
             'doctor changed permanently',
             true,
             null,
@@ -1174,11 +1181,11 @@ export class AppointmentsService {
           identity,
           AppointmentStatusEnum.RESCHEDULED,
         );
-        const [cancelResult, createResult] = await Promise.all([
+        const [rescheduleResult, createResult] = await Promise.all([
           AppointmentsModel.update(
             {
               appointmentStatusId: rescheduleStatusId,
-              cancelRescheduleReasonId: dto.rescheduleReason,
+              cancelRescheduleReasonId: rescheduleReasonId,
               cancelRescheduleText: dto.rescheduleText,
               upcomingAppointment: false,
             },
@@ -1189,7 +1196,7 @@ export class AppointmentsService {
             identity,
             {
               patientId: appointment.patientId,
-              staffId: dto.staffId || appointment.staffId,
+              staffId: staffId,
               appointmentStatusId: scheduleStatusId,
               appointmentVisitModeId: dto.appointmentVisitModeId ?? appointment.appointmentVisitModeId,
               appointmentTypeId: dto.appointmentTypeId ?? appointment.appointmentTypeId,
@@ -1204,7 +1211,7 @@ export class AppointmentsService {
 
         this.logger.debug({
           method: 'rescheduleAppointment',
-          cancelResult,
+          rescheduleResult: rescheduleResult,
           createResult,
         });
 

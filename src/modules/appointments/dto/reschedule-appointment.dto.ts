@@ -30,9 +30,10 @@ export class RescheduleAppointmentDto {
   @Type(() => Number)
   durationMinutes?: number;
 
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  rescheduleReason: number;
+  rescheduleReason?: number;
 
   @IsOptional()
   @IsString()
