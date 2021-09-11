@@ -49,6 +49,7 @@ describe('patient-info service', () => {
       statusCode: 'RELEASED',
       legacyId: 'legacyId-1',
       userId: null,
+      displayPatientId: 'legacyId-1',
     };
 
     await patientInfoSvc.create(patientInfo);
@@ -67,6 +68,9 @@ describe('patient-info service', () => {
       dob: '1988-11-01',
       primaryHealthPlanNumber: '123AB',
       statusCode: 'ACTIVE',
+      userId: 1,
+      legacyId: 'legacy-1',
+      displayPatientId: 'legacy-1',
     };
 
     await patientInfoSvc.create(patientInfo);
@@ -94,6 +98,7 @@ describe('patient-info service', () => {
       fullName: 'Johnn Doh',
       primaryHealthPlanNumber: 'MOX-patient09',
       statusCode: 'ACTIVE',
+      legacyId: null,
     });
   });
 
@@ -108,6 +113,7 @@ describe('patient-info service', () => {
       statusCode: PatientStatus.ACTIVE,
       legacyId: 'legacyId-1',
       userId: null,
+      displayPatientId: 'legacyId-1',
     };
     await patientInfoSvc.create(patientInfo);
     createdPatientInfoIds.push(patientInfo.id);
@@ -131,6 +137,7 @@ describe('patient-info service', () => {
       statusCode: PatientStatus.RELEASED,
       legacyId: 'legacyId-1',
       userId: null,
+      displayPatientId: 'legacyId-1',
     };
 
     const payload = {

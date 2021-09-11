@@ -48,8 +48,26 @@ export class PatientInfoService {
   }
 
   async update(patientInfo: PatientInfoAttributes, transaction?: Transaction): Promise<PatientInfoAttributes> {
-    const [patient] = await this.patientRepo.upsert(patientInfo, { transaction });
-    return patient.get({ plain: true });
+    await this.patientRepo.update(
+      {
+        id: patientInfo.id,
+        clinicId: patientInfo.clinicId,
+        fullName: patientInfo.fullName,
+        primaryHealthPlanNumber: patientInfo.primaryHealthPlanNumber,
+        dob: patientInfo.dob,
+        statusCode: patientInfo.statusCode,
+        doctorId: patientInfo.doctorId,
+        legacyId: patientInfo.legacyId,
+        userId: patientInfo.userId,
+      },
+      {
+        where: { id: patientInfo.id },
+        returning: true,
+        sideEffects: true,
+        transaction,
+      },
+    );
+    return (await this.patientRepo.findOne({ transaction, where: { id: patientInfo.id } })).get({ plain: true });
   }
 
   async changeAssignedDoctor(payload: ChangeAssingedDoctorPayload) {
@@ -101,7 +119,17 @@ export class PatientInfoService {
    * @returns the same input
    */
   create(patientInfo: PatientInfoAttributes): Promise<PatientInfoAttributes> {
-    return this.patientRepo.create(patientInfo);
+    return this.patientRepo.create({
+      id: patientInfo.id,
+      clinicId: patientInfo.clinicId,
+      fullName: patientInfo.fullName,
+      primaryHealthPlanNumber: patientInfo.primaryHealthPlanNumber,
+      dob: patientInfo.dob,
+      statusCode: patientInfo.statusCode,
+      doctorId: patientInfo.doctorId,
+      legacyId: patientInfo.legacyId,
+      userId: patientInfo.userId,
+    });
   }
 
   getById(id: number, transaction?: Transaction): Promise<PatientInfoAttributes | null> {

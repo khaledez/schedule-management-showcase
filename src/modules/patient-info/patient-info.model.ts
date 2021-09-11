@@ -10,6 +10,7 @@ export interface PatientInfoAttributes {
   doctorId?: number;
   legacyId?: string;
   userId?: number;
+  displayPatientId?: string;
 }
 
 /**
