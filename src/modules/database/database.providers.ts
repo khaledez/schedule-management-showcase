@@ -20,6 +20,7 @@ import { TimeGroupsLookupsModel } from '../lookups/models/time-groups.model';
 import { AppointmentRequestsModel } from '../appointment-requests/models/appointment-requests.model';
 import { AppointmentRequestStatusLookupsModel } from '../lookups/models/appointment-request-status.model';
 import { AppointmentRequestTypesLookupsModel } from '../lookups/models/appointment-request-types.model';
+import { AppointmentRequestFeatureStatusModel } from '../appointment-requests/models/appointment-requests-feature-status.model';
 
 export const databaseProviders = [
   {
@@ -53,6 +54,7 @@ export const databaseProviders = [
         AppointmentRequestsModel,
         AppointmentRequestStatusLookupsModel,
         AppointmentRequestTypesLookupsModel,
+        AppointmentRequestFeatureStatusModel,
       ]);
       return sequelize;
     },

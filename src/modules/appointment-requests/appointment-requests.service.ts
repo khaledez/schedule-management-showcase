@@ -7,8 +7,11 @@ import {
   UpdateAppointmentRequestDto,
 } from './dto';
 import { IIdentity } from '@monmedx/monmedx-common';
-import { AppointmentRequestsModel } from './models/appointment-requests.model';
-import { APPOINTMENT_REQUEST_REPOSITORY, SEQUELIZE } from '../../common/constants';
+import {
+  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
+  APPOINTMENT_REQUEST_REPOSITORY,
+  SEQUELIZE,
+} from '../../common/constants';
 import { AppointmentsService } from '../appointments/appointments.service';
 import * as moment from 'moment';
 import { LookupsService } from '../lookups/lookups.service';
@@ -16,6 +19,7 @@ import { AppointmentStatusEnum, AppointmentTypesEnum } from '../../common/enums'
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
 import { featureStatusDto } from './dto/feature-status.dto';
+import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from './models';
 
 @Injectable()
 export class AppointmentRequestsService {
@@ -26,6 +30,8 @@ export class AppointmentRequestsService {
     private readonly sequelizeInstance: Sequelize,
     @Inject(APPOINTMENT_REQUEST_REPOSITORY)
     private readonly appointmentRequestsModel: typeof AppointmentRequestsModel,
+    @Inject(APPOINTMENT_REQUEST_FEATURE_REPOSITORY)
+    private readonly appointmentRequestFeatureStatusModel: typeof AppointmentRequestFeatureStatusModel,
     private readonly appointmentsService: AppointmentsService,
     private readonly lookupsService: LookupsService,
   ) {}
@@ -364,11 +370,35 @@ export class AppointmentRequestsService {
     return appointmentRequest.reload({ plain: true });
   }
 
-  public featureStatus(requestDto: featureStatusDto, identity: IIdentity, transaction: Transaction) {
+  public async featureStatus(requestDto: featureStatusDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'featureStatusDto', requestDto });
 
     const { clinicId, doctorId } = requestDto;
-    return true;
+
+    const result = await this.appointmentRequestFeatureStatusModel.findAll({
+      where: {
+        clinicId,
+        doctorId: {
+          [Op.or]: [null, doctorId],
+        },
+      },
+      transaction,
+    });
+
+    let clinicEnabled = true;
+    let doctorEnabled = true;
+
+    if (result.length) {
+      result.forEach((el) => {
+        if (el.doctorId === null) {
+          clinicEnabled = el.enabled ? true : false;
+        } else {
+          doctorEnabled = el.enabled ? true : false;
+        }
+      });
+    }
+
+    return !clinicEnabled ? false : doctorEnabled;
   }
 
   //===========================  Private Functions  ===========================
