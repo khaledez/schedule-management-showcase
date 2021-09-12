@@ -379,7 +379,7 @@ export class AppointmentRequestsService {
       where: {
         clinicId,
         doctorId: {
-          [Op.or]: [null, doctorId],
+          [Op.or]: [null, doctorId || null],
         },
       },
       transaction,
@@ -391,9 +391,9 @@ export class AppointmentRequestsService {
     if (result.length) {
       result.forEach((el) => {
         if (el.doctorId === null) {
-          clinicEnabled = el.enabled ? true : false;
+          clinicEnabled = !!el.enabled;
         } else {
-          doctorEnabled = el.enabled ? true : false;
+          doctorEnabled = !!el.enabled;
         }
       });
     }

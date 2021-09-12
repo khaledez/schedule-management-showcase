@@ -1,5 +1,16 @@
 import { Identity, IIdentity, TransactionInterceptor, TransactionParam } from '@monmedx/monmedx-common';
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Transaction } from 'sequelize';
 import { AppointmentRequestsService } from './appointment-requests.service';
 import {
@@ -21,7 +32,7 @@ export class AppointmentRequestsController {
   @Get('feature-status')
   featureStatus(
     @TransactionParam() transaction: Transaction,
-    @Body() requestDto: featureStatusDto,
+    @Query() requestDto: featureStatusDto,
     @Identity() identity: IIdentity,
   ) {
     return this.appointmentRequestsService.featureStatus(requestDto, identity, transaction);
