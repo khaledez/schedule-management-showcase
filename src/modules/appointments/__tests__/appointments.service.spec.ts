@@ -136,6 +136,7 @@ describe('Appointment service', () => {
 
   describe('#createAppointment', () => {
     let appointmentAttributes: CreateAppointmentDto;
+
     beforeEach(async () => {
       appointmentAttributes = {
         appointmentStatusId: await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY),
@@ -148,6 +149,7 @@ describe('Appointment service', () => {
       await AvailabilityModel.destroy({ where: {} });
       await AppointmentsModel.destroy({ where: {} });
     });
+
     test('Creating an appointment without availabilityId or startDate & durationMinutes & appointmentTypeId', async (done) => {
       delete appointmentAttributes.startDate;
       delete appointmentAttributes.durationMinutes;
@@ -270,6 +272,28 @@ describe('Appointment service', () => {
       // Get created availability
       const availability = await availabilityService.findOne(nonProvisionalAppointment.availabilityId);
       expect(availability).toBeDefined();
+    });
+
+    test("Create appointment via adhoc: patient don't have appointment that day", async () => {
+      const todayDate = new Date();
+      const futureDate = DateTime.fromJSDate(todayDate).plus({ days: 5 }).toJSDate();
+      appointmentAttributes.startDate = futureDate.toISOString();
+      const appointment = await apptService.createAppointment(identity, appointmentAttributes, true);
+      const adhocAppointment = await apptService.adhocAppointment(identity, {
+        patientId: appointmentAttributes.patientId,
+        date: todayDate,
+        modeCode: AppointmentVisitModeEnum.PHONE,
+      });
+      const cancelledAppointment = await apptService.findOne(identity, appointment.id);
+      expect(cancelledAppointment.cancelRescheduleReasonId).toEqual(
+        await lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.OTHER),
+      );
+      expect(cancelledAppointment.cancelRescheduleText).toEqual('Ad-hoc appointment initiated');
+      expect(adhocAppointment).toBeDefined();
+      expect(adhocAppointment.appointmentVisitModeId).toEqual(
+        await lookupsService.getVisitModeByCode(AppointmentVisitModeEnum.PHONE),
+      );
+      expect(adhocAppointment.startDate).toEqual(todayDate);
     });
   });
 

@@ -992,12 +992,12 @@ export class AppointmentsService {
       appointmentData,
     });
 
-    const [finalStatusesIds, inProgressStatus, typeFUB, appointmentModeId, cancelReasonId] = await Promise.all([
+    const [finalStatusesIds, inProgressStatus, typeFUB, appointmentModeId, rescheduleReasonId] = await Promise.all([
       this.lookupsService.getFinalStatusIds(identity),
       this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.VISIT),
       this.lookupsService.getFUBAppointmentTypeId(identity),
       this.lookupsService.getVisitModeByCode(appointmentData.modeCode || AppointmentVisitModeEnum.IN_PERSON),
-      this.lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.RELEASE_PATIENT),
+      this.lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.OTHER),
     ]);
 
     const procedureInTx = async (transaction: Transaction) => {
@@ -1040,16 +1040,6 @@ export class AppointmentsService {
           );
           appointment.availabilityId = availability.id;
         }
-
-        await this.cancelPatientAppointments(
-          identity,
-          appointmentData.patientId,
-          cancelReasonId,
-          'Ad-hoc appointment initiated',
-          false,
-          null,
-          transaction,
-        );
         appointment = await appointment.save({ transaction });
       }
 
@@ -1067,7 +1057,7 @@ export class AppointmentsService {
             staffId: identity.userId,
           },
           true,
-          cancelReasonId,
+          rescheduleReasonId,
           'Ad-hoc appointment initiated',
           transaction,
         );
