@@ -384,6 +384,23 @@ export class LookupsService {
     return result.id;
   }
 
+  @Cached((id: number) => `get-appointment-status-by-id-${id}`)
+  public async getAppointmentStatusById(id: number): Promise<AppointmentStatusLookupsModel> {
+    const result = await this.appointmentStatusLookupsRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+    if (!result) {
+      throw new BadRequestException({
+        fields: [],
+        code: ErrorCodes.BAD_REQUEST,
+        message: `Appointment with status id=${id} doesn't exist`,
+      });
+    }
+    return result;
+  }
+
   @Cached(() => `AppointmentFinalStateIds`)
   public async getAppointmentFinalStateIds() {
     const res = await this.appointmentStatusLookupsRepository.findAll({

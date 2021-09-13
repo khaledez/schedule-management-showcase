@@ -1,13 +1,11 @@
 import { BelongsTo, Column, DefaultScope, ForeignKey, IsDate, Scopes, Table } from 'sequelize-typescript';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
-import { AppointmentsModel, AppointmentsModelAttributes } from '../../appointments/appointments.model';
+import { AppointmentsModel } from '../../appointments/appointments.model';
 import { BaseModel, BaseModelAttributes } from '../../../common/models';
 import { TimeGroupsLookupsModel } from '../../lookups/models/time-groups.model';
 import { AppointmentVisitModeLookupModel } from '../../lookups/models/appointment-visit-mode.model';
 import { AppointmentRequestTypesLookupsModel } from '../../lookups/models/appointment-request-types.model';
 import { AppointmentRequestStatusLookupsModel } from '../../lookups/models/appointment-request-status.model';
-import { CalendarEntry } from '../../../common/interfaces/calendar-entry';
-import { LookupWithCodeAttributes } from '../../lookups/models';
 
 export interface AppointmentsRequestModelAttributes extends BaseModelAttributes {
   clinicId: number;

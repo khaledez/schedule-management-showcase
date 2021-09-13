@@ -20,7 +20,7 @@ import {
 } from 'modules/lookups/__tests__/lookups.data';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 import { IIdentity } from '@monmedx/monmedx-common';
-import { CancelRescheduleReasonCode } from '../../../common/enums';
+import { AppointmentStatusEnum, CancelRescheduleReasonCode, ErrorCodes } from '../../../common/enums';
 
 describe('LookupsService', () => {
   let lookupsService: LookupsService;
@@ -243,5 +243,23 @@ describe('# Cancel Reschedule Reasons', () => {
     codes.forEach((code) => {
       expect(resultCodes.includes(code)).toBeTruthy();
     });
+  });
+
+  test.each(Object.values(AppointmentStatusEnum))('# getAppointmentStatusById: valid input %p', async (code) => {
+    const id = await service.getStatusIdByCode(identity, code);
+    const status = await service.getAppointmentStatusById(id);
+    expect(status.code).toEqual(code);
+  });
+
+  test('# getAppointmentStatusById: invalid input', async () => {
+    const id = 1000;
+    try {
+      await service.getAppointmentStatusById(id);
+      fail("Shouldn't have made it here");
+    } catch (err) {
+      expect(err).toBeInstanceOf(BadRequestException);
+      expect(err.response).toHaveProperty('message', `Appointment with status id=${id} doesn't exist`);
+      expect(err.response).toHaveProperty('code', ErrorCodes.BAD_REQUEST);
+    }
   });
 });

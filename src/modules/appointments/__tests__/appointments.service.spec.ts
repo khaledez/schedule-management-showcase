@@ -37,6 +37,7 @@ import { AvailabilityValidator } from '../../availability/availability.validator
 import { PatientInfoModel } from '../../patient-info/patient-info.model';
 import { BadRequestException, HttpModule, NotFoundException } from '@nestjs/common';
 import { PatientStatus } from '../../../common/enums/patient-status';
+import { AppointmentEventPublisher } from '../appointments.event-publisher';
 
 const identity: IIdentity = {
   // clinicId: Math.floor(Math.random() * 1000),
@@ -92,6 +93,7 @@ describe('Appointment service', () => {
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
         AvailabilityValidator,
+        AppointmentEventPublisher,
       ],
     }).compile();
 
@@ -452,6 +454,7 @@ describe('# Cancel appointment', () => {
         AppointmentsService,
         AvailabilityService,
         AvailabilityValidator,
+        AppointmentEventPublisher,
       ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
@@ -666,6 +669,7 @@ describe('# Patient appointment history tests', () => {
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
         AvailabilityValidator,
+        AppointmentEventPublisher,
       ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
@@ -717,6 +721,7 @@ describe('# reschedule appointment', () => {
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
         AvailabilityValidator,
+        AppointmentEventPublisher,
       ],
     }).compile();
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
@@ -930,6 +935,7 @@ describe('Patient upcoming and next appointments tests', () => {
         { provide: 'PatientInfoService', useValue: {} },
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
+        AppointmentEventPublisher,
         AvailabilityValidator,
       ],
     }).compile();

@@ -1,4 +1,12 @@
-import { Identity, IIdentity, PaginationInterceptor, PagingInfo, PagingInfoInterface } from '@monmedx/monmedx-common';
+import {
+  Identity,
+  IIdentity,
+  PaginationInterceptor,
+  PagingInfo,
+  PagingInfoInterface,
+  PermissionCode,
+  Permissions,
+} from '@monmedx/monmedx-common';
 import {
   Body,
   Controller,
@@ -31,6 +39,7 @@ import { QueryAppointmentsByPeriodsDto } from './dto/query-appointments-by-perio
 import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { AppointmentEventPublisher, AppointmentsEventName } from './appointments.event-publisher';
 
 @Controller('appointments')
 @UseInterceptors(AppointmentStatusActions)
@@ -42,6 +51,7 @@ export class AppointmentsController {
     private readonly lookupsService: LookupsService,
     @Inject(forwardRef(() => PatientInfoService))
     private readonly patientSvc: PatientInfoService,
+    private readonly eventPublisher: AppointmentEventPublisher,
   ) {}
 
   // search using post method
@@ -67,7 +77,7 @@ export class AppointmentsController {
 
   // get total appointment for each day for a specific period
   @Get('appointments-days')
-  // @Permissions(PermissionCode.APPOINTMENT_READ)
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   async getAppointmentsByPeriods(@Identity() identity: IIdentity, @Query() query: QueryAppointmentsByPeriodsDto) {
     this.logger.log({ query });
     this.logger.log({ identity });
@@ -77,19 +87,28 @@ export class AppointmentsController {
   }
 
   @Get(':id')
-  // @Permissions(PermissionCode.APPOINTMENT_READ)
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   findOne(@Identity() identity: IIdentity, @Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.findOne(identity, id);
   }
 
   @Patch(':id')
-  // @Permissions(PermissionCode.APPOINTMENT_WRITE)
-  updateOneAppointment(
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
+  async updateOneAppointment(
     @Identity() identity: IIdentity,
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
   ) {
-    return this.appointmentsService.updateAppointment(identity, id, updateAppointmentDto);
+    const appointmentBeforeUpdate = await this.appointmentsService.findOne(identity, id);
+    const appointment = await this.appointmentsService.updateAppointment(identity, id, updateAppointmentDto);
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_UPDATED,
+      appointment,
+      null,
+      appointmentBeforeUpdate,
+      identity,
+    );
+    return appointment;
   }
 
   /**
@@ -128,6 +147,13 @@ export class AppointmentsController {
 
     await this.patientSvc.ensurePatientInfoIsActive(appointmentData.patientId, authToken);
     const appointment = await this.appointmentsService.createAppointment(identity, dto, true);
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_SET_PROVISIONAL,
+      appointment,
+      null,
+      null,
+      identity,
+    );
     return { appointment };
   }
 
@@ -135,40 +161,62 @@ export class AppointmentsController {
    *
    * @param identity
    * @param authToken
-   * @param appointmentData
+   * @param dto
    */
   @Post()
   async createAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
-    @Body() appointmentData: CreateAppointmentDto,
+    @Body() dto: CreateAppointmentDto,
   ): Promise<{ appointment?: AppointmentsModel; errors?: UserError[] }> {
-    this.logger.debug({ identity, appointmentData });
+    this.logger.debug({ identity, appointmentData: dto });
 
-    await this.patientSvc.ensurePatientInfoIsActive(appointmentData.patientId, authToken);
+    await this.patientSvc.ensurePatientInfoIsActive(dto.patientId, authToken);
     // TODO: The cancel reason should be optional in the dto
     const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
       identity,
       CancelRescheduleReasonCode.OTHER,
     );
+    const previousAppointment = await this.appointmentsService.getPatientActiveAppointment(identity, dto.patientId);
     const appointment = await this.appointmentsService.createPatientAppointment(
       identity,
-      appointmentData,
+      dto,
       true,
       cancelReasonId,
       'create new appointment',
     );
+    const eventName = appointment
+      ? AppointmentsEventName.APPOINTMENT_RESCHEDULED
+      : AppointmentsEventName.APPOINTMENT_SCHEDULED;
+    this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, identity);
     return { appointment };
   }
 
   @Post('reschedule')
-  async rescheduleAppointment(@Identity() identity: IIdentity, @Body() rescheduleDto: RescheduleAppointmentDto) {
-    return { appointment: await this.appointmentsService.rescheduleAppointment(identity, rescheduleDto) };
+  async rescheduleAppointment(@Identity() identity: IIdentity, @Body() dto: RescheduleAppointmentDto) {
+    const previousAppointment = await this.appointmentsService.findOne(identity, dto.appointmentId);
+    const appointment = await this.appointmentsService.rescheduleAppointment(identity, dto);
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_RESCHEDULED,
+      appointment,
+      previousAppointment,
+      null,
+      identity,
+    );
+    return { appointment: appointment };
   }
 
   @Post('cancel')
-  async cancelAppointment(@Identity() identity: IIdentity, @Body() cancelDto: CancelAppointmentDto) {
-    const appointment = await this.appointmentsService.cancelAppointment(identity, cancelDto);
+  async cancelAppointment(@Identity() identity: IIdentity, @Body() dto: CancelAppointmentDto) {
+    const previousAppointment = await this.appointmentsService.findOne(identity, dto.appointmentId);
+    const appointment = await this.appointmentsService.cancelAppointment(identity, dto);
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_CANCELED,
+      appointment,
+      previousAppointment,
+      null,
+      identity,
+    );
     return { appointment };
   }
 
@@ -182,10 +230,20 @@ export class AppointmentsController {
   async adhocAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
-    @Body() appointmentData: AdhocAppointmentDto,
+    @Body() dto: AdhocAppointmentDto,
   ): Promise<AppointmentsModel> {
-    await this.patientSvc.ensurePatientInfoIsActive(appointmentData.patientId, authToken);
-    return this.appointmentsService.adhocAppointment(identity, appointmentData);
+    await this.patientSvc.ensurePatientInfoIsActive(dto.patientId, authToken);
+    const previousAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, dto.patientId);
+    const appointment = await this.appointmentsService.adhocAppointment(identity, dto);
+    const wasAppointmentUpdated = previousAppointment.id === appointment.id;
+    this.eventPublisher.publishAppointmentEvent(
+      wasAppointmentUpdated ? AppointmentsEventName.APPOINTMENT_UPDATED : AppointmentsEventName.APPOINTMENT_RESCHEDULED,
+      appointment,
+      wasAppointmentUpdated ? null : previousAppointment,
+      wasAppointmentUpdated ? previousAppointment : null,
+      identity,
+    );
+    return appointment;
   }
 
   @Post('forPatient')
@@ -234,10 +292,15 @@ export class AppointmentsController {
       identity,
       id,
     });
-    const appointment = await this.appointmentsService.confirmAppointmentByApp(id, identity);
-
+    const appointmentBeforeUpdate = await this.appointmentsService.findOne(identity, id);
+    const appointment = await this.appointmentsService.confirmAppointmentByApp(identity, id);
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_UPDATED,
+      appointment,
+      null,
+      appointmentBeforeUpdate,
+      identity,
+    );
     return { appointment };
   }
-
-  //appointmentConfirmation
 }

@@ -8,7 +8,7 @@ import { LookupsModule } from '../lookups/lookups.module';
 import { AppointmentsController } from './appointments.controller';
 import { appointmentsProviders } from './appointments.provider';
 import { AppointmentsService } from './appointments.service';
-import { AppointmentsModel } from './appointments.model';
+import { AppointmentEventPublisher } from './appointments.event-publisher';
 
 @Module({
   imports: [
@@ -21,6 +21,6 @@ import { AppointmentsModel } from './appointments.model';
   ],
   controllers: [AppointmentsController],
   providers: [...appointmentsProviders],
-  exports: [AppointmentsService],
+  exports: [AppointmentsService, AppointmentEventPublisher],
 })
 export class AppointmentsModule {}

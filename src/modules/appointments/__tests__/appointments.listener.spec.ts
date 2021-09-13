@@ -28,6 +28,7 @@ import { Sequelize } from 'sequelize';
 import { LookupsService } from '../../lookups/lookups.service';
 import { AppointmentStatusEnum } from '../../../common/enums';
 import { PatientStatus } from '../../../common/enums/patient-status';
+import { AppointmentEventPublisher } from '../appointments.event-publisher';
 
 describe('# Appointment event listener', () => {
   let appointmentsService: AppointmentsService;
@@ -47,6 +48,7 @@ describe('# Appointment event listener', () => {
         AppointmentsService,
         AvailabilityService,
         AvailabilityValidator,
+        AppointmentEventPublisher,
       ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);

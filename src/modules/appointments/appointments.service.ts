@@ -187,19 +187,16 @@ export class AppointmentsService {
       upcomingAppointment: true,
     };
     if (queryParams.filter?.doctorId) {
-      const staffIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.doctorId);
-      where.staffId = staffIdWhereClause;
+      where.staffId = this.getEntityIdWhereClause(queryParams.filter?.doctorId);
     }
     if (queryParams.filter?.appointmentStatusId) {
-      const appointmentStatusIdWhereClause = await this.getAppointmentStatusIdWhereClause(
+      where.appointmentStatusId = await this.getAppointmentStatusIdWhereClause(
         identity,
         queryParams.filter.appointmentStatusId,
       );
-      where.appointmentStatusId = appointmentStatusIdWhereClause;
     }
     if (queryParams.filter?.appointmentTypeId) {
-      const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(queryParams.filter?.appointmentTypeId);
-      where.appointmentTypeId = appointmentTypeIdWhereClause;
+      where.appointmentTypeId = this.getEntityIdWhereClause(queryParams.filter?.appointmentTypeId);
     }
     if (queryParams.filter?.date) {
       const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
@@ -438,7 +435,7 @@ export class AppointmentsService {
     const finalStatuses = await this.lookupsService.getFinalStatusIds(identity);
     if (finalStatuses.includes(appointment.appointmentStatusId)) {
       throw new BadRequestException({
-        message: "Can't cancel appointment with final status",
+        message: "Can't cancel an appointment with final status",
         code: ErrorCodes.BAD_REQUEST,
       });
     }
@@ -1082,7 +1079,6 @@ export class AppointmentsService {
     const options: FindOptions = {
       where: {
         clinicId: identity.clinicId,
-        deletedAt: null,
         patientId,
         appointmentStatusId: {
           [Op.in]: statuses,
@@ -1135,6 +1131,14 @@ export class AppointmentsService {
           { model: AvailabilityModel, required: true },
           transaction,
         );
+        const finalStatuses = await this.lookupsService.getFinalStatusIds(identity);
+        if (finalStatuses.includes(appointment.appointmentStatusId)) {
+          throw new BadRequestException({
+            message: "Can't reschedule an appointment with final status",
+            fields: ['appointmentId'],
+            error: 'BAD_REQUEST',
+          });
+        }
 
         // 2. check if we need to change the doctor permanently
         let staffId = dto.staffId;
@@ -1670,7 +1674,7 @@ export class AppointmentsService {
   }
 
   //Confirm Appointment by patient from mobile app
-  public confirmAppointmentByApp(appointmentId: number, identity: IIdentity) {
+  public confirmAppointmentByApp(identity: IIdentity, appointmentId: number) {
     const {
       userId,
       userInfo: { patientIds },
@@ -1730,15 +1734,6 @@ export class AppointmentsService {
           );
           const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
           this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
-          // 4. publish event if status changed to check in
-          //TODO: MMX-5661
-          /*this.publishEventIfStatusMatches(
-            identity,
-            AppointmentStatusEnum.CONFIRM1,
-            updatedAppt,
-            null,
-            APPOINTMENT_CONFIRM1_STATUS_EVENT,
-          );*/
           return updatedAppt;
         } catch (error) {
           this.logger.error({
@@ -1795,5 +1790,3 @@ function mapUpdateDtoToAttributes(
     appointmentTypeId: updateDto.appointmentTypeId,
   };
 }
-
-type BatchCancelResult = { appointmentId: number; status: 'OK' | 'FAIL'; error?: string };
