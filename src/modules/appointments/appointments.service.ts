@@ -11,7 +11,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENT_CHECKIN_STATUS_EVENT, APPOINTMENT_CONFIRM1_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
@@ -342,7 +342,7 @@ export class AppointmentsService {
     return { [Op.notIn]: [] };
   }
 
-  async getPatientAppointmentHistory(
+  public async getPatientAppointmentHistory(
     identity: IIdentity,
     pagingFilter: PagingInfoInterface,
     payload: GetPatientAppointmentHistoryDto,
@@ -408,7 +408,7 @@ export class AppointmentsService {
    * @param rescheduleReasonText
    * @param transaction
    */
-  createPatientAppointment(
+  public createPatientAppointment(
     identity: IIdentity,
     dto: CreateAppointmentDto,
     upcomingAppointment: boolean,
@@ -432,7 +432,7 @@ export class AppointmentsService {
     return this.appointmentsRepository.sequelize.transaction(procedureInTx);
   }
 
-  async cancelAppointment(identity: IIdentity, cancelDto: CancelAppointmentDto, usedTransaction?: Transaction) {
+  public async cancelAppointment(identity: IIdentity, cancelDto: CancelAppointmentDto, usedTransaction?: Transaction) {
     const appointment = await this.getAppointmentById(identity, cancelDto.appointmentId);
     const finalStatuses = await this.lookupsService.getFinalStatusIds(identity);
     if (finalStatuses.includes(appointment.appointmentStatusId)) {
@@ -750,7 +750,7 @@ export class AppointmentsService {
     return validateInputThenArrangeAttributesAndCommit(transaction);
   }
 
-  async changePatientAssignedDoctor(payload: ChangeAssingedDoctorPayload) {
+  protected async changePatientAssignedDoctor(payload: ChangeAssingedDoctorPayload) {
     try {
       await this.patientInfoSvc.changeAssignedDoctor(payload);
     } catch (error) {
@@ -1440,7 +1440,7 @@ export class AppointmentsService {
     }
   };
 
-  async getAppointmentByPatientId(identity: IIdentity, patientId: number) {
+  public async getAppointmentByPatientId(identity: IIdentity, patientId: number) {
     const finalStatusId = await this.lookupsService.getFinalStatusIds(identity);
     const options: FindOptions = {
       where: {
@@ -1664,6 +1664,91 @@ export class AppointmentsService {
           id: appointmentId,
         },
         transaction,
+      },
+    );
+  }
+
+  //Confirm Appointment by patient
+  public confirmAppointmentByApp(appointmentId: number, identity: IIdentity) {
+    const {
+      userId,
+      userInfo: { patientIds },
+    } = identity;
+    return this.appointmentsRepository.sequelize.transaction<AppointmentsModelAttributes>(
+      async (transaction: Transaction) => {
+        // 1. fetch appointment
+        const appointment = await this.appointmentsRepository.findOne({
+          transaction,
+          where: {
+            id: appointmentId,
+            patientId: {
+              [Op.in]: patientIds,
+            },
+          },
+        });
+        if (!appointment) {
+          throw new NotFoundException({
+            fields: ['appointmentId'],
+            message: `Appointment with id = ${appointmentId} not found`,
+            code: ErrorCodes.NOT_FOUND,
+          });
+        }
+        identity.clinicId = appointment.clinicId;
+
+        //check appointment status
+        const appointmentStatusId_SCHEDULE = await this.lookupsService.getStatusIdByCode(
+          identity,
+          AppointmentStatusEnum.SCHEDULE,
+        );
+        if (appointment.appointmentStatusId !== appointmentStatusId_SCHEDULE) {
+          throw new NotFoundException({
+            fields: ['appointmentStatusId'],
+            message: `Appointment with status = ${appointment.appointmentStatusId} can not be confirmed`,
+            code: ErrorCodes.CONFLICTS,
+          });
+        }
+
+        try {
+          const appointmentStatusId_CONFIRM1 = await this.lookupsService.getStatusIdByCode(
+            identity,
+            AppointmentStatusEnum.CONFIRM1,
+          );
+
+          // 3. update database
+          await this.appointmentsRepository.update(
+            {
+              appointmentStatusId: appointmentStatusId_CONFIRM1,
+              updatedBy: userId,
+            },
+            {
+              where: {
+                id: appointmentId,
+              },
+              transaction,
+              returning: true,
+            },
+          );
+          const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
+          this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
+          // 4. publish event if status changed to check in
+          this.publishEventIfStatusMatches(
+            identity,
+            AppointmentStatusEnum.CONFIRM1,
+            updatedAppt,
+            null,
+            APPOINTMENT_CONFIRM1_STATUS_EVENT,
+          );
+          return updatedAppt;
+        } catch (error) {
+          this.logger.error({
+            method: 'appointmentService/confirmAppointmentByApp',
+            message: error.message,
+          });
+          throw new InternalServerErrorException({
+            code: ErrorCodes.INTERNAL_SERVER_ERROR,
+            message: error.message,
+          });
+        }
       },
     );
   }

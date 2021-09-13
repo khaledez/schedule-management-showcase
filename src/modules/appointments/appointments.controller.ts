@@ -222,4 +222,22 @@ export class AppointmentsController {
       count,
     };
   }
+
+  @Post(':id/confirmation')
+  async confirmAppointment(
+    @Identity() identity: IIdentity,
+    @PagingInfo() pagingInfo: PagingInfoInterface,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<unknown> {
+    this.logger.debug({
+      function: 'controller/appointment/confirmAppointmentByApp',
+      identity,
+      id,
+    });
+    const appointment = await this.appointmentsService.confirmAppointmentByApp(id, identity);
+
+    return { appointment };
+  }
+
+  //appointmentConfirmation
 }
