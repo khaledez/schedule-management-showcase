@@ -11,7 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT, APPOINTMENT_CONFIRM1_STATUS_EVENT,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENT_CONFIRM1_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
@@ -1668,7 +1669,7 @@ export class AppointmentsService {
     );
   }
 
-  //Confirm Appointment by patient
+  //Confirm Appointment by patient from mobile app
   public confirmAppointmentByApp(appointmentId: number, identity: IIdentity) {
     const {
       userId,
@@ -1725,19 +1726,19 @@ export class AppointmentsService {
                 id: appointmentId,
               },
               transaction,
-              returning: true,
             },
           );
           const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
           this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
           // 4. publish event if status changed to check in
-          this.publishEventIfStatusMatches(
+          //TODO: MMX-5661
+          /*this.publishEventIfStatusMatches(
             identity,
             AppointmentStatusEnum.CONFIRM1,
             updatedAppt,
             null,
             APPOINTMENT_CONFIRM1_STATUS_EVENT,
-          );
+          );*/
           return updatedAppt;
         } catch (error) {
           this.logger.error({
@@ -1752,6 +1753,14 @@ export class AppointmentsService {
       },
     );
   }
+
+  //Call by event notification service need to change appointment status to Reminded
+
+  //public
+  /*public appoitmentActionByWeb(){
+    //actionType [CONFIRM, CHECKIN]
+    //token
+  }*/
 }
 
 function mapUpdateDtoToAttributes(
