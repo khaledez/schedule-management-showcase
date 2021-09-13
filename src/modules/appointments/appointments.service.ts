@@ -55,7 +55,6 @@ import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
 import { PatientInfoService } from '../patient-info';
 import { Includeable } from 'sequelize/types/lib/model';
-import { ChangeAppointmentDoctorDto } from './dto/change-appointment-doctor-dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -682,7 +681,7 @@ export class AppointmentsService {
         });
       }
 
-      if (isProvisional) {
+      if (!dto.availabilityId && isProvisional) {
         return this.createProvisionalAppointment(
           identity,
           {
