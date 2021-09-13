@@ -650,6 +650,43 @@ describe('# Cancel appointment', () => {
     expect(rescheduledAppointment.cancelRescheduleReasonId).toEqual(rescheduleReasonId);
     expect(rescheduledAppointment.appointmentStatusId).toEqual(rescheduledId);
   });
+
+  test('# Reschedule current appointment and create a new one using availability', async () => {
+    const availability = await availabilityService.createSingleAvailability(identity, {
+      appointmentTypeId: 1,
+      durationMinutes: 15,
+      staffId: 1,
+      startDate: '2021-10-25T07:43:40.084Z',
+    });
+    const appointment = await createAppointment();
+    const appointmentTypeId = await lookupsService.getFUBAppointmentTypeId(identity);
+    const readyStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+    const rescheduledId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RESCHEDULED);
+    const rescheduleReasonText = 'create new appointment';
+    const rescheduleReasonId = await lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.CHANGE_DOCTOR,
+    );
+    const newAppointment = await appointmentsService.createPatientAppointment(
+      identity,
+      {
+        patientId: appointment.patientId,
+        staffId: 606,
+        appointmentTypeId,
+        availabilityId: availability.id,
+      },
+      true,
+      rescheduleReasonId,
+      rescheduleReasonText,
+    );
+
+    expect(newAppointment.appointmentStatusId).toEqual(readyStatusId);
+
+    const rescheduledAppointment = await appointmentsService.findOne(identity, appointment.id);
+    expect(rescheduledAppointment.cancelRescheduleText).toEqual(rescheduleReasonText);
+    expect(rescheduledAppointment.cancelRescheduleReasonId).toEqual(rescheduleReasonId);
+    expect(rescheduledAppointment.appointmentStatusId).toEqual(rescheduledId);
+  });
 });
 
 describe('# Patient appointment history tests', () => {

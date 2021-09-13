@@ -860,14 +860,14 @@ export class AppointmentsService {
    * Handles appointmentStatusId attribute
    * @param identity
    * @param dto
-   * @returns default id (WAIT_LIST) or provided id
+   * @returns default id (READY) or provided id
    */
   private getAppointmentStatusId(identity: IIdentity, dto: CreateAppointmentDto): Promise<number> {
     const id = dto.appointmentStatusId;
     if (id) {
       return Promise.resolve(id);
     }
-    return this.lookupsService.getProvisionalAppointmentStatusId(identity);
+    return this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
   }
 
   async findOne(
