@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import {
   APPOINTMENT_CHECKIN_STATUS_EVENT,
-  APPOINTMENT_CONFIRM1_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
@@ -56,6 +55,7 @@ import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
 import { PatientInfoService } from '../patient-info';
 import { Includeable } from 'sequelize/types/lib/model';
+import { ChangeAppointmentDoctorDto } from './dto/change-appointment-doctor-dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -1079,7 +1079,7 @@ export class AppointmentsService {
     const options: FindOptions = {
       where: {
         clinicId: identity.clinicId,
-        patientId,
+        patientId: patientId,
         appointmentStatusId: {
           [Op.in]: statuses,
         },
@@ -1748,14 +1748,6 @@ export class AppointmentsService {
       },
     );
   }
-
-  //Call by event notification service need to change appointment status to Reminded
-
-  //public
-  /*public appoitmentActionByWeb(){
-    //actionType [CONFIRM, CHECKIN]
-    //token
-  }*/
 }
 
 function mapUpdateDtoToAttributes(

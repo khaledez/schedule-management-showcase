@@ -3,7 +3,7 @@ import { LookupsModule } from '../../lookups/lookups.module';
 import { LookupsService } from '../../lookups/lookups.service';
 import { AppointmentEventPublisher } from '../appointments.event-publisher';
 import { getTestIdentity } from '../../../utils/test-helpers/common-data-helpers';
-import { AppointmentStatusEnum } from '../../../common/enums';
+import { AppointmentStatusEnum, AppointmentTypesEnum } from '../../../common/enums';
 import { DatabaseModule } from '../../database/database.module';
 import { ConfigurationModule } from '../../config/config.module';
 
@@ -32,11 +32,11 @@ describe('# Appointment event publisher', () => {
   });
 
   test('# appointmentToEventAppointmentPayLoad: valid appointment', async () => {
-    const appointmentStatusId = await lookupsService.getStatusIdByCode(
-      getTestIdentity(32, 32),
-      AppointmentStatusEnum.RESCHEDULED,
-    );
+    const identity = getTestIdentity(32, 32);
+    const appointmentStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RESCHEDULED);
+    const appointmentTypeId = await lookupsService.getTypeByCode(identity, AppointmentTypesEnum.NEW);
     const status = await lookupsService.getAppointmentStatusById(appointmentStatusId);
+    const type = await lookupsService.getAppointmentTypeById(appointmentTypeId);
     const startDate = new Date();
     const staffId = 10;
     const id = 20;
@@ -48,6 +48,7 @@ describe('# Appointment event publisher', () => {
       staffId,
       startDate,
       appointmentStatusId,
+      appointmentTypeId,
     });
     expect(result).toBeDefined();
     expect(result.appointmentId).toEqual(id);
@@ -55,6 +56,11 @@ describe('# Appointment event publisher', () => {
       code: status.code,
       nameEn: status.nameEn,
       nameFr: status.nameFr,
+    });
+    expect(result.appointmentType).toEqual({
+      code: type.code,
+      nameEn: type.nameEn,
+      nameFr: type.nameFr,
     });
     expect(result.appointmentDateTime).toEqual(startDate.toISOString());
   });

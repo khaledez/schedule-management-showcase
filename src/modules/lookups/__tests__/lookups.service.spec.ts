@@ -20,7 +20,12 @@ import {
 } from 'modules/lookups/__tests__/lookups.data';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 import { IIdentity } from '@monmedx/monmedx-common';
-import { AppointmentStatusEnum, CancelRescheduleReasonCode, ErrorCodes } from '../../../common/enums';
+import {
+  AppointmentStatusEnum,
+  AppointmentTypesEnum,
+  CancelRescheduleReasonCode,
+  ErrorCodes,
+} from '../../../common/enums';
 
 describe('LookupsService', () => {
   let lookupsService: LookupsService;
@@ -260,6 +265,24 @@ describe('# Cancel Reschedule Reasons', () => {
       expect(err).toBeInstanceOf(BadRequestException);
       expect(err.response).toHaveProperty('message', `Appointment with status id=${id} doesn't exist`);
       expect(err.response).toHaveProperty('code', ErrorCodes.BAD_REQUEST);
+    }
+  });
+
+  test.each(Object.values(AppointmentTypesEnum))('# getAppointmentTypeById: valid input %p', async (code) => {
+    const id = await service.getTypeByCode(identity, code);
+    const type = await service.getAppointmentTypeById(id);
+    expect(type.code).toEqual(code.toString());
+  });
+
+  test('# getAppointmentTypeById: valid input %p', async () => {
+    const id = 1000;
+    try {
+      await service.getAppointmentTypeById(id);
+      fail("Shouldn't have made it here");
+    } catch (error) {
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error.response).toHaveProperty('message', `Can't find appointment type for id = ${id}`);
+      expect(error.response).toHaveProperty('code', ErrorCodes.BAD_REQUEST);
     }
   });
 });

@@ -15,11 +15,12 @@ export class AppointmentsEventPayload {
 export interface EventAppointmentPayload {
   appointmentId: number;
   staffId: number;
-  appointmentStatus: EventAppointmentStatusPayload;
+  appointmentStatus?: LookupModelPayload;
+  appointmentType?: LookupModelPayload;
   appointmentDateTime: string;
 }
 
-export interface EventAppointmentStatusPayload {
+export interface LookupModelPayload {
   code: string;
   nameEn: string;
   nameFr: string;

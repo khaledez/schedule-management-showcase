@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ErrorCodes } from '../../common/enums';
 import { SCHEDULE_MGMT_TOPIC } from '../../common/constants';
-import { AppointmentsEventPayload } from './events/appointments-event-payload';
+import { AppointmentsEventPayload, LookupModelPayload } from './events/appointments-event-payload';
 import { AppointmentsModelAttributes } from './appointments.model';
 import { LookupsService } from '../lookups/lookups.service';
 import { IIdentity } from '@monmedx/monmedx-common';
@@ -63,18 +63,20 @@ export class AppointmentEventPublisher {
       return null;
     }
     const status = await this.lookupsService.getAppointmentStatusById(appointment.appointmentStatusId);
+    const type = await this.lookupsService.getAppointmentTypeById(appointment.appointmentTypeId);
     return appointment
       ? {
           appointmentId: appointment.id,
           staffId: appointment.staffId,
-          appointmentStatus: {
-            code: status.code,
-            nameEn: status.nameEn,
-            nameFr: status.nameFr,
-          },
+          appointmentStatus: this.getModelLookups(status),
+          appointmentType: this.getModelLookups(type),
           appointmentDateTime: appointment.startDate.toISOString(),
         }
       : null;
+  }
+
+  getModelLookups(model: { code: string; nameEn: string; nameFr: string }): LookupModelPayload {
+    return model ? { code: model.code, nameEn: model.nameEn, nameFr: model.nameFr } : null;
   }
 
   getAffected(appointments: AppointmentsModelAttributes[], field: string): number[] {

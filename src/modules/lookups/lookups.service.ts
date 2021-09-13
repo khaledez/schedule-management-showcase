@@ -184,7 +184,7 @@ export class LookupsService {
     });
   }
 
-  @Cached(({ clinicId }: IIdentity, codes) => `cancel-reasons-${clinicId}`)
+  @Cached(({ clinicId }: IIdentity) => `cancel-reasons-${clinicId}`)
   public getCancelReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
     return this.getCancelRescheduleReasons(identity, [
       CancelRescheduleReasonCode.CHANGE_DOCTOR,
@@ -196,7 +196,7 @@ export class LookupsService {
     ]);
   }
 
-  @Cached(({ clinicId }: IIdentity, codes) => `reschedule-reasons-${clinicId}`)
+  @Cached(({ clinicId }: IIdentity) => `reschedule-reasons-${clinicId}`)
   public getRescheduleReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
     return this.getCancelRescheduleReasons(identity, [
       CancelRescheduleReasonCode.CHANGE_DOCTOR,
@@ -416,7 +416,7 @@ export class LookupsService {
 
   @Cached(({ clinicId }: IIdentity, code: AppointmentStatusEnum) => `appttypeid-${clinicId}-${code.toString()}`)
   async getTypeByCode({ clinicId }: IIdentity | null, code: AppointmentTypeEnum): Promise<number> {
-    if (!Object.keys(AppointmentTypeEnum).includes(code)) {
+    if (!Object.values(AppointmentTypeEnum).includes(code)) {
       throw new BadRequestException({
         fields: [],
         code: 'NOT_FOUND',
@@ -433,6 +433,23 @@ export class LookupsService {
       attributes: ['id'],
     });
     return result?.id;
+  }
+
+  @Cached((id: number) => `getAppointmentTypeById-${id}`)
+  async getAppointmentTypeById(id: number): Promise<AppointmentTypesLookupsModel> {
+    const result = await this.appointmentTypesLookupsRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+    if (!result) {
+      throw new BadRequestException({
+        fields: [],
+        code: ErrorCodes.BAD_REQUEST,
+        message: `Can't find appointment type for id = ${id}`,
+      });
+    }
+    return result;
   }
 
   @Cached(

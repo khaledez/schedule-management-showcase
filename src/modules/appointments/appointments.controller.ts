@@ -40,6 +40,7 @@ import { QueryParamsDto } from './dto/query-params.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { AppointmentEventPublisher, AppointmentsEventName } from './appointments.event-publisher';
+import { ChangeAppointmentDoctorDto } from './dto/change-appointment-doctor-dto';
 
 @Controller('appointments')
 @UseInterceptors(AppointmentStatusActions)
@@ -302,5 +303,34 @@ export class AppointmentsController {
       identity,
     );
     return { appointment };
+  }
+
+  @Post('changeDoctor')
+  async changeAppointmentDoctor(
+    @Identity() identity: IIdentity,
+    @Body() dto: ChangeAppointmentDoctorDto,
+  ): Promise<unknown> {
+    const previousAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, dto.patientId);
+    const appointment = await this.appointmentsService.createPatientAppointment(
+      identity,
+      {
+        patientId: dto.patientId,
+        staffId: dto.doctorId,
+        appointmentTypeId: dto.appointmentTypeId ?? previousAppointment.appointmentTypeId,
+        startDate: dto.provisionalDate ?? previousAppointment.startDate.toISOString(),
+        durationMinutes: previousAppointment.durationMinutes,
+      },
+      true,
+      await this.lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.CHANGE_DOCTOR),
+      'Reschedule provisional appoint with new doctor',
+    );
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_RESCHEDULED,
+      appointment,
+      previousAppointment,
+      null,
+      identity,
+    );
+    return { appointment: appointment };
   }
 }
