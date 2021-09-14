@@ -1,4 +1,4 @@
-import { Identity, IIdentity, Public } from '@monmedx/monmedx-common';
+import { Identity, IIdentity } from '@monmedx/monmedx-common';
 import { Controller, Get } from '@nestjs/common';
 import { LookupsService } from './lookups.service';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
@@ -11,72 +11,60 @@ import { TimeGroupsLookupsModel } from './models/time-groups.model';
 export class LookupsController {
   constructor(private readonly lookupsService: LookupsService) {}
 
-  @Public()
   @Get('/duration-minutes')
-  public findDurationMinutes(): Promise<DurationMinutesLookupsModel[]> {
-    return this.lookupsService.findAllDurationMinutesLookups();
+  public findDurationMinutes(@Identity() identity: IIdentity): Promise<DurationMinutesLookupsModel[]> {
+    return this.lookupsService.findAllDurationMinutesLookups(identity);
   }
 
-  @Public()
   @Get('/time-groups')
-  public findTimeGroups(): Promise<TimeGroupsLookupsModel[]> {
-    return this.lookupsService.findAllTimeGroupsLookups();
+  public findTimeGroups(@Identity() identity: IIdentity): Promise<TimeGroupsLookupsModel[]> {
+    return this.lookupsService.findAllTimeGroupsLookups(identity);
   }
 
-  @Public()
   @Get('/appointment-actions')
-  public findAppointmentActions(): Promise<AppointmentActionsLookupsModel[]> {
-    return this.lookupsService.findAllAppointmentActionsLookups();
+  public findAppointmentActions(@Identity() identity: IIdentity): Promise<AppointmentActionsLookupsModel[]> {
+    return this.lookupsService.findAllAppointmentActionsLookups(identity);
   }
 
-  @Public()
   @Get('/appointment-status')
-  public findAppointmentStatus(): Promise<AppointmentStatusLookupsModel[]> {
-    return this.lookupsService.findAllAppointmentStatusLookups();
+  public findAppointmentStatus(@Identity() identity: IIdentity): Promise<AppointmentStatusLookupsModel[]> {
+    return this.lookupsService.findAllAppointmentStatusLookups(identity);
   }
-
-  @Public()
   @Get('/appointment-types')
-  public findAppointmentTypes(): Promise<AppointmentTypesLookupsModel[]> {
-    return this.lookupsService.findAllAppointmentTypesLookups();
+  public findAppointmentTypes(@Identity() identity: IIdentity): Promise<AppointmentTypesLookupsModel[]> {
+    return this.lookupsService.findAllAppointmentTypesLookups(identity);
   }
 
-  @Public()
   @Get('/appointment-visit-modes')
-  public findAppointmentVisitModes() {
-    return this.lookupsService.findAllAppointmentVisitModes();
+  public findAppointmentVisitModes(@Identity() identity: IIdentity) {
+    return this.lookupsService.findAllAppointmentVisitModes(identity);
   }
 
   /**
    * @deprecated use {@link getCancelReasons} and {@link getRescheduleReasons} instead
    */
-  @Public()
   @Get('/cancel-reschedule-reason')
-  public findAppointmentCancelRescheduleReasons() {
-    return this.lookupsService.findAllAppointmentCancelRescheduleReasons();
+  public findAppointmentCancelRescheduleReasons(@Identity() identity: IIdentity) {
+    return this.lookupsService.findAllAppointmentCancelRescheduleReasons(identity);
   }
 
-  @Public()
   @Get('/cancel-reasons')
-  public getCancelReasons() {
-    return this.lookupsService.getCancelReasons();
+  public getCancelReasons(@Identity() identity: IIdentity) {
+    return this.lookupsService.getCancelReasons(identity);
   }
 
-  @Public()
   @Get('/reschedule-reasons')
-  public getRescheduleReasons() {
-    return this.lookupsService.getRescheduleReasons();
+  public getRescheduleReasons(@Identity() identity: IIdentity) {
+    return this.lookupsService.getRescheduleReasons(identity);
   }
 
-  @Public()
   @Get('/appointment-request-types')
-  public getAppintmentRequestTypes() {
-    return this.lookupsService.findAllAppointmentRequestTypesLookups();
+  public getAppintmentRequestTypes(@Identity() identity: IIdentity) {
+    return this.lookupsService.findAllAppointmentRequestTypesLookups(identity);
   }
 
-  @Public()
   @Get('/appointment-request-status')
-  public getAppintmentRequestStatus() {
-    return this.lookupsService.findAllAppointmentRequestStatusLookups();
+  public getAppintmentRequestStatus(@Identity() identity: IIdentity) {
+    return this.lookupsService.findAllAppointmentRequestStatusLookups(identity);
   }
 }
