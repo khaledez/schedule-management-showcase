@@ -54,6 +54,7 @@
     "@nestjs/terminus": "^7.0.1",
     "@nestjs/typeorm": "^7.1.5",
     "aws-sdk": "^2.948.0",
+    "aws-xray-sdk-core": "^3.3.3",
     "axios": "^0.21.1",
     "babel-jest": "^27.0.6",
     "cache-manager": "^3.4.4",
