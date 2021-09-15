@@ -39,14 +39,7 @@ import { BadRequestException, HttpModule, NotFoundException } from '@nestjs/comm
 import { PatientStatus } from '../../../common/enums/patient-status';
 import { AppointmentEventPublisher } from '../appointments.event-publisher';
 
-const identity: IIdentity = {
-  // clinicId: Math.floor(Math.random() * 1000),
-  clinicId: 5000,
-  userId: 2,
-  cognitoId: null,
-  userLang: 'en',
-  userInfo: null,
-};
+const identity: IIdentity = getTestIdentity(42, 5000);
 
 describe('Appointment Actions', () => {
   let moduleRef: TestingModule;

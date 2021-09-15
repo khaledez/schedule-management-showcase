@@ -6,6 +6,18 @@ export function getTestIdentity(userId, clinicId): IIdentity {
     clinicId,
     cognitoId: null,
     userLang: null,
-    userInfo: null,
+    userInfo: {
+      cognitoId: null,
+      status: null,
+      userId: null,
+      clinicIds: [clinicId],
+      username: null,
+      userType: null,
+      firstName: null,
+      lastName: null,
+      languageCode: null,
+      clinics: [],
+      patientIds: [],
+    },
   };
 }
