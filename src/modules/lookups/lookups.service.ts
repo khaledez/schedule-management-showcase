@@ -37,6 +37,7 @@ import { TimeGroupsLookupsModel } from './models/time-groups.model';
 import { AppointmentRequestStatusLookupsModel } from './models/appointment-request-status.model';
 import { AppointmentRequestTypesLookupsModel } from './models/appointment-request-types.model';
 import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
+import { identity } from 'rxjs';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)
@@ -70,12 +71,11 @@ export class LookupsService {
    * @param identity xmmx user identifiers
    * duration minutes like 5 Mins, 15 Mins or 30.
    */
-  public findAllDurationMinutesLookups(identity): Promise<DurationMinutesLookupsModel[]> {
-    const { clinicId } = identity;
+  public findAllDurationMinutesLookups(identity?): Promise<DurationMinutesLookupsModel[]> {
     return this.durationMinutesLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
     });
@@ -85,12 +85,11 @@ export class LookupsService {
    * @param identity
    * lookup example: morning, afternoon, evening
    */
-  public findAllTimeGroupsLookups(identity): Promise<TimeGroupsLookupsModel[]> {
-    const { clinicId } = identity;
+  public findAllTimeGroupsLookups(identity?): Promise<TimeGroupsLookupsModel[]> {
     return this.timeGroupsLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
     });
@@ -100,12 +99,11 @@ export class LookupsService {
    * @param identity
    * example: CANCEL, CHANGE_APPT_TYPE, CHANGE_DOCTOR
    */
-  public findAllAppointmentActionsLookups(identity): Promise<AppointmentActionsLookupsModel[]> {
-    const { clinicId } = identity;
+  public findAllAppointmentActionsLookups(identity?: IIdentity): Promise<AppointmentActionsLookupsModel[]> {
     return this.appointmentActionsLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
     });
@@ -116,21 +114,23 @@ export class LookupsService {
    * example: NEW, FUP
    * @param transaction
    */
-  @Cached(({ clinicId = 0 }: IIdentity) => `appttypes-${clinicId}`)
+  @Cached((identity: IIdentity) => `appttypes-${identity?.clinicId ?? 0}`)
   public findAllAppointmentTypesLookups(
-    identity: IIdentity,
+    identity?: IIdentity,
     transaction?: Transaction,
   ): Promise<AppointmentTypesLookupsModel[]> {
     const conditions: FindOptions<AppointmentTypesLookupsModel> = identity?.clinicId
       ? {
           where: {
             clinicId: {
-              [Op.or]: [null, identity.clinicId],
+              [Op.or]: this.getLookupClinicCondition(identity),
             },
           },
           transaction,
         }
-      : {};
+      : {
+          transaction,
+        };
 
     return this.appointmentTypesLookupsRepository.findAll(conditions);
   }
@@ -140,78 +140,80 @@ export class LookupsService {
    * example: READY, CHECK-IN
    * @param transaction
    */
-  @Cached(({ clinicId }: IIdentity) => `apptstatus-${clinicId}`)
+  @Cached((identity: IIdentity) => `apptstatus-${identity?.clinicId ?? 0}`)
   public findAllAppointmentStatusLookups(
-    identity,
+    identity?: IIdentity,
     transaction?: Transaction,
   ): Promise<AppointmentStatusLookupsModel[]> {
-    const { clinicId } = identity;
     return this.appointmentStatusLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
       transaction,
     });
   }
 
-  @Cached(({ clinicId }: IIdentity) => `visitmode-${clinicId}`)
-  findAllAppointmentVisitModes(
-    { clinicId }: IIdentity,
-    transaction?: Transaction,
-  ): Promise<LookupWithCodeAttributes[]> {
+  @Cached((identity: IIdentity) => `visitmode-${identity?.clinicId ?? 0}`)
+  findAllAppointmentVisitModes(identity?: IIdentity, transaction?: Transaction): Promise<LookupWithCodeAttributes[]> {
     return this.appointmentVisitModeRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
       transaction,
     });
   }
 
-  @Cached(({ clinicId }: IIdentity) => `cancel-reschedule-${clinicId}`)
-  public findAllAppointmentCancelRescheduleReasons({
-    clinicId,
-  }: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
+  @Cached((identity: IIdentity) => `cancel-reschedule-${identity?.clinicId ?? 0}`)
+  public findAllAppointmentCancelRescheduleReasons(
+    identity?: IIdentity,
+  ): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
     return this.appointmentCancelRescheduleReasonRepo.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
     });
   }
 
-  @Cached(({ clinicId }: IIdentity) => `cancel-reasons-${clinicId}`)
-  public getCancelReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
-    return this.getCancelRescheduleReasons(identity, [
-      CancelRescheduleReasonCode.CHANGE_DOCTOR,
-      CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
-      CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
-      CancelRescheduleReasonCode.NO_SHOW_UP,
-      CancelRescheduleReasonCode.RELEASE_PATIENT,
-      CancelRescheduleReasonCode.ABORT_VISIT,
-      CancelRescheduleReasonCode.OTHER,
-    ]);
+  @Cached((identity: IIdentity) => `cancel-reasons-${identity?.clinicId ?? 0}`)
+  public getCancelReasons(identity?: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
+    return this.getCancelRescheduleReasons(
+      [
+        CancelRescheduleReasonCode.CHANGE_DOCTOR,
+        CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
+        CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
+        CancelRescheduleReasonCode.NO_SHOW_UP,
+        CancelRescheduleReasonCode.RELEASE_PATIENT,
+        CancelRescheduleReasonCode.ABORT_VISIT,
+        CancelRescheduleReasonCode.OTHER,
+      ],
+      identity,
+    );
   }
 
-  @Cached(({ clinicId }: IIdentity) => `reschedule-reasons-${clinicId}`)
-  public getRescheduleReasons(identity: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
-    return this.getCancelRescheduleReasons(identity, [
-      CancelRescheduleReasonCode.CHANGE_DOCTOR,
-      CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
-      CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
-      CancelRescheduleReasonCode.NO_SHOW_UP,
-      CancelRescheduleReasonCode.OTHER,
-    ]);
+  @Cached((identity: IIdentity) => `reschedule-reasons-${identity?.clinicId ?? 0}`)
+  public getRescheduleReasons(identity?: IIdentity): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
+    return this.getCancelRescheduleReasons(
+      [
+        CancelRescheduleReasonCode.CHANGE_DOCTOR,
+        CancelRescheduleReasonCode.DOCTOR_UNAVAILABLE,
+        CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
+        CancelRescheduleReasonCode.NO_SHOW_UP,
+        CancelRescheduleReasonCode.OTHER,
+      ],
+      identity,
+    );
   }
 
-  @Cached(({ clinicId }: IIdentity, codes) => `cancel-reschedule-${clinicId}-${codes}`)
+  @Cached((codes, identity: IIdentity) => `cancel-reschedule-${identity?.clinicId ?? 0}-${codes}`)
   public getCancelRescheduleReasons(
-    { clinicId }: IIdentity,
     codes: CancelRescheduleReasonCode[],
+    identity?: IIdentity,
   ): Promise<AppointmentCancelRescheduleReasonLookupModel[]> {
     if (!codes || codes.length === 0) {
       throw new BadRequestException({
@@ -222,7 +224,7 @@ export class LookupsService {
     return this.appointmentCancelRescheduleReasonRepo.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
         code: {
           [Op.in]: codes,
@@ -230,6 +232,18 @@ export class LookupsService {
       },
     });
   }
+
+  /**
+   * @param identity
+   * @returns [Null] or [Null, clinicId] probided identity
+   */
+  getLookupClinicCondition = (identity?: IIdentity) => {
+    const condition = [null];
+    if (identity) {
+      condition.push(identity.clinicId);
+    }
+    return condition;
+  };
 
   /**
    * find Appointments Primary And Secondary Actions By Array Of Status Ids
@@ -687,16 +701,15 @@ export class LookupsService {
    * example: fullfilled,cancelled,pending,rejected
    * @param transaction
    */
-  @Cached(({ clinicId }: IIdentity) => `apptRequeststatus-${clinicId}`)
+  @Cached((identity: IIdentity) => `apptRequeststatus-${identity?.clinicId ?? 0}`)
   public findAllAppointmentRequestStatusLookups(
-    identity,
+    identity?: IIdentity,
     transaction?: Transaction,
   ): Promise<AppointmentRequestStatusLookupsModel[]> {
-    const { clinicId } = identity;
     return this.appointmentRequestStatusLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
       transaction,
@@ -709,16 +722,15 @@ export class LookupsService {
    * example: schedule,reschedule,cancel
    * @param transaction
    */
-  @Cached(({ clinicId }: IIdentity) => `apptRequestTypes-${clinicId}`)
+  @Cached((identity: IIdentity) => `apptRequestTypes-${identity?.clinicId ?? 0}`)
   public findAllAppointmentRequestTypesLookups(
-    identity,
+    identity?: IIdentity,
     transaction?: Transaction,
   ): Promise<AppointmentRequestTypesLookupsModel[]> {
-    const { clinicId } = identity;
     return this.appointmentRequestTypesLookupsRepository.findAll({
       where: {
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: this.getLookupClinicCondition(identity),
         },
       },
       transaction,

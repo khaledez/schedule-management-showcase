@@ -216,7 +216,7 @@ describe('# Cancel Reschedule Reasons', () => {
 
   test('# getCancelRescheduleReasons: null input', async () => {
     try {
-      await service.getCancelRescheduleReasons(identity, null);
+      await service.getCancelRescheduleReasons(null, identity);
       fail("Shouldn't have made it here");
     } catch (error) {
       expect(error).toBeInstanceOf(BadRequestException);
@@ -227,7 +227,7 @@ describe('# Cancel Reschedule Reasons', () => {
 
   test('# getCancelRescheduleReasons: empty array input', async () => {
     try {
-      await service.getCancelRescheduleReasons(identity, []);
+      await service.getCancelRescheduleReasons([], identity);
       fail("Shouldn't have made it here");
     } catch (error) {
       expect(error).toBeInstanceOf(BadRequestException);
@@ -242,7 +242,7 @@ describe('# Cancel Reschedule Reasons', () => {
       CancelRescheduleReasonCode.NO_SHOW_UP,
       CancelRescheduleReasonCode.ABORT_VISIT,
     ];
-    const result = await service.getCancelRescheduleReasons(identity, codes);
+    const result = await service.getCancelRescheduleReasons(codes, identity);
     expect(result.length).toEqual(codes.length);
     const resultCodes = result.map((reason) => reason.code);
     codes.forEach((code) => {
