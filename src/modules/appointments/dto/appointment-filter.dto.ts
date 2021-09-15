@@ -101,4 +101,9 @@ export class AppointmentFilterDto {
   @IsOptional()
   @IsEnum(TimeScopesEnum)
   timeScope?: TimeScopesEnum;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FilterIdsInputDto)
+  clinicId?: FilterIdsInputDto;
 }

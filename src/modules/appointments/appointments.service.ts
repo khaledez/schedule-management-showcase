@@ -121,14 +121,14 @@ export class AppointmentsService {
         identity,
         AppointmentStatusEnum.WAIT_LIST,
       );
-      delete where.upcomingAppointment;
+      if (queryParams.filter?.clinicId) {
+        where.clinicId = this.getEntityIdWhereClause(queryParams.filter?.clinicId);
+      }
+
       where = {
         ...where,
         patientId: {
           [Op.in]: patientIds,
-        },
-        clinicId: {
-          [Op.in]: clinicIds,
         },
         [Op.or]: [
           { appointmentStatusId: { [Op.not]: appt_status_Waitlist } },
@@ -181,9 +181,10 @@ export class AppointmentsService {
 
   private async appointmentSearchWhere(queryParams, identity: IIdentity) {
     const where: any = {
-      clinicId: identity.clinicId,
+      clinicId: {
+        [Op.in]: identity.userInfo.clinicIds,
+      },
       deletedBy: null,
-      upcomingAppointment: true,
     };
     if (queryParams.filter?.doctorId) {
       where.staffId = this.getEntityIdWhereClause(queryParams.filter?.doctorId);
@@ -228,7 +229,10 @@ export class AppointmentsService {
             ...patientInfoInclude,
           },
         ],
-        where,
+        where: {
+          ...where,
+          upcomingAppointment: true,
+        },
         order,
         limit,
         offset,
