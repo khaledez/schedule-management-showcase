@@ -24,11 +24,11 @@ export class XRayInterceptor implements NestInterceptor {
     });
 
     const handled = next.handle();
-    handled.subscribe({
-      error(err) {
-        segment.addError(err);
-      },
-    });
+    // handled.subscribe({
+    //   error(err) {
+    //     segment.addError(err);
+    //   },
+    // });
 
     return handled;
   }
