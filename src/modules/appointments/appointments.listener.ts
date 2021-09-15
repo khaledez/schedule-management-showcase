@@ -125,7 +125,7 @@ export class AppointmentsListener {
           payload.patientId,
           cancelReasonId,
           'visit aborted',
-          false,
+          true,
           payload.data.visit.id,
           transaction,
         );
