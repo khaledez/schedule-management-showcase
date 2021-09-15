@@ -192,6 +192,7 @@ export class LookupsService {
       CancelRescheduleReasonCode.PATIENT_CANNOT_MAKE_IT,
       CancelRescheduleReasonCode.NO_SHOW_UP,
       CancelRescheduleReasonCode.RELEASE_PATIENT,
+      CancelRescheduleReasonCode.ABORT_VISIT,
       CancelRescheduleReasonCode.OTHER,
     ]);
   }
@@ -406,7 +407,12 @@ export class LookupsService {
     const res = await this.appointmentStatusLookupsRepository.findAll({
       where: {
         code: {
-          [Op.in]: [AppointmentStatusEnum.CANCELED, AppointmentStatusEnum.COMPLETE, AppointmentStatusEnum.RELEASED],
+          [Op.in]: [
+            AppointmentStatusEnum.CANCELED,
+            AppointmentStatusEnum.COMPLETE,
+            AppointmentStatusEnum.RELEASED,
+            AppointmentStatusEnum.RESCHEDULED,
+          ],
         },
       },
       attributes: ['id'],

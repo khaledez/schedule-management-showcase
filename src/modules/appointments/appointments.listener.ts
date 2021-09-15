@@ -120,15 +120,13 @@ export class AppointmentsListener {
           identity,
           CancelRescheduleReasonCode.ABORT_VISIT,
         );
-        await this.appointmentsService.cancelAppointment(
+        await this.appointmentsService.cancelPatientAppointments(
           identity,
-          {
-            appointmentId: payload.data.visit.appointmentId,
-            keepAvailabiltySlot: false,
-            cancelReasonId: cancelReasonId,
-            cancelReasonText: 'visit aborted',
-            visitId: payload.data.visit.id,
-          },
+          payload.patientId,
+          cancelReasonId,
+          'visit aborted',
+          false,
+          payload.data.visit.id,
           transaction,
         );
         // 3. create a provisional appointment with the same date as the cancelled appointment
@@ -139,7 +137,7 @@ export class AppointmentsListener {
             durationMinutes: appointment.durationMinutes,
             appointmentTypeId: payload.data.visit.appointmentTypeId,
             patientId: payload.patientId,
-            startDate: DateTime.fromJSDate(appointment.startDate).toISO(), // TODO - ask Shoukri What to use in this case?
+            startDate: DateTime.fromJSDate(appointment.startDate).toISO(),
           },
           true,
           transaction,
