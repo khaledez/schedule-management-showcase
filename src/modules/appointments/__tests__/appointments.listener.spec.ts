@@ -18,6 +18,7 @@ import { AvailabilityValidator } from '../../availability/availability.validator
 import { PatientInfoModel } from '../../patient-info/patient-info.model';
 import { PatientInfoService } from '../../patient-info';
 import {
+  buildICompleteVisitEventKeepOriginalAppointment,
   buildIConfirmCompleteVisitEvent,
   getProvisionalPatientInfoAfterCompleteVisit,
   getReleasePatientInfoAfterCompleteVisit,
@@ -133,5 +134,33 @@ describe('# Appointment event listener', () => {
     expect(updatedAppointment.status.code).toEqual(AppointmentStatusEnum.RELEASED);
     const updatePatientInfo = await patientInfoService.getById(patientInfo.id);
     expect(updatePatientInfo.statusCode).toEqual(PatientStatus.RELEASED);
+  });
+
+  test('# Complete visit flow: use original appointment', async () => {
+    const patientInfo = await patientInfoService.create(getReleasePatientInfoAfterCompleteVisit());
+    const identity = getTestIdentity(105, patientInfo.clinicId);
+    const readyStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+    const appointment = await appointmentsService.createAppointment(
+      identity,
+      {
+        appointmentTypeId: 1,
+        durationMinutes: 15,
+        patientId: patientInfo.id,
+        staffId: 1,
+        startDate: '2021-10-25T07:43:40.084Z',
+        appointmentStatusId: readyStatusId,
+      },
+      true,
+    );
+    const eventPayLoad = buildICompleteVisitEventKeepOriginalAppointment(patientInfo, appointment, false);
+    await appointmentListener.handleCompleteVisitEvent(eventPayLoad);
+
+    const updatedAppointment = await AppointmentsModel.findOne({
+      where: { id: appointment.id },
+      include: [{ all: true }],
+    });
+    expect(updatedAppointment.status.code).toEqual(AppointmentStatusEnum.COMPLETE);
+    const newAppointment = await appointmentsService.getAppointmentByPatientId(identity, patientInfo.id);
+    expect(newAppointment.id !== updatedAppointment.id).toBeTruthy();
   });
 });

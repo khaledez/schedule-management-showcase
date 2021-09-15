@@ -75,6 +75,53 @@ export function buildIConfirmCompleteVisitEvent(
   };
 }
 
+export function buildICompleteVisitEventKeepOriginalAppointment(
+  patientInfo: PatientInfoAttributes,
+  appointment: AppointmentsModelAttributes,
+  release: boolean,
+): IConfirmCompleteVisitEvent {
+  return {
+    eventName: 'visit_complete',
+    userId: patientInfo.id,
+    source: 'visit-management',
+    patientId: patientInfo.id,
+    clinicId: patientInfo.clinicId,
+    staffId: 103,
+    langCode: 'EN',
+    data: {
+      patient: {
+        id: patientInfo.id,
+        release: release,
+        displayName: patientInfo.fullName,
+      },
+      visit: {
+        id: 1,
+        documentId: 'asd',
+        appointment: {
+          id: appointment.id,
+          typeId: appointment.appointmentTypeId,
+          startDate: appointment.startDate,
+          actualStartDate: appointment.startDate.toISOString(),
+          modeCode: 'IN-PERSON',
+          amended: false,
+          completedBy: 103,
+          completedAt: appointment.endDate,
+        },
+      },
+      requisition: {},
+      billing: {
+        services: [],
+      },
+      upcomingAppointment: {
+        id: null,
+        typeId: null,
+        date: null,
+        release: release,
+      },
+    },
+  };
+}
+
 export function getQueryGenericSortMapperTestCases() {
   const associationFields: AssociationFieldsSortCriteria = {
     STATUS: {

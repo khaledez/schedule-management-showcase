@@ -70,7 +70,7 @@ export class AppointmentsListener {
           visit: {
             id: visitId,
             documentId: documentId,
-            appointment: { id: appointmentId },
+            appointment: { id: appointmentId, typeId: visitAppointmentTypeId, startDate: visitAppointmentStartDate },
           },
         },
       } = payload;
@@ -87,8 +87,8 @@ export class AppointmentsListener {
           appointmentId,
           visitId,
           documentId,
-          appointmentTypeId,
-          startDate,
+          appointmentTypeId ?? visitAppointmentTypeId,
+          startDate ?? visitAppointmentStartDate,
           transaction,
         );
       }
