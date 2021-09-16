@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { FilterDateInputDto, Identity, IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
+import { Identity, IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
 import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
@@ -55,6 +55,7 @@ import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
 import { PatientInfoService } from '../patient-info';
 import { Includeable } from 'sequelize/types/lib/model';
+import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -122,7 +123,7 @@ export class AppointmentsService {
         AppointmentStatusEnum.WAIT_LIST,
       );
       if (queryParams.filter?.clinicId) {
-        where.clinicId = this.getEntityIdWhereClause(queryParams.filter?.clinicId);
+        where.clinicId = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.clinicId);
       }
 
       where = {
@@ -136,14 +137,14 @@ export class AppointmentsService {
         ],
       };
       if (queryParams.filter?.timeScope) {
-        const appintmentFinalStatuses = await this.lookupsService.getFinalStatusIds(identity);
+        const appointmentFinalStatuses = await this.lookupsService.getFinalStatusIds(identity);
         const appointmentStatusIdFilter =
           queryParams.filter.timeScope === TimeScopesEnum.PAST
             ? {
-                [Op.in]: appintmentFinalStatuses,
+                [Op.in]: appointmentFinalStatuses,
               }
             : {
-                [Op.notIn]: appintmentFinalStatuses,
+                [Op.notIn]: appointmentFinalStatuses,
               };
 
         where = {
@@ -179,6 +180,7 @@ export class AppointmentsService {
     }
   }
 
+  // eslint-disable-next-line complexity
   private async appointmentSearchWhere(queryParams, identity: IIdentity) {
     const where: any = {
       clinicId: {
@@ -187,7 +189,7 @@ export class AppointmentsService {
       deletedBy: null,
     };
     if (queryParams.filter?.doctorId) {
-      where.staffId = this.getEntityIdWhereClause(queryParams.filter?.doctorId);
+      where.staffId = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.doctorId);
     }
     if (queryParams.filter?.appointmentStatusId) {
       where.appointmentStatusId = await this.getAppointmentStatusIdWhereClause(
@@ -196,13 +198,22 @@ export class AppointmentsService {
       );
     }
     if (queryParams.filter?.appointmentTypeId) {
-      where.appointmentTypeId = this.getEntityIdWhereClause(queryParams.filter?.appointmentTypeId);
+      const idsToExclude = await this.lookupsService.getFinalStatusIds(identity);
+      where.appointmentTypeId = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.appointmentTypeId, {
+        [Op.notIn]: idsToExclude,
+      });
     }
     if (queryParams.filter?.date) {
-      const startDateWhereClause = this.getStartDateWhereClause(queryParams.filter?.date || {});
+      const startDateWhereClause = WhereClauseBuilder.getDateWhereClause(queryParams.filter?.date || {});
       where[Op.or] = [{ startDate: startDateWhereClause }, { appointmentRequestDate: startDateWhereClause }];
     }
-
+    if (queryParams.filter?.time) {
+      where[Op.and] = WhereClauseBuilder.getTimeWhereClause(
+        'AppointmentsModel',
+        AppointmentsService.DATE_COLUMN,
+        queryParams.filter.time.between,
+      );
+    }
     return where;
   }
 
@@ -298,7 +309,7 @@ export class AppointmentsService {
     if (queryParams?.filter?.patientDoctorId) {
       where = {
         ...where,
-        doctorId: this.getEntityIdWhereClause(queryParams.filter?.patientDoctorId || { or: null }),
+        doctorId: WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.patientDoctorId || { or: null }),
       };
     }
 
@@ -307,16 +318,6 @@ export class AppointmentsService {
       as: 'patient',
       where: where,
     };
-  }
-
-  // TODO: refactor filters mappers to a proper util class
-  getEntityIdWhereClause(entity: FilterIdsInputDto) {
-    if (entity && entity.in) {
-      return { [Op.in]: entity.in };
-    } else if (entity && entity.eq) {
-      return { [Op.eq]: entity.eq };
-    }
-    return { [Op.notIn]: [] };
   }
 
   async getAppointmentStatusIdWhereClause(identity: IIdentity, entity: FilterIdsInputDto) {
@@ -328,19 +329,6 @@ export class AppointmentsService {
     // get final states for appointments
     const idsToExclude = await this.lookupsService.getFinalStatusIds(identity);
     return { [Op.notIn]: idsToExclude };
-  }
-
-  getStartDateWhereClause(dateRange: FilterDateInputDto) {
-    // Set endTime to 23:59:59 due to sequelize limitations
-    if (dateRange.between) {
-      dateRange.between[1].setUTCHours(23, 59, 59, 999);
-      return { [Op.between]: dateRange.between };
-    } else if (dateRange.eq) {
-      const end = new Date(dateRange.eq.getTime());
-      end.setUTCHours(23, 59, 59, 999);
-      return { [Op.between]: [dateRange.eq, end] };
-    }
-    return { [Op.notIn]: [] };
   }
 
   public async getPatientAppointmentHistory(
@@ -1376,77 +1364,6 @@ export class AppointmentsService {
       });
     }
   }
-
-  // eslint-disable-next-line complexity
-  readonly handleAppointmentCategoryFilter = (
-    { filter = {} },
-    logger: Logger,
-  ): { name: string; filter: Record<string, unknown> } | Record<string, unknown> => {
-    try {
-      const filterName = 'appointmentCategory';
-      const waitlist = 'WAITLIST';
-      const appt = 'APPOINTMENT';
-      const isApptCategoryFilterExist = Object.keys(filter).findIndex((e) => e === filterName) !== -1;
-      logger.debug({
-        function: 'handleAppointmentCategoryFilter START',
-        filter,
-        isApptCategoryFilterExist,
-      });
-      if (!isApptCategoryFilterExist) {
-        return {};
-      }
-      const comingOperator: string = Object.keys(filter[filterName])[0];
-      const operatorValue = filter[filterName][comingOperator];
-      const supportedOperators = ['eq', 'ne', 'in'];
-      logger.debug({
-        function: 'handleAppointmentCategoryFilter next 1',
-        comingOperator,
-        operatorValue,
-        condition: !supportedOperators.includes(comingOperator),
-      });
-      if (!supportedOperators.includes(comingOperator)) {
-        throw new BadRequestException(`Not supported filter on appointmentCategory`);
-      }
-      // check wait list is needed!
-      if (
-        (comingOperator === 'eq' && operatorValue === waitlist) ||
-        (comingOperator === 'ne' && operatorValue === appt) ||
-        (comingOperator === 'in' && operatorValue.includes(waitlist))
-      ) {
-        return {
-          name: filterName,
-          filter: {
-            availabilityId: {
-              eq: null,
-            },
-          },
-        };
-      }
-      // check appointment is needed!
-      else if (
-        (comingOperator === 'eq' && operatorValue === appt) ||
-        (comingOperator === 'ne' && operatorValue === waitlist) ||
-        (comingOperator === 'in' && operatorValue.includes(appt))
-      ) {
-        return {
-          name: filterName,
-          filter: {
-            availabilityId: {
-              ne: null,
-            },
-          },
-        };
-      }
-      // by default returning all.
-
-      return {
-        name: filterName,
-        filter: {},
-      };
-    } catch (error) {
-      throw new BadRequestException(error);
-    }
-  };
 
   public async getAppointmentByPatientId(identity: IIdentity, patientId: number) {
     const finalStatusId = await this.lookupsService.getFinalStatusIds(identity);

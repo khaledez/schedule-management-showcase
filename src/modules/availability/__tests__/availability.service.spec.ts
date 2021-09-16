@@ -18,7 +18,6 @@ import {
   buildUpdateAvailabilityDto,
   createAvailabilityDto,
   getAvailabilitiesCountTestCases,
-  getAvailabilitySearchDateWhereClauseTestCases,
   getEntityIdWhereClauseTestCases,
   getSearchForAvailabilitiesTestCases,
   getSuggestionsData,
@@ -153,10 +152,6 @@ describe('# AvailabilityService', () => {
 
     test.each(getEntityIdWhereClauseTestCases())('# getEntityIdWhereClause', (testCase) => {
       expect(availabilityService.getEntityIdWhereClause(testCase.filter)).toEqual(testCase.expected);
-    });
-
-    test.each(getAvailabilitySearchDateWhereClauseTestCases())('# getAvailabilitySearchDateWhereClause', (testCase) => {
-      expect(testCase.expected).toEqual(availabilityService.getAvailabilitySearchDateWhereClause(testCase.filter));
     });
 
     test('# getSuggestionsDateWhereClause', () => {

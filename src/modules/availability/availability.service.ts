@@ -1,4 +1,4 @@
-import { FilterDateInputDto, IIdentity } from '@monmedx/monmedx-common';
+import { IIdentity } from '@monmedx/monmedx-common';
 import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   forwardRef,
@@ -39,6 +39,7 @@ import { BulkUpdateResult } from './interfaces/availability-bulk-update.interfac
 import { AvailabilityEdgesInterface } from './interfaces/availability-edges.interface';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityModel } from './models/availability.model';
+import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
 
 @Injectable()
 export class AvailabilityService {
@@ -97,15 +98,12 @@ export class AvailabilityService {
     return availability;
   }
 
-  async doesExist(id: number): Promise<boolean> {
-    const availability = await this.availabilityRepository.findByPk(id);
-    return availability !== null;
-  }
-
   /**
    *
    * @param ids array of availability ids to be deleted
    *
+   * @param identity
+   * @param transaction
    */
   async bulkRemove(ids: Array<number>, identity: IIdentity, transaction: Transaction): Promise<Array<number>> {
     try {
@@ -370,7 +368,7 @@ export class AvailabilityService {
   }
 
   async searchForAvailabilities(identity: IIdentity, payload: SearchAvailabilityDto): Promise<CalendarEntry[]> {
-    const dateWhereClause = this.getAvailabilitySearchDateWhereClause(payload.dateRange);
+    const dateWhereClause = WhereClauseBuilder.getDateWhereClause(payload.dateRange);
     const staffIdWhereClause = this.getEntityIdWhereClause(payload.staffId);
     const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(payload.appointmentTypeId);
     const options: FindOptions = {
@@ -400,19 +398,6 @@ export class AvailabilityService {
       { isOccupied: true, updatedBy: identity.userId, updatedAt: new Date() },
       { where: { id: availabilityId }, transaction },
     );
-  }
-
-  getAvailabilitySearchDateWhereClause(dateRange: FilterDateInputDto) {
-    // Set endTime to 23:59:59 due to sequelize limitations
-    if (dateRange.between) {
-      dateRange.between[1].setUTCHours(23, 59, 59, 999);
-      return { [Op.between]: dateRange.between };
-    } else if (dateRange.eq) {
-      const end = new Date(dateRange.eq.getTime());
-      end.setUTCHours(23, 59, 59, 999);
-      return { [Op.between]: [dateRange.eq, end] };
-    }
-    return { [Op.notIn]: [] };
   }
 }
 
