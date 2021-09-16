@@ -8,6 +8,7 @@ import {
   Permissions,
 } from '@monmedx/monmedx-common';
 import {
+  BadRequestException,
   Body,
   Controller,
   forwardRef,
@@ -23,13 +24,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { DEFAULT_EVENT_DURATION_MINS } from 'common/constants';
-import { CancelRescheduleReasonCode } from 'common/enums';
+import { AppointmentStatusEnum, CancelRescheduleReasonCode, ErrorCodes } from 'common/enums';
 import { AppointmentStatusActions } from 'common/intercepter/appointment-status-actions';
 import { UserError } from 'common/interfaces/user-error.interface';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
 import { PatientInfoService } from 'modules/patient-info';
 import { LookupsService } from '../lookups/lookups.service';
-import { AppointmentsModel } from './appointments.model';
+import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
 import { AppointmentsService } from './appointments.service';
 import { AdhocAppointmentDto } from './dto/appointment-adhoc.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
@@ -173,12 +174,12 @@ export class AppointmentsController {
     this.logger.debug({ identity, appointmentData: dto });
 
     await this.patientSvc.ensurePatientInfoIsActive(dto.patientId, authToken);
-    // TODO: The cancel reason should be optional in the dto
     const cancelReasonId = await this.lookupsService.getCancelRescheduleReasonByCode(
       identity,
       CancelRescheduleReasonCode.OTHER,
     );
     const previousAppointment = await this.appointmentsService.getPatientActiveAppointment(identity, dto.patientId);
+    await this.validateVisitNotInProgress(identity, previousAppointment);
     const appointment = await this.appointmentsService.createPatientAppointment(
       identity,
       dto,
@@ -196,20 +197,19 @@ export class AppointmentsController {
   @Post('reschedule')
   async rescheduleAppointment(@Identity() identity: IIdentity, @Body() dto: RescheduleAppointmentDto) {
     const previousAppointment = await this.appointmentsService.findOne(identity, dto.appointmentId);
+    await this.validateVisitNotInProgress(identity, previousAppointment);
     const appointment = await this.appointmentsService.rescheduleAppointment(identity, dto);
-    this.eventPublisher.publishAppointmentEvent(
-      AppointmentsEventName.APPOINTMENT_RESCHEDULED,
-      appointment,
-      previousAppointment,
-      null,
-      identity,
-    );
+    const eventName = dto.staffChangedPermanent
+      ? AppointmentsEventName.APPOINTMENT_CANCELED
+      : AppointmentsEventName.APPOINTMENT_RESCHEDULED;
+    this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, identity);
     return { appointment: appointment };
   }
 
   @Post('cancel')
   async cancelAppointment(@Identity() identity: IIdentity, @Body() dto: CancelAppointmentDto) {
     const previousAppointment = await this.appointmentsService.findOne(identity, dto.appointmentId);
+    await this.validateVisitNotInProgress(identity, previousAppointment);
     const appointment = await this.appointmentsService.cancelAppointment(identity, dto);
     this.eventPublisher.publishAppointmentEvent(
       AppointmentsEventName.APPOINTMENT_CANCELED,
@@ -311,6 +311,7 @@ export class AppointmentsController {
     @Body() dto: ChangeAppointmentDoctorDto,
   ): Promise<unknown> {
     const previousAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, dto.patientId);
+    await this.validateVisitNotInProgress(identity, previousAppointment);
     const appointment = await this.appointmentsService.createPatientAppointment(
       identity,
       {
@@ -332,5 +333,25 @@ export class AppointmentsController {
       identity,
     );
     return { appointment: appointment };
+  }
+
+  /**
+   * Throws an error if the patient active appointment is in progress
+   * @param identity
+   * @param appointment
+   * @private
+   */
+  async validateVisitNotInProgress(identity: IIdentity, appointment: AppointmentsModelAttributes) {
+    if (!appointment?.appointmentStatusId) {
+      return;
+    }
+    const visitInProgress = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.VISIT);
+    if (appointment.appointmentStatusId === visitInProgress) {
+      throw new BadRequestException({
+        fields: [],
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'Patient has visit in progress',
+      });
+    }
   }
 }
