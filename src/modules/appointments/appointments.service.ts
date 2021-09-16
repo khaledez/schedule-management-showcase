@@ -864,14 +864,14 @@ export class AppointmentsService {
    * Handles appointmentStatusId attribute
    * @param identity
    * @param dto
-   * @returns default id (READY) or provided id
+   * @returns default id (SCHEDULE) or provided id
    */
   private getAppointmentStatusId(identity: IIdentity, dto: CreateAppointmentDto): Promise<number> {
     const id = dto.appointmentStatusId;
     if (id) {
       return Promise.resolve(id);
     }
-    return this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+    return this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
   }
 
   async findOne(

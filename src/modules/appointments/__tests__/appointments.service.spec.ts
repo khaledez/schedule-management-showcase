@@ -653,7 +653,7 @@ describe('# Cancel appointment', () => {
     });
     const appointment = await createAppointment();
     const appointmentTypeId = await lookupsService.getFUBAppointmentTypeId(identity);
-    const readyStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+    const scheduleStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
     const rescheduledId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RESCHEDULED);
     const rescheduleReasonText = 'create new appointment';
     const rescheduleReasonId = await lookupsService.getCancelRescheduleReasonByCode(
@@ -673,7 +673,7 @@ describe('# Cancel appointment', () => {
       rescheduleReasonText,
     );
 
-    expect(newAppointment.appointmentStatusId).toEqual(readyStatusId);
+    expect(newAppointment.appointmentStatusId).toEqual(scheduleStatusId);
 
     const rescheduledAppointment = await appointmentsService.findOne(identity, appointment.id);
     expect(rescheduledAppointment.cancelRescheduleText).toEqual(rescheduleReasonText);
