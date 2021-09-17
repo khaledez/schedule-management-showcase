@@ -18,4 +18,8 @@ export class ChangeAppointmentDoctorDto {
   @IsOptional()
   @IsISO8601()
   provisionalDate?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  appointmentStatusId?: number;
 }

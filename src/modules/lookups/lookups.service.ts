@@ -369,6 +369,7 @@ export class LookupsService {
     }
   }
 
+  @Cached(() => `getFinalStatusIds`)
   public getFinalStatusIds(identity: IIdentity): Promise<number[]> {
     return Promise.all([
       this.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),

@@ -697,6 +697,7 @@ export class AppointmentsService {
         appointmentVisitModeId,
         appointmentStatusId,
       }));
+      await this.isAllowedSchedulingStatus(identity, appointmentStatusId);
       const provisionalDate: Date = provisionalAppointment ? provisionalAppointment.startDate : availability.startDate;
 
       // 3.2 create the appointment
@@ -860,6 +861,17 @@ export class AppointmentsService {
       return Promise.resolve(id);
     }
     return this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
+  }
+
+  private async isAllowedSchedulingStatus(identity: IIdentity, appointmentStatusId: number) {
+    const allowedSchedulingStatuses = await this.lookupsService.getFinalStatusIds(identity);
+    if (allowedSchedulingStatuses.includes(appointmentStatusId)) {
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'Used AppointmentStatusId is not allowed for scheduling/rescheduling appointments',
+        fields: ['appointmentStatusId'],
+      });
+    }
   }
 
   async findOne(
@@ -1183,7 +1195,7 @@ export class AppointmentsService {
             {
               patientId: appointment.patientId,
               staffId: staffId,
-              appointmentStatusId: scheduleStatusId,
+              appointmentStatusId: dto.appointmentStatusId ?? scheduleStatusId,
               appointmentVisitModeId: dto.appointmentVisitModeId ?? appointment.appointmentVisitModeId,
               appointmentTypeId: dto.appointmentTypeId ?? appointment.appointmentTypeId,
               availabilityId: dto.availabilityId,

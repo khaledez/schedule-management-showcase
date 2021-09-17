@@ -59,4 +59,8 @@ export class RescheduleAppointmentDto {
   @IsOptional()
   @Type(() => Number)
   appointmentVisitModeId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  appointmentStatusId?: number;
 }

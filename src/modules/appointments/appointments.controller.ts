@@ -317,6 +317,7 @@ export class AppointmentsController {
       {
         patientId: dto.patientId,
         staffId: dto.doctorId,
+        appointmentStatusId: dto.appointmentStatusId,
         appointmentTypeId: dto.appointmentTypeId ?? previousAppointment.appointmentTypeId,
         startDate: dto.provisionalDate ?? previousAppointment.startDate.toISOString(),
         durationMinutes: previousAppointment.durationMinutes,
