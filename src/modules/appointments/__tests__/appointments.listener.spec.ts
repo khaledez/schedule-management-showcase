@@ -30,6 +30,7 @@ import { LookupsService } from '../../lookups/lookups.service';
 import { AppointmentStatusEnum } from '../../../common/enums';
 import { PatientStatus } from '../../../common/enums/patient-status';
 import { AppointmentEventPublisher } from '../appointments.event-publisher';
+import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 
 describe('# Appointment event listener', () => {
   let appointmentsService: AppointmentsService;
@@ -100,7 +101,7 @@ describe('# Appointment event listener', () => {
 
     const updatedAppointment = await AppointmentsModel.findOne({
       where: { id: appointment.id },
-      include: [{ all: true }],
+      include: [{ model: AppointmentStatusLookupsModel }],
     });
     expect(updatedAppointment.status.code).toEqual(AppointmentStatusEnum.COMPLETE);
     const createdAppointment = await appointmentsService.getAppointmentByPatientId(identity, patientInfo.id);
@@ -129,7 +130,7 @@ describe('# Appointment event listener', () => {
 
     const updatedAppointment = await AppointmentsModel.findOne({
       where: { id: appointment.id },
-      include: [{ all: true }],
+      include: [{ model: AppointmentStatusLookupsModel }],
     });
     expect(updatedAppointment.status.code).toEqual(AppointmentStatusEnum.RELEASED);
     const updatePatientInfo = await patientInfoService.getById(patientInfo.id);
@@ -157,7 +158,7 @@ describe('# Appointment event listener', () => {
 
     const updatedAppointment = await AppointmentsModel.findOne({
       where: { id: appointment.id },
-      include: [{ all: true }],
+      include: [{ model: AppointmentStatusLookupsModel }],
     });
     expect(updatedAppointment.status.code).toEqual(AppointmentStatusEnum.COMPLETE);
     const newAppointment = await appointmentsService.getAppointmentByPatientId(identity, patientInfo.id);

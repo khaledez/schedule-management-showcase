@@ -4,28 +4,28 @@ import { IsISO8601, IsNumber, IsOptional } from 'class-validator';
 export class UpdateAppointmentDto {
   @IsOptional()
   @IsISO8601()
-  startDate: string;
+  startDate?: string;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  durationMinutes: number;
+  durationMinutes?: number;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  appointmentTypeId: number;
+  appointmentTypeId?: number;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  appointmentVisitModeId: number;
+  appointmentVisitModeId?: number;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  appointmentStatusId: number;
+  appointmentStatusId?: number;
 
   @IsOptional()
-  complaintsNotes: string;
+  complaintsNotes?: string;
 }

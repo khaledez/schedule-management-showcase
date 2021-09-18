@@ -1,18 +1,31 @@
-import { CalendarType } from 'common/enums';
+import { CalendarType, ErrorCodes } from 'common/enums';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { LookupWithCodeAttributes } from 'modules/lookups/models';
 import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { Op } from 'sequelize';
-import { BelongsTo, Column, DataType, DefaultScope, ForeignKey, Scopes, Table } from 'sequelize-typescript';
-import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
-import { BaseModel } from '../../common/models/base.model';
+import {
+  AfterCreate,
+  AfterUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  DefaultScope,
+  ForeignKey,
+  HasMany,
+  Scopes,
+  Table,
+} from 'sequelize-typescript';
+import { AppointmentStatusEnum } from '../../common/enums';
+import { BaseModel } from '../../common/models';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { PatientInfoModel } from '../patient-info/patient-info.model';
-import { AppointmentRequestsModel } from '../appointment-requests/models/appointment-requests.model';
+import { AppointmentRequestsModel } from '../appointment-requests/models';
+import { AppointmentStatusHistoryModel } from '../appointment-history/models/appointment-status-history.model';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 const { INTEGER, VIRTUAL } = DataType;
 
 export interface AppointmentsModelAttributes extends CalendarEntry {
@@ -46,6 +59,7 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
     deletedBy: null,
   },
   attributes: { exclude: ['deletedAt', 'deletedBy'] },
+  individualHooks: true,
 }))
 // TODO update scope to correctly connect patient and lookups
 @Scopes(() => ({
@@ -81,6 +95,8 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
 export class AppointmentsModel
   extends BaseModel<AppointmentsModelAttributes, AppointmentsModelAttributes>
   implements AppointmentsModelAttributes {
+  private static readonly logger = new Logger(AppointmentsModel.name);
+
   @Column
   @ForeignKey(() => PatientInfoModel)
   patientId: number;
@@ -181,6 +197,9 @@ export class AppointmentsModel
   @BelongsTo(() => AppointmentRequestsModel, 'appointmentRequestId')
   appointmentRequest: AppointmentRequestsModel;
 
+  @HasMany(() => AppointmentStatusHistoryModel)
+  statusHistory: AppointmentStatusHistoryModel[];
+
   @Column({
     type: DataType.VIRTUAL,
     get() {
@@ -200,5 +219,46 @@ export class AppointmentsModel
   @Column(VIRTUAL(INTEGER))
   get hasPendingAppointmentRequest() {
     return !!this.appointmentRequestId;
+  }
+
+  @AfterCreate
+  static addStatusToHistoryAfterCreate(instance: AppointmentsModel) {
+    AppointmentStatusHistoryModel.create({
+      appointmentId: instance.id,
+      clinicId: instance.clinicId,
+      appointmentStatusId: instance.appointmentStatusId,
+      createdBy: instance.createdBy,
+      createdAt: instance.createdAt,
+    }).catch((error) => {
+      const message = `Failed to add status ${instance.appointmentStatusId} change to appointment ${instance.id} history`;
+      AppointmentsModel.logger.error(`${message}: ${error.message}`);
+      throw new InternalServerErrorException({
+        fields: [],
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: message,
+      });
+    });
+  }
+
+  @AfterUpdate
+  static async addStatusToHistoryAfterUpdate(updatedAppointment) {
+    if (!updatedAppointment.changed().includes('appointmentStatusId')) {
+      return;
+    }
+    await AppointmentStatusHistoryModel.create({
+      appointmentId: updatedAppointment.id,
+      clinicId: updatedAppointment.clinicId,
+      appointmentStatusId: updatedAppointment.appointmentStatusId,
+      createdBy: updatedAppointment.updatedBy,
+      createdAt: updatedAppointment.updatedAt,
+    }).catch((error) => {
+      const message = `Failed to add status ${updatedAppointment.appointmentStatusId} change to appointment ${updatedAppointment.id} history`;
+      AppointmentsModel.logger.error(`${message}: ${error.message}`);
+      throw new InternalServerErrorException({
+        fields: [],
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: message,
+      });
+    });
   }
 }

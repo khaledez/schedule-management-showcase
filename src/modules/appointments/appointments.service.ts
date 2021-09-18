@@ -156,6 +156,7 @@ export class AppointmentsService {
         include: [
           {
             all: true,
+            required: false,
           },
         ],
         where,
@@ -235,6 +236,7 @@ export class AppointmentsService {
         include: [
           {
             all: true,
+            required: false,
           },
           {
             ...patientInfoInclude,
@@ -344,6 +346,7 @@ export class AppointmentsService {
         include: [
           {
             all: true,
+            required: false,
           },
         ],
         where: {
@@ -521,7 +524,7 @@ export class AppointmentsService {
 
     if (keepAvailabilitySlot !== false) {
       await AvailabilityModel.update(
-        { isOccupied: false },
+        { isOccupied: false, updatedBy: identity.userId },
         { transaction, where: { id: { [Op.in]: availabilities } } },
       );
     } else {
@@ -582,11 +585,11 @@ export class AppointmentsService {
       userInfo: null,
     };
     const statusReleasedId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED);
-
     const appointmentFinalStateIds: number[] = await this.lookupsService.getAppointmentFinalStateIds();
 
     await this.appointmentsRepository.update(
       {
+        updatedBy: identity.userId,
         appointmentStatusId: statusReleasedId,
         cancelRescheduleText: statusCode,
         upcomingAppointment: false,
@@ -883,6 +886,7 @@ export class AppointmentsService {
       include: [
         {
           all: true,
+          required: false,
         },
       ],
       transaction,
@@ -1174,7 +1178,9 @@ export class AppointmentsService {
         }
 
         // 3. cancel appointment and create a new appointment
-        const scheduleStatusId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
+        const scheduleStatusId =
+          dto.appointmentStatusId ??
+          (await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE));
         const rescheduleStatusId = await this.lookupsService.getStatusIdByCode(
           identity,
           AppointmentStatusEnum.RESCHEDULED,
@@ -1182,6 +1188,7 @@ export class AppointmentsService {
         const [rescheduleResult, createResult] = await Promise.all([
           AppointmentsModel.update(
             {
+              updatedBy: identity.userId,
               appointmentStatusId: rescheduleStatusId,
               cancelRescheduleReasonId: rescheduleReasonId,
               cancelRescheduleText: dto.rescheduleText,
@@ -1195,7 +1202,7 @@ export class AppointmentsService {
             {
               patientId: appointment.patientId,
               staffId: staffId,
-              appointmentStatusId: dto.appointmentStatusId ?? scheduleStatusId,
+              appointmentStatusId: scheduleStatusId,
               appointmentVisitModeId: dto.appointmentVisitModeId ?? appointment.appointmentVisitModeId,
               appointmentTypeId: dto.appointmentTypeId ?? appointment.appointmentTypeId,
               availabilityId: dto.availabilityId,
@@ -1251,7 +1258,7 @@ export class AppointmentsService {
       function: 'completeAppointment',
       completeStatusId,
     });
-    return this.appointmentsRepository.unscoped().update(
+    return this.appointmentsRepository.update(
       {
         appointmentStatusId: completeStatusId,
         updatedBy: identity.userId,
@@ -1313,7 +1320,6 @@ export class AppointmentsService {
               id: appointmentId,
             },
             transaction,
-            returning: true,
           });
           const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
           this.logger.debug({ method: 'appointmentService/updateAppointment', updatedAppt });
@@ -1390,6 +1396,7 @@ export class AppointmentsService {
       include: [
         {
           all: true,
+          required: false,
         },
       ],
     };
