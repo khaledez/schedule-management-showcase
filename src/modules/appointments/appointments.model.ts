@@ -197,9 +197,6 @@ export class AppointmentsModel
   @BelongsTo(() => AppointmentRequestsModel, 'appointmentRequestId')
   appointmentRequest: AppointmentRequestsModel;
 
-  @HasMany(() => AppointmentStatusHistoryModel)
-  statusHistory: AppointmentStatusHistoryModel[];
-
   @Column({
     type: DataType.VIRTUAL,
     get() {
