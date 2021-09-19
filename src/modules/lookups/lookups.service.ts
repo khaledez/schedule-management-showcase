@@ -744,7 +744,7 @@ export class LookupsService {
     transaction?: Transaction,
   ): Promise<number> {
     const statuses = await this.findAllAppointmentRequestStatusLookups(identity, transaction);
-    const status: any = statuses.filter((el) => el.code === code);
-    return status.id || null;
+    const status: any = statuses.map((el) => el.get({ plain: true })).filter((el) => el.code === code);
+    return status[0]?.id || null;
   }
 }
