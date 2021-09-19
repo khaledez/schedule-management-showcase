@@ -531,7 +531,13 @@ export class AppointmentsService {
         { transaction, where: { id: { [Op.in]: availabilities } } },
       );
     } else {
-      await AvailabilityModel.destroy({ transaction, where: { id: { [Op.in]: availabilities } } });
+      await AvailabilityModel.update(
+        {
+          deletedBy: identity.userId,
+          deletedAt: new Date(),
+        },
+        { transaction, where: { id: { [Op.in]: availabilities } } },
+      );
     }
   }
 

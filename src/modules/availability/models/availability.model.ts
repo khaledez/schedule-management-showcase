@@ -2,6 +2,9 @@ import { CalendarType } from 'common/enums';
 import { BaseModel } from 'common/models/base.model';
 import { EventModel } from 'modules/events/models';
 import {
+  AfterBulkCreate,
+  AfterCreate,
+  AfterUpdate,
   BelongsTo,
   Column,
   DataType,
@@ -15,6 +18,7 @@ import {
 import { AppointmentsModel } from '../../appointments/appointments.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { AvailabilityCreationAttributes, AvailabilityModelAttributes } from './availability.interfaces';
+import { AvailabilityEventName, AvailabilityEventPublisher } from '../availability.event-publisher';
 
 @DefaultScope(() => ({
   attributes: {
@@ -83,4 +87,49 @@ export class AvailabilityModel
     },
   })
   entryType: CalendarType;
+
+  @AfterCreate
+  static publishEventAfterCreate(instance: AvailabilityModel) {
+    AvailabilityEventPublisher.getInstance().publishAvailabilityEvent(
+      AvailabilityEventName.AVAILABILITY_CREATED,
+      instance,
+      null,
+      instance.createdBy,
+      instance.clinicId,
+    );
+  }
+
+  @AfterUpdate
+  static publishEventAfterUpdate(updatedAvailability) {
+    if (updatedAvailability.changed().includes('deletedAt') || updatedAvailability.changed().includes('deletedBy')) {
+      AvailabilityEventPublisher.getInstance().publishAvailabilityEvent(
+        AvailabilityEventName.AVAILABILITY_DELETED,
+        updatedAvailability,
+        null,
+        updatedAvailability.createdBy,
+        updatedAvailability.clinicId,
+      );
+      return;
+    }
+    AvailabilityEventPublisher.getInstance().publishAvailabilityEvent(
+      AvailabilityEventName.AVAILABILITY_UPDATED,
+      updatedAvailability,
+      updatedAvailability._previousDataValues,
+      updatedAvailability.createdBy,
+      updatedAvailability.clinicId,
+    );
+  }
+
+  @AfterBulkCreate
+  static publishEventAfterBulkCreate(instances) {
+    instances.forEach((instance) => {
+      AvailabilityEventPublisher.getInstance().publishAvailabilityEvent(
+        AvailabilityEventName.AVAILABILITY_CREATED,
+        instance,
+        null,
+        instance.createdBy,
+        instance.clinicId,
+      );
+    });
+  }
 }
