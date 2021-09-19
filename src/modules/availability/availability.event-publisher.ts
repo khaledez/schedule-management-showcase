@@ -33,6 +33,10 @@ export class AvailabilityEventPublisher {
     clinicId: number,
     triggeringMMXUser: number,
   ) {
+    // A necessary work around for unit tests to work properly
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
     const payload: AvailabilityEventPayload = {
       eventName,
       changeType: AvailabilityEventPublisher.AVAILABILITY_CHANGE_TYPE,
@@ -42,10 +46,6 @@ export class AvailabilityEventPublisher {
       doctorsAffected: this.getAffectedDoctors(availability, previousAvailability),
       availability: this.buildAvailabilitiesPayload(availability, previousAvailability),
     };
-    // A necessary work around for unit tests to work properly
-    if (process.env.NODE_ENV === 'test') {
-      return;
-    }
     snsTopic
       .sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
         ...payload,

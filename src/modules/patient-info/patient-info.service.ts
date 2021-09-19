@@ -103,6 +103,9 @@ export class PatientInfoService {
   }
 
   publishPatientProfileUpdateEvent(clinicId, patientId, data): Promise<unknown> {
+    if (process.env.NODE_ENV === 'test') {
+      return Promise.resolve();
+    }
     return snsTopic.sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
       eventName: PATIENT_UPDATE_REQUEST_EVENT_NAME,
       source: SCHEDULE_MGMT_TOPIC,

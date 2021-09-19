@@ -3,7 +3,7 @@ export class AvailabilityEventPayload {
   changeType: string;
   source: string;
   clinicId: number;
-  triggeringMMXUser?: number;
+  triggeringMMXUser: number;
   doctorsAffected: number[];
   availability: AvailabilityPayload;
 }

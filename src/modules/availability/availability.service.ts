@@ -138,7 +138,7 @@ export class AvailabilityService {
     transaction: Transaction,
   ): Promise<AvailabilityModelAttributes[]> {
     const { availabilityUpdates, ids } = update
-      .map((dto): [AvailabilityModelAttributes, number] => [mapCreateDtoToModelAttributes(identity, dto), dto.id])
+      .map((dto): [AvailabilityModelAttributes, number] => [mapUpdateDtoToModelAttributes(identity, dto), dto.id])
       .map(([availability, avId]): [Promise<AvailabilityModel[]>, number] => {
         // here we're not using bulkCreate as it will fail in MySQL if some required info are missing (staffId, createdBy)
         // even though bulkCreate uses UPSERT query
@@ -412,6 +412,18 @@ function mapCreateDtoToModelAttributes(identity: IIdentity, dto: CreateAvailabil
     ...dto,
     clinicId: identity.clinicId,
     createdBy: identity.userId,
+    startDate: isoDate.toJSDate(),
+    endDate: isoDate.plus({ minutes: dto.durationMinutes }).toJSDate(),
+    entryType: CalendarType.AVAILABILITY,
+    __typename: 'CalendarAvailiblity',
+  };
+}
+
+function mapUpdateDtoToModelAttributes(identity: IIdentity, dto: UpdateAvailabilityDto): AvailabilityModelAttributes {
+  const isoDate = DateTime.fromISO(dto.startDate);
+  return {
+    ...dto,
+    updatedBy: identity.userId,
     startDate: isoDate.toJSDate(),
     endDate: isoDate.plus({ minutes: dto.durationMinutes }).toJSDate(),
     entryType: CalendarType.AVAILABILITY,

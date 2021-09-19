@@ -106,7 +106,7 @@ export class AvailabilityModel
         AvailabilityEventName.AVAILABILITY_DELETED,
         updatedAvailability,
         null,
-        updatedAvailability.createdBy,
+        updatedAvailability.deletedBy,
         updatedAvailability.clinicId,
       );
       return;
