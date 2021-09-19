@@ -1,4 +1,4 @@
-import {BelongsTo, Column, DefaultScope, ForeignKey, Table} from 'sequelize-typescript';
+import { BelongsTo, Column, DefaultScope, ForeignKey, Table } from 'sequelize-typescript';
 import { BaseModel, BaseModelAttributes } from '../../../common/models';
 import { AppointmentsModel } from '../../appointments/appointments.model';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
@@ -6,6 +6,7 @@ import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-
 export interface AppointmentStatusHistoryAttributes extends BaseModelAttributes {
   appointmentId: number;
   appointmentStatusId: number;
+  previousAppointmentStatusId?: number;
 }
 
 @DefaultScope(() => ({
@@ -27,9 +28,16 @@ export class AppointmentStatusHistoryModel
   @ForeignKey(() => AppointmentStatusLookupsModel)
   appointmentStatusId: number;
 
+  @Column
+  @ForeignKey(() => AppointmentStatusLookupsModel)
+  previousAppointmentStatusId?: number;
+
   @BelongsTo(() => AppointmentsModel)
   appointment: AppointmentsModel;
 
   @BelongsTo(() => AppointmentStatusLookupsModel, 'appointmentStatusId')
   status: AppointmentStatusLookupsModel;
+
+  @BelongsTo(() => AppointmentStatusLookupsModel, 'previousAppointmentStatusId')
+  previousStatus: AppointmentStatusLookupsModel;
 }

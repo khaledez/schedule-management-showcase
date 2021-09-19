@@ -62,11 +62,17 @@ describe('# Appointment status history', () => {
     const scheduleStatusId = await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
     const readyStatusId = await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
     const confirmStatusId = await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM1);
-    const expectedOrder = [
+    const expectedStatusOrder = [
       AppointmentStatusEnum.COMPLETE,
       AppointmentStatusEnum.CONFIRM1,
       AppointmentStatusEnum.READY,
       AppointmentStatusEnum.SCHEDULE,
+    ];
+    const expectedPreviousStatusOrder = [
+      AppointmentStatusEnum.CONFIRM1,
+      AppointmentStatusEnum.READY,
+      AppointmentStatusEnum.SCHEDULE,
+      null,
     ];
     const appointment = await appointmentsService.createAppointment(
       identity,
@@ -94,13 +100,19 @@ describe('# Appointment status history', () => {
       appointment.id,
       false,
     );
-    expect(statusHistory.map((statusEntry) => statusEntry.code)).toEqual(expectedOrder);
+    expect(statusHistory.map((statusEntry) => statusEntry.status.code)).toEqual(expectedStatusOrder);
+    expect(statusHistory.map((statusEntry) => statusEntry.previousStatus?.code ?? null)).toEqual(
+      expectedPreviousStatusOrder,
+    );
 
     const reversedStatusHistory = await appointmentHistoryService.getAppointmentStatusHistoryEntries(
       identity,
       appointment.id,
       true,
     );
-    expect(reversedStatusHistory.map((statusEntry) => statusEntry.code)).toEqual(expectedOrder.reverse());
+    expect(reversedStatusHistory.map((statusEntry) => statusEntry.status.code)).toEqual(expectedStatusOrder.reverse());
+    expect(reversedStatusHistory.map((statusEntry) => statusEntry.previousStatus?.code ?? null)).toEqual(
+      expectedPreviousStatusOrder.reverse(),
+    );
   });
 });

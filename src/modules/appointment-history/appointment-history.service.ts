@@ -5,6 +5,7 @@ import { AppointmentStatusHistoryModel } from './models/appointment-status-histo
 import { IIdentity } from '@monmedx/monmedx-common';
 import { Order } from '../../common/enums';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
+import { LookupWithCodeAttributes } from '../lookups/models';
 
 @Injectable()
 export class AppointmentHistoryService {
@@ -30,6 +31,11 @@ export class AppointmentHistoryService {
       include: [
         {
           model: AppointmentStatusLookupsModel,
+          as: 'status',
+        },
+        {
+          model: AppointmentStatusLookupsModel,
+          as: 'previousStatus',
         },
       ],
       where: {
@@ -47,17 +53,15 @@ function toAppointmentStatusHistoryEntry(
 ): AppointmentStatusHistoryEntry {
   return {
     createdBy: appointmentStatusHistory.createdBy,
-    nameEn: appointmentStatusHistory.status.nameEn,
-    nameFr: appointmentStatusHistory.status.nameFr,
-    code: appointmentStatusHistory.status.code,
+    status: appointmentStatusHistory.status,
+    previousStatus: appointmentStatusHistory.previousStatus,
     createdAt: appointmentStatusHistory.createdAt,
   };
 }
 
 export interface AppointmentStatusHistoryEntry {
   createdBy: number;
-  nameEn: string;
-  nameFr: string;
-  code: string;
   createdAt: Date;
+  status: LookupWithCodeAttributes;
+  previousStatus?: LookupWithCodeAttributes;
 }

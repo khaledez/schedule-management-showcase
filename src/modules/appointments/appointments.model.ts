@@ -246,6 +246,7 @@ export class AppointmentsModel
       appointmentId: updatedAppointment.id,
       clinicId: updatedAppointment.clinicId,
       appointmentStatusId: updatedAppointment.appointmentStatusId,
+      previousAppointmentStatusId: updatedAppointment._previousDataValues.appointmentStatusId,
       createdBy: updatedAppointment.updatedBy,
       createdAt: updatedAppointment.updatedAt,
     }).catch((error) => {
