@@ -189,6 +189,9 @@ export class AppointmentsService {
       },
       deletedBy: null,
     };
+    if (queryParams.filter?.id) {
+      where.id = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.id);
+    }
     if (queryParams.filter?.doctorId) {
       where.staffId = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.doctorId);
     }
