@@ -1,4 +1,11 @@
-import { Identity, IIdentity, TransactionInterceptor, TransactionParam } from '@monmedx/monmedx-common';
+import {
+  Identity,
+  IIdentity,
+  PermissionCode,
+  Permissions,
+  TransactionInterceptor,
+  TransactionParam,
+} from '@monmedx/monmedx-common';
 import {
   Body,
   Controller,
@@ -26,7 +33,7 @@ import { DataResponseInterceptor } from '../../common/intercepter';
 export class AppointmentRequestsController {
   constructor(private readonly appointmentRequestsService: AppointmentRequestsService) {}
 
-  //@Permissions(PermissionCode.APPT_REQUEST_CREATE)
+  @Permissions(PermissionCode.APPT_REQUEST_WRITE)
   @UseInterceptors(TransactionInterceptor)
   @UseInterceptors(DataResponseInterceptor)
   @Get('feature-status')
@@ -38,7 +45,7 @@ export class AppointmentRequestsController {
     return this.appointmentRequestsService.featureStatus(requestDto, identity, transaction);
   }
 
-  //@Permissions(PermissionCode.APPT_REQUEST_READ)
+  @Permissions(PermissionCode.APPT_REQUEST_READ)
   @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Get(':id')
@@ -50,7 +57,7 @@ export class AppointmentRequestsController {
     return this.appointmentRequestsService.getRequestById(id, identity, transaction);
   }
 
-  //@Permissions(PermissionCode.APPT_REQUEST_CREATE)
+  @Permissions(PermissionCode.APPT_REQUEST_WRITE)
   @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Post()
@@ -62,7 +69,7 @@ export class AppointmentRequestsController {
     return this.appointmentRequestsService.create(requestDto, identity, transaction);
   }
 
-  //@Permissions(PermissionCode.APPT_REQUEST_UPDATE)
+  @Permissions(PermissionCode.APPT_REQUEST_WRITE)
   @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Patch('id')
@@ -74,7 +81,7 @@ export class AppointmentRequestsController {
     return this.appointmentRequestsService.update(requestDto, identity, transaction);
   }
 
-  //@Permissions(PermissionCode.APPT_REQUEST_CANCEL)
+  @Permissions(PermissionCode.APPT_REQUEST_WRITE)
   @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
   @Delete(':id')
@@ -86,7 +93,7 @@ export class AppointmentRequestsController {
     return this.appointmentRequestsService.cancelRequest(id, identity, transaction);
   }
 
-  //@Permissions(PermissionCode.APPT_REQUEST_CANCEL)
+  @Permissions(PermissionCode.APPT_REQUEST_WRITE)
   @UseInterceptors(TransactionInterceptor)
   @UseInterceptors(DataResponseInterceptor)
   @Post('appointment/:id')
@@ -98,7 +105,7 @@ export class AppointmentRequestsController {
     return this.appointmentRequestsService.cancelAppointment(requestDto, identity, transaction);
   }
 
-  //@Permissions(PermissionCode.APPT_REQUEST_Reject)
+  @Permissions(PermissionCode.APPT_REQUEST_REJECT)
   @UseInterceptors(TransactionInterceptor)
   @UseInterceptors(DataResponseInterceptor)
   @Post('/:id/reject')
