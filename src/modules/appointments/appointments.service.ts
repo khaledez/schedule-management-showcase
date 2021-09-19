@@ -1138,7 +1138,7 @@ export class AppointmentsService {
         const appointment = await this.getAppointmentById(
           identity,
           dto.appointmentId,
-          { model: AvailabilityModel, required: true },
+          [{ model: AvailabilityModel, required: false }],
           transaction,
         );
         const finalStatuses = await this.lookupsService.getFinalStatusIds(identity);
@@ -1239,6 +1239,7 @@ export class AppointmentsService {
       include,
       transaction: transaction,
     });
+
     if (!appointment) {
       throw new NotFoundException({
         fields: ['appointmentId'],
