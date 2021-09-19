@@ -106,4 +106,9 @@ export class AppointmentFilterDto {
   @ValidateNested()
   @Type(() => FilterIdsInputDto)
   clinicId?: FilterIdsInputDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FilterIdsInputDto)
+  id?: FilterIdsInputDto;
 }
