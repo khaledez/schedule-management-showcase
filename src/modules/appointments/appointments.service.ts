@@ -1235,7 +1235,7 @@ export class AppointmentsService {
     transaction?: Transaction,
   ) {
     const appointment = await this.appointmentsRepository.findOne({
-      where: { id: appointmentId, clinicId: identity.clinicId },
+      where: { id: appointmentId, clinicId: { [Op.in]: identity.userInfo.clinicIds } },
       include,
       transaction: transaction,
     });
@@ -1289,7 +1289,7 @@ export class AppointmentsService {
         // 1. fetch appointment
         const appointment = await this.appointmentsRepository.findOne({
           transaction,
-          where: { id: appointmentId, clinicId: identity.clinicId },
+          where: { id: appointmentId, clinicId: { [Op.in]: identity.userInfo.clinicIds } },
         });
         if (!appointment) {
           throw new NotFoundException({
