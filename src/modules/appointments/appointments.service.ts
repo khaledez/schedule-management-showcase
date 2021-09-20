@@ -1359,6 +1359,27 @@ export class AppointmentsService {
           });
           const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
           this.logger.debug({ method: 'appointmentService/updateAppointment', updatedAppt });
+          const readyStatusId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
+
+          //To handle if appointment status go to ready without visit CHECK_IN STATUS
+          if (updateDto.appointmentStatusId && updateDto.appointmentStatusId === readyStatusId) {
+            const checkinStatusId = await this.lookupsService.getStatusIdByCode(
+              identity,
+              AppointmentStatusEnum.CHECK_IN,
+            );
+            if (appointment.appointmentRequestId !== checkinStatusId) {
+              this.publishEventIfStatusMatches(
+                identity,
+                AppointmentStatusEnum.CHECK_IN,
+                updatedAppt,
+                {
+                  ...updateDto,
+                  appointmentStatusId: checkinStatusId,
+                },
+                APPOINTMENT_CHECKIN_STATUS_EVENT,
+              );
+            }
+          }
           // 4. publish event if status changed to check in
           this.publishEventIfStatusMatches(
             identity,
