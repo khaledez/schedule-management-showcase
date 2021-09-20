@@ -53,6 +53,9 @@ export class AppointmentEventPublisher {
       .sendSnsMessage(SCHEDULE_MGMT_TOPIC, {
         ...payload,
       })
+      .then(() => {
+        this.logger.log(`Published ${eventName} event`);
+      })
       .catch((error) => {
         this.logger.error({
           message: `Failed publishing appointment event: ${eventName}, payload = ${payload}`,
