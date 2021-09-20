@@ -25,6 +25,7 @@ export class UpdateAppointmentRequestDto {
   @Type(() => Date)
   date: Date;
 
+  @IsOptional()
   @IsDate()
   @Type(() => Date)
   time: Date;

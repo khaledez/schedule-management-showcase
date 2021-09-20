@@ -72,7 +72,7 @@ export class AppointmentRequestsController {
   @Permissions(PermissionCode.APPT_REQUEST_WRITE)
   @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
-  @Patch('id')
+  @Patch(':id')
   update(
     @TransactionParam() transaction: Transaction,
     @Body() requestDto: UpdateAppointmentRequestDto,
