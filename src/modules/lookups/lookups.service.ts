@@ -109,6 +109,21 @@ export class LookupsService {
       },
     });
   }
+
+  findAppointmentActionByCode(
+    code: AppointmentActionEnum,
+    identity?: IIdentity,
+  ): Promise<AppointmentActionsLookupsModel> {
+    return this.appointmentActionsLookupsRepository.findOne({
+      where: {
+        code,
+        clinicId: {
+          [Op.or]: this.getLookupClinicCondition(identity),
+        },
+      },
+    });
+  }
+
   /**
    * Find Appointment types
    * @param identity

@@ -23,6 +23,7 @@ import {
   SEQUELIZE,
 } from 'common/constants';
 import {
+  AppointmentActionEnum,
   AppointmentStatusEnum,
   AppointmentVisitModeEnum,
   CancelRescheduleReasonCode,
@@ -165,7 +166,7 @@ export class AppointmentsService {
         offset,
       };
       const { rows: appointments } = await this.appointmentsRepository.findAndCountAll(options);
-      const searchResult = await this.buildAppointmentConnectionResponse(appointments);
+      const searchResult = await this.buildAppointmentConnectionResponseForPatient(appointments, identity);
 
       return [searchResult, appointments.length];
     } catch (error) {
@@ -374,6 +375,31 @@ export class AppointmentsService {
         error: error.message,
       });
     }
+  }
+
+  private async buildAppointmentConnectionResponseForPatient(appointments, identity: IIdentity) {
+    const status_Scheduled_id = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE); //2
+    const status_Reminded_id = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM2); //8
+
+    //TODO check if notification sent
+
+    const CONFIRM1 = await this.lookupsService.findAppointmentActionByCode(AppointmentActionEnum.CONFIRM1, identity);
+    const CHECK_IN = await this.lookupsService.findAppointmentActionByCode(AppointmentActionEnum.CHECK_IN, identity);
+    return appointments.map((e) => {
+      const appt = e.get({ plain: true });
+      const patientActions = [];
+      if (!appt.appointmentRequestId && [status_Scheduled_id, status_Reminded_id].includes(appt.appointmentStatusId)) {
+        if (status_Scheduled_id === appt.appointmentStatusId) {
+          patientActions.push(CONFIRM1);
+        } else if (status_Reminded_id === appt.appointmentStatusId) {
+          patientActions.push(CHECK_IN);
+        }
+      }
+      return {
+        ...appt,
+        patientActions: patientActions,
+      };
+    });
   }
 
   private async buildAppointmentConnectionResponse(appointments) {
