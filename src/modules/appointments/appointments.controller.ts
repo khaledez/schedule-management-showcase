@@ -182,7 +182,12 @@ export class AppointmentsController {
     await this.validateVisitNotInProgress(identity, previousAppointment);
     const appointment = await this.appointmentsService.createPatientAppointment(
       identity,
-      dto,
+      {
+        ...dto,
+        appointmentStatusId:
+          dto.appointmentStatusId ??
+          (await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE)),
+      },
       true,
       cancelReasonId,
       'create new appointment',
