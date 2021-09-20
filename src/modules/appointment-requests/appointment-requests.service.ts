@@ -164,7 +164,7 @@ export class AppointmentRequestsService {
       ...baseUpdate,
     };
 
-    const createdRequest = await this.appointmentRequestsModel.update(
+    await this.appointmentRequestsModel.update(
       { ...data },
       {
         where: {
@@ -174,7 +174,7 @@ export class AppointmentRequestsService {
         transaction,
       },
     );
-    return createdRequest;
+    return this.appointmentRequestsModel.findByPk(requestDto.id, { transaction });
   }
 
   public async cancelRequest(id: number, identity: IIdentity, transaction: Transaction) {
