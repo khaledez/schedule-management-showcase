@@ -38,6 +38,7 @@ import { AppointmentRequestStatusLookupsModel } from './models/appointment-reque
 import { AppointmentRequestTypesLookupsModel } from './models/appointment-request-types.model';
 import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
 import { identity } from 'rxjs';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)
@@ -743,8 +744,18 @@ export class LookupsService {
     identity,
     transaction?: Transaction,
   ): Promise<number> {
-    const statuses = await this.findAllAppointmentRequestStatusLookups(identity, transaction);
-    const status: any = statuses.map((el) => el.get({ plain: true })).filter((el) => el.code === code);
-    return status[0]?.id || null;
+    const rows = await this.findAllAppointmentRequestStatusLookups(identity, transaction);
+    const row: any = rows.map((el) => el.get({ plain: true })).filter((el) => el.code === code);
+    return row[0]?.id || null;
+  }
+
+  public async getApptRequestTypeIdByCode(
+    code: ApptRequestTypesEnum,
+    identity,
+    transaction?: Transaction,
+  ): Promise<number> {
+    const rows = await this.findAllAppointmentRequestTypesLookups(identity, transaction);
+    const row: any = rows.map((el) => el.get({ plain: true })).filter((el) => el.code === code);
+    return row[0]?.id || null;
   }
 }

@@ -20,6 +20,7 @@ import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-sta
 import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
 import { featureStatusDto } from './dto/feature-status.dto';
 import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from './models';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 
 @Injectable()
 export class AppointmentRequestsService {
@@ -272,6 +273,11 @@ export class AppointmentRequestsService {
       identity,
     ); //2
 
+    const request_type_CANCEL_id = await this.lookupsService.getApptRequestTypeIdByCode(
+      ApptRequestTypesEnum.CANCEL,
+      identity,
+    ); //3
+
     //Request to cancel the appointment to cancel any in-flight rescheduling request.
     if (appointment.appointmentRequestId) {
       const prevAppointmentRequest = await this.appointmentRequestsModel.findByPk(appointment.appointmentRequestId);
@@ -298,7 +304,7 @@ export class AppointmentRequestsService {
         userId,
         clinicId: appointment.clinicId,
         patientId: appointment.patientId,
-        requestTypeId: request_status_CANCELED_id, //CANCEL
+        requestTypeId: request_type_CANCEL_id, //CANCEL
         requestStatusId: request_status_PENDING_id, //PENDING
         originalAppointmentId: appointmentId,
         requestReason: cancelReason,
