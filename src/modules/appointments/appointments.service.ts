@@ -57,6 +57,7 @@ import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assi
 import { PatientInfoService } from '../patient-info';
 import { Includeable } from 'sequelize/types/lib/model';
 import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
+import { AppointmentActionDto } from './dto/appointment-action.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -1670,79 +1671,86 @@ export class AppointmentsService {
   }
 
   //Confirm Appointment by patient from mobile app
-  public confirmAppointmentByApp(identity: IIdentity, appointmentId: number) {
+  public async appointmentAction(identity: IIdentity, body: AppointmentActionDto, transaction: Transaction) {
     const {
       userId,
       userInfo: { patientIds },
     } = identity;
-    return this.appointmentsRepository.sequelize.transaction<AppointmentsModelAttributes>(
-      async (transaction: Transaction) => {
-        // 1. fetch appointment
-        const appointment = await this.appointmentsRepository.findOne({
-          transaction,
+
+    const { appointmentId, actionType } = body;
+    if (![AppointmentActionEnum.CONFIRM1, AppointmentActionEnum.CHECK_IN].includes(actionType)) {
+      throw new NotFoundException({
+        fields: ['appointmentStatusId'],
+        message: `Appointment Action:${actionType} not allowed by patient`,
+        code: ErrorCodes.CONFLICTS,
+      });
+    }
+
+    // 1. fetch appointment
+    const appointment = await this.appointmentsRepository.findOne({
+      transaction,
+      where: {
+        id: appointmentId,
+        patientId: {
+          [Op.in]: patientIds,
+        },
+      },
+    });
+    if (!appointment) {
+      throw new NotFoundException({
+        fields: ['appointmentId'],
+        message: `Appointment with id = ${appointmentId} not found`,
+        code: ErrorCodes.NOT_FOUND,
+      });
+    }
+    identity.clinicId = appointment.clinicId;
+
+    //check appointment status
+    const appointmentStatusId_SCHEDULE = await this.lookupsService.getStatusIdByCode(
+      identity,
+      AppointmentStatusEnum.SCHEDULE,
+    );
+    if (appointment.appointmentStatusId !== appointmentStatusId_SCHEDULE) {
+      throw new NotFoundException({
+        fields: ['appointmentStatusId'],
+        message: `Appointment with status = ${appointment.appointmentStatusId} can not be confirmed`,
+        code: ErrorCodes.CONFLICTS,
+      });
+    }
+
+    try {
+      const appointmentStatusId_CONFIRM1 = await this.lookupsService.getStatusIdByCode(
+        identity,
+        actionType as AppointmentStatusEnum,
+      );
+
+      // 3. update database
+      await this.appointmentsRepository.update(
+        {
+          appointmentStatusId: appointmentStatusId_CONFIRM1,
+          updatedBy: userId,
+        },
+        {
           where: {
             id: appointmentId,
-            patientId: {
-              [Op.in]: patientIds,
-            },
           },
-        });
-        if (!appointment) {
-          throw new NotFoundException({
-            fields: ['appointmentId'],
-            message: `Appointment with id = ${appointmentId} not found`,
-            code: ErrorCodes.NOT_FOUND,
-          });
-        }
-        identity.clinicId = appointment.clinicId;
-
-        //check appointment status
-        const appointmentStatusId_SCHEDULE = await this.lookupsService.getStatusIdByCode(
-          identity,
-          AppointmentStatusEnum.SCHEDULE,
-        );
-        if (appointment.appointmentStatusId !== appointmentStatusId_SCHEDULE) {
-          throw new NotFoundException({
-            fields: ['appointmentStatusId'],
-            message: `Appointment with status = ${appointment.appointmentStatusId} can not be confirmed`,
-            code: ErrorCodes.CONFLICTS,
-          });
-        }
-
-        try {
-          const appointmentStatusId_CONFIRM1 = await this.lookupsService.getStatusIdByCode(
-            identity,
-            AppointmentStatusEnum.CONFIRM1,
-          );
-
-          // 3. update database
-          await this.appointmentsRepository.update(
-            {
-              appointmentStatusId: appointmentStatusId_CONFIRM1,
-              updatedBy: userId,
-            },
-            {
-              where: {
-                id: appointmentId,
-              },
-              transaction,
-            },
-          );
-          const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
-          this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
-          return updatedAppt;
-        } catch (error) {
-          this.logger.error({
-            method: 'appointmentService/confirmAppointmentByApp',
-            message: error.message,
-          });
-          throw new InternalServerErrorException({
-            code: ErrorCodes.INTERNAL_SERVER_ERROR,
-            message: error.message,
-          });
-        }
-      },
-    );
+          transaction,
+        },
+      );
+      //const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
+      const updatedAppt = await appointment.reload({ transaction });
+      this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
+      return { originalAppt: appointment, updatedAppt };
+    } catch (error) {
+      this.logger.error({
+        method: 'appointmentService/confirmAppointmentByApp',
+        message: error.message,
+      });
+      throw new InternalServerErrorException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
   }
 }
 

@@ -6,6 +6,8 @@ import {
   PagingInfoInterface,
   PermissionCode,
   Permissions,
+  TransactionInterceptor,
+  TransactionParam,
 } from '@monmedx/monmedx-common';
 import {
   BadRequestException,
@@ -42,6 +44,8 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { AppointmentEventPublisher, AppointmentsEventName } from './appointments.event-publisher';
 import { ChangeAppointmentDoctorDto } from './dto/change-appointment-doctor-dto';
+import { AppointmentActionDto } from './dto/appointment-action.dto';
+import { Transaction } from 'sequelize';
 
 @Controller('appointments')
 @UseInterceptors(AppointmentStatusActions)
@@ -287,27 +291,29 @@ export class AppointmentsController {
     };
   }
 
-  @Post(':id/confirmation')
-  async confirmAppointment(
+  //appointmentActionByApp
+  @Post(':id')
+  @UseInterceptors(TransactionInterceptor)
+  async appointmentAction(
     @Identity() identity: IIdentity,
     @PagingInfo() pagingInfo: PagingInfoInterface,
-    @Param('id', ParseIntPipe) id: number,
+    @Body() body: AppointmentActionDto,
+    @TransactionParam() transaction: Transaction,
   ): Promise<unknown> {
     this.logger.debug({
-      function: 'controller/appointment/confirmAppointmentByApp',
+      function: 'controller/appointment/appointmentAction',
       identity,
-      id,
+      body,
     });
-    const appointmentBeforeUpdate = await this.appointmentsService.findOne(identity, id);
-    const appointment = await this.appointmentsService.confirmAppointmentByApp(identity, id);
+    const { originalAppt, updatedAppt } = await this.appointmentsService.appointmentAction(identity, body, transaction);
     this.eventPublisher.publishAppointmentEvent(
       AppointmentsEventName.APPOINTMENT_UPDATED,
-      appointment,
+      updatedAppt,
       null,
-      appointmentBeforeUpdate,
+      originalAppt,
       identity,
     );
-    return { appointment };
+    return { appointment: updatedAppt };
   }
 
   @Post('changeDoctor')
