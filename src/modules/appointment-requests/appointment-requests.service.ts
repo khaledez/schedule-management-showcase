@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { fn, Op, Sequelize, Transaction } from 'sequelize';
 import {
   AppointmentRequestCancelAppointmentDto,
@@ -33,6 +33,7 @@ export class AppointmentRequestsService {
     private readonly appointmentRequestsModel: typeof AppointmentRequestsModel,
     @Inject(APPOINTMENT_REQUEST_FEATURE_REPOSITORY)
     private readonly appointmentRequestFeatureStatusModel: typeof AppointmentRequestFeatureStatusModel,
+    @Inject(forwardRef(() => AppointmentsService))
     private readonly appointmentsService: AppointmentsService,
     private readonly lookupsService: LookupsService,
   ) {}
@@ -405,6 +406,94 @@ export class AppointmentRequestsService {
     }
 
     return !clinicEnabled ? false : doctorEnabled;
+  }
+
+  async handleAppointmentRequest(
+    appointmentId: number,
+    action: ApptRequestTypesEnum,
+    identity: IIdentity,
+    transaction?: Transaction,
+  ) {
+    const appointment = await this.appointmentsService.getAppointmentById(
+      identity,
+      appointmentId,
+      [{ model: AppointmentRequestsModel, as: 'appointmentRequest', required: false }],
+      transaction,
+    );
+
+    if (!appointment.appointmentRequestId) {
+      return false;
+    }
+
+    const request_status_FULLFILLED_id = await this.lookupsService.getApptRequestStatusIdByCode(
+      ApptRequestStatusEnum.FULLFILLED,
+      identity,
+    ); //3
+
+    const newRequestData = { id: null, date: null };
+    if ([ApptRequestTypesEnum.SCHEDULE, ApptRequestTypesEnum.RESCHEDULE].includes(action)) {
+      await this.appointmentRequestsModel.update(
+        {
+          requestStatusId: request_status_FULLFILLED_id,
+        },
+        {
+          where: {
+            id: appointment.appointmentRequestId,
+          },
+          transaction,
+        },
+      );
+    } else if (action === ApptRequestTypesEnum.CANCEL) {
+      const request_type_RESCHEDULE_id = await this.lookupsService.getApptRequestTypeIdByCode(
+        ApptRequestTypesEnum.RESCHEDULE,
+        identity,
+      ); //2
+
+      await this.appointmentRequestsModel.update(
+        {
+          requestStatusId: request_status_FULLFILLED_id,
+        },
+        {
+          where: {
+            id: appointment.appointmentRequestId,
+          },
+          transaction,
+        },
+      );
+
+      if (appointment.appointmentRequest.appointmentTypeId === request_type_RESCHEDULE_id) {
+        const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
+          ApptRequestStatusEnum.PENDING,
+          identity,
+        ); //3
+
+        const newAppointment = await this.appointmentsService.getAppointmentByPatientId(
+          identity,
+          appointment.patientId,
+        );
+        if (newAppointment) {
+          const createdRequest = await this.appointmentRequestsModel.create(
+            {
+              requestTypeId: request_type_RESCHEDULE_id,
+              requestStatusId: request_status_PENDING_id,
+              originalAppointmentId: newAppointment.id,
+              appointmentTypeId: newAppointment.appointmentTypeId,
+              ...appointment.appointmentRequest,
+            },
+            {
+              transaction,
+            },
+          );
+          //update original appointment
+          await this.appointmentsService.updateAppointmentAddRequestData(appointmentId, createdRequest, transaction);
+        }
+      }
+    }
+
+    //update original appointment
+    await this.appointmentsService.updateAppointmentAddRequestData(appointmentId, newRequestData, transaction);
+
+    return true;
   }
 
   //===========================  Private Functions  ===========================

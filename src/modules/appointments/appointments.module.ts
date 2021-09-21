@@ -9,6 +9,7 @@ import { AppointmentsController } from './appointments.controller';
 import { appointmentsProviders } from './appointments.provider';
 import { AppointmentsService } from './appointments.service';
 import { AppointmentEventPublisher } from './appointments.event-publisher';
+import { AppointmentRequestsModule } from '../appointment-requests/appointment-requests.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AppointmentEventPublisher } from './appointments.event-publisher';
     EventsModule,
     DatabaseModule,
     forwardRef(() => PatientInfoModule),
+    forwardRef(() => AppointmentRequestsModule),
     ScheduleModule.forRoot(),
   ],
   controllers: [AppointmentsController],

@@ -53,4 +53,9 @@ export class CreateAppointmentDto {
   @IsBoolean()
   @Type(() => Boolean)
   staffChangedPermanent?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Transform((value) => parseInt(value))
+  previousAppointmentId?: number;
 }

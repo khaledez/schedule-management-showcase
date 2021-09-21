@@ -58,6 +58,8 @@ import { PatientInfoService } from '../patient-info';
 import { Includeable } from 'sequelize/types/lib/model';
 import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
 import { AppointmentActionDto } from './dto/appointment-action.dto';
+import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -94,6 +96,8 @@ export class AppointmentsService {
     private readonly availabilityService: AvailabilityService,
     @Inject(forwardRef(() => PatientInfoService))
     private readonly patientInfoSvc: PatientInfoService,
+    @Inject(forwardRef(() => AppointmentRequestsService))
+    private readonly apptRequestServiceSvc: AppointmentRequestsService,
   ) {}
 
   private readonly associationFieldsSortNames: AssociationFieldsSortCriteria = {
@@ -483,6 +487,15 @@ export class AppointmentsService {
         transaction,
       );
 
+      if (appointment.appointmentRequestId) {
+        this.apptRequestServiceSvc.handleAppointmentRequest(
+          appointment.id,
+          ApptRequestTypesEnum.CANCEL,
+          identity,
+          transaction,
+        );
+      }
+
       return this.createAppointment(
         identity,
         {
@@ -492,6 +505,7 @@ export class AppointmentsService {
           startDate: cancelDto.provisionalDate,
           durationMinutes: DEFAULT_EVENT_DURATION_MINS,
           appointmentVisitModeId: appointment.appointmentVisitModeId,
+          previousAppointmentId: appointment.id,
         },
         true,
         transaction,
@@ -768,6 +782,15 @@ export class AppointmentsService {
           appointmentId: createdAppointment.id,
           reason: 'createAppointment-staffChangedPermanent',
         });
+      }
+
+      if (provisionalAppointment && provisionalAppointment.appointmentRequestId) {
+        this.apptRequestServiceSvc.handleAppointmentRequest(
+          provisionalAppointment.id,
+          ApptRequestTypesEnum.SCHEDULE,
+          identity,
+          transaction,
+        );
       }
 
       return createdAppointment;
@@ -1249,6 +1272,15 @@ export class AppointmentsService {
             transaction,
           ),
         ]);
+
+        if (appointment.appointmentRequestId) {
+          this.apptRequestServiceSvc.handleAppointmentRequest(
+            appointment.id,
+            ApptRequestTypesEnum.RESCHEDULE,
+            identity,
+            transaction,
+          );
+        }
 
         this.logger.debug({
           method: 'rescheduleAppointment',
@@ -1737,8 +1769,7 @@ export class AppointmentsService {
           transaction,
         },
       );
-      //const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
-      const updatedAppt = await appointment.reload({ transaction });
+      const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
       this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
       return { originalAppt: appointment, updatedAppt };
     } catch (error) {
