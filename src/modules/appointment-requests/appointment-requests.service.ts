@@ -485,7 +485,11 @@ export class AppointmentRequestsService {
             },
           );
           //update original appointment
-          await this.appointmentsService.updateAppointmentAddRequestData(appointmentId, createdRequest, transaction);
+          await this.appointmentsService.updateAppointmentAddRequestData(
+            newAppointment.id,
+            createdRequest,
+            transaction,
+          );
         }
       }
     }
