@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import {ErrorCodes} from "../enums";
 
 export class ValidatorBase {
   /**
@@ -18,7 +19,9 @@ export class ValidatorBase {
     });
     if (badObjects.length !== 0) {
       throw new BadRequestException({
-        msg: errorMessage,
+        fields: [],
+        message: errorMessage,
+        code: ErrorCodes.BAD_REQUEST,
         objects: badObjects,
       });
     }

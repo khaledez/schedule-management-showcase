@@ -18,7 +18,7 @@ describe('ValidatorBase', () => {
       validatorBase.assertArrayElementsType(badArray, TestClassA, errorMessage);
     } catch (error) {
       expect(error).toBeInstanceOf(BadRequestException);
-      expect(error.response).toHaveProperty('msg', errorMessage);
+      expect(error.response).toHaveProperty('message', errorMessage);
       expect(error.response).toHaveProperty('objects', [1, 3]);
     }
   });

@@ -12,59 +12,6 @@ import { BulkUpdateAvailabilityDto } from 'modules/availability/dto/add-or-updat
 describe('AvailabilityValidator', () => {
   const validator: AvailabilityValidator = new AvailabilityValidator();
 
-  test('#findOverlappedPeriods: No overlapped periods', () => {
-    const periods = [
-      {
-        id: 1,
-        startDateTs: new Date('2021-07-25T07:43:40.084Z').getTime(),
-        endDateTs: new Date('2021-07-25T07:58:40.084Z').getTime(),
-      },
-      {
-        id: 2,
-        startDateTs: new Date('2021-07-25T08:43:40.084Z').getTime(),
-        endDateTs: new Date('2021-07-25T08:58:40.084Z').getTime(),
-      },
-      {
-        id: 3,
-        startDateTs: new Date('2021-07-25T09:43:40.084Z').getTime(),
-        endDateTs: new Date('2021-07-25T09:58:40.084Z').getTime(),
-      },
-    ];
-    const result = AvailabilityValidator.findOverlappedPeriods(periods);
-    expect(result).toEqual([]);
-  });
-
-  test('#findOverlappedPeriods: Should have overlapped periods', () => {
-    const periods = [
-      {
-        id: 1,
-        startDateTs: new Date('2021-07-25T07:43:40.084Z').getTime(),
-        endDateTs: new Date('2021-07-25T10:58:40.084Z').getTime(),
-      },
-      {
-        id: 2,
-        startDateTs: new Date('2021-07-25T08:43:40.084Z').getTime(),
-        endDateTs: new Date('2021-07-25T10:58:40.084Z').getTime(),
-      },
-      {
-        id: 3,
-        startDateTs: new Date('2021-07-25T09:43:40.084Z').getTime(),
-        endDateTs: new Date('2021-07-25T09:58:40.084Z').getTime(),
-      },
-    ];
-    const result = AvailabilityValidator.findOverlappedPeriods(periods);
-    expect(result).toEqual([
-      {
-        availabilityIndex: 1,
-        overlappedWith: [2, 3],
-      },
-      {
-        availabilityIndex: 2,
-        overlappedWith: [3],
-      },
-    ]);
-  });
-
   test.each(assertNoIdDuplicatesValidInputTestData())('#assertNoIdDuplicates valid input: %p', (testCase) => {
     validator.assertNoIdDuplicates(testCase.update);
   });
