@@ -189,7 +189,6 @@ export class AppointmentRequestsService {
         userId,
       },
     });
-    //TODO check if patient has permission to cancel his appointment
     if (!createdRequest) {
       throw new BadRequestException({
         fields: ['id'],
@@ -410,7 +409,7 @@ export class AppointmentRequestsService {
 
   async handleAppointmentRequest(
     appointmentId: number,
-    action: ApptRequestTypesEnum,
+    action: ApptRequestTypesEnum | null,
     identity: IIdentity,
     transaction?: Transaction,
   ) {
@@ -424,83 +423,100 @@ export class AppointmentRequestsService {
     if (!appointment.appointmentRequestId) {
       return false;
     }
-
-    const request_status_FULLFILLED_id = await this.lookupsService.getApptRequestStatusIdByCode(
-      ApptRequestStatusEnum.FULLFILLED,
-      identity,
-    ); //3
-
-    const newRequestData = { id: null, date: null };
-    if ([ApptRequestTypesEnum.SCHEDULE, ApptRequestTypesEnum.RESCHEDULE].includes(action)) {
-      await this.appointmentRequestsModel.update(
-        {
-          requestStatusId: request_status_FULLFILLED_id,
-        },
-        {
-          where: {
-            id: appointment.appointmentRequestId,
-          },
-          transaction,
-        },
+    if (!action) {
+      await this.updateAppointmentRequestStatus(
+        appointment.appointmentRequestId,
+        ApptRequestStatusEnum.CANCELED,
+        identity,
+        transaction,
       );
-    } else if (action === ApptRequestTypesEnum.CANCEL) {
+    }
+
+    if (
+      [ApptRequestTypesEnum.SCHEDULE, ApptRequestTypesEnum.RESCHEDULE, ApptRequestTypesEnum.CANCEL].includes(action)
+    ) {
+      await this.updateAppointmentRequestStatus(
+        appointment.appointmentRequestId,
+        ApptRequestStatusEnum.FULLFILLED,
+        identity,
+        transaction,
+      );
+    }
+
+    if (action === ApptRequestTypesEnum.CANCEL) {
       const request_type_RESCHEDULE_id = await this.lookupsService.getApptRequestTypeIdByCode(
         ApptRequestTypesEnum.RESCHEDULE,
         identity,
       ); //2
 
-      await this.appointmentRequestsModel.update(
-        {
-          requestStatusId: request_status_FULLFILLED_id,
-        },
-        {
-          where: {
-            id: appointment.appointmentRequestId,
-          },
-          transaction,
-        },
-      );
-
       if (appointment.appointmentRequest.appointmentTypeId === request_type_RESCHEDULE_id) {
-        const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
-          ApptRequestStatusEnum.PENDING,
-          identity,
-        ); //3
-
-        const newAppointment = await this.appointmentsService.getAppointmentByPatientId(
-          identity,
-          appointment.patientId,
-        );
-        if (newAppointment) {
-          const createdRequest = await this.appointmentRequestsModel.create(
-            {
-              requestTypeId: request_type_RESCHEDULE_id,
-              requestStatusId: request_status_PENDING_id,
-              originalAppointmentId: newAppointment.id,
-              appointmentTypeId: newAppointment.appointmentTypeId,
-              ...appointment.appointmentRequest,
-            },
-            {
-              transaction,
-            },
-          );
-          //update original appointment
-          await this.appointmentsService.updateAppointmentAddRequestData(
-            newAppointment.id,
-            createdRequest,
-            transaction,
-          );
-        }
+        await this.createUnfulfilledRequestForNextProvisional(appointment, identity, transaction);
       }
     }
 
     //update original appointment
-    await this.appointmentsService.updateAppointmentAddRequestData(appointmentId, newRequestData, transaction);
+    await this.appointmentsService.updateAppointmentAddRequestData(
+      appointmentId,
+      { id: null, date: null },
+      transaction,
+    );
 
     return true;
   }
 
   //===========================  Private Functions  ===========================
+
+  protected async updateAppointmentRequestStatus(
+    id: number,
+    newStatusCode: ApptRequestStatusEnum,
+    identity: IIdentity,
+    transaction: Transaction,
+  ) {
+    const target_status_id = await this.lookupsService.getApptRequestStatusIdByCode(newStatusCode, identity);
+
+    await this.appointmentRequestsModel.update(
+      {
+        requestStatusId: target_status_id,
+        updatedBy: identity.userId,
+        updatedAt: new Date(),
+      },
+      {
+        where: {
+          id,
+        },
+        transaction,
+      },
+    );
+  }
+
+  //creates another unfulfilled request on the next provisional appointment, request type = reschedule.
+  protected async createUnfulfilledRequestForNextProvisional(
+    appointment,
+    identity: IIdentity,
+    transaction: Transaction,
+  ) {
+    const newAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, appointment.patientId);
+    if (newAppointment) {
+      const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
+        ApptRequestStatusEnum.PENDING,
+        identity,
+      ); //3
+
+      const createdRequest = await this.appointmentRequestsModel.create(
+        {
+          requestStatusId: request_status_PENDING_id,
+          originalAppointmentId: newAppointment.id,
+          appointmentTypeId: newAppointment.appointmentTypeId,
+          ...appointment.appointmentRequest,
+        },
+        {
+          transaction,
+        },
+      );
+      //update original appointment
+      await this.appointmentsService.updateAppointmentAddRequestData(newAppointment.id, createdRequest, transaction);
+    }
+  }
 
   protected checkIfCanRescheduleAppointment(appointment, identity) {
     if (!appointment) {

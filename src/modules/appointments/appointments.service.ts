@@ -1421,6 +1421,11 @@ export class AppointmentsService {
             updateDto,
             APPOINTMENT_CHECKIN_STATUS_EVENT,
           );
+
+          if (appointment.appointmentRequestId) {
+            this.apptRequestServiceSvc.handleAppointmentRequest(appointment.id, null, identity, transaction);
+          }
+
           return updatedAppt;
         } catch (error) {
           this.logger.error({
