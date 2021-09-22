@@ -642,7 +642,7 @@ export class AppointmentsService {
         updatedBy: identity.userId,
         appointmentStatusId: statusReleasedId,
         cancelRescheduleText: statusCode,
-        upcomingAppointment: false,
+        upcomingAppointment: true,
       },
       {
         transaction,
