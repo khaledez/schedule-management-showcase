@@ -291,31 +291,6 @@ export class AppointmentsController {
     };
   }
 
-  //appointmentActionByApp
-  @Post(':id')
-  @UseInterceptors(TransactionInterceptor)
-  async appointmentAction(
-    @Identity() identity: IIdentity,
-    @PagingInfo() pagingInfo: PagingInfoInterface,
-    @Body() body: AppointmentActionDto,
-    @TransactionParam() transaction: Transaction,
-  ): Promise<unknown> {
-    this.logger.debug({
-      function: 'controller/appointment/appointmentAction',
-      identity,
-      body,
-    });
-    const { originalAppt, updatedAppt } = await this.appointmentsService.appointmentAction(identity, body, transaction);
-    this.eventPublisher.publishAppointmentEvent(
-      AppointmentsEventName.APPOINTMENT_UPDATED,
-      updatedAppt,
-      null,
-      originalAppt,
-      identity,
-    );
-    return { appointment: updatedAppt };
-  }
-
   @Post('changeDoctor')
   async changeAppointmentDoctor(
     @Identity() identity: IIdentity,
@@ -345,6 +320,31 @@ export class AppointmentsController {
       identity,
     );
     return { appointment: appointment };
+  }
+
+  //appointmentActionByApp
+  @Post(':id')
+  @UseInterceptors(TransactionInterceptor)
+  async appointmentAction(
+    @Identity() identity: IIdentity,
+    @PagingInfo() pagingInfo: PagingInfoInterface,
+    @Body() body: AppointmentActionDto,
+    @TransactionParam() transaction: Transaction,
+  ): Promise<unknown> {
+    this.logger.debug({
+      function: 'controller/appointment/appointmentAction',
+      identity,
+      body,
+    });
+    const { originalAppt, updatedAppt } = await this.appointmentsService.appointmentAction(identity, body, transaction);
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_UPDATED,
+      updatedAppt,
+      null,
+      originalAppt,
+      identity,
+    );
+    return { appointment: updatedAppt };
   }
 
   /**

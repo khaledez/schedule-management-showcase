@@ -239,7 +239,7 @@ export class AppointmentsModel
 
   @AfterUpdate
   static async addStatusToHistoryAfterUpdate(updatedAppointment) {
-    if (!updatedAppointment.changed().includes('appointmentStatusId')) {
+    if (!updatedAppointment.changed() || !updatedAppointment.changed().includes('appointmentStatusId')) {
       return;
     }
     await AppointmentStatusHistoryModel.create({
