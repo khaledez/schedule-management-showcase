@@ -1,6 +1,8 @@
 import { IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
+  APPOINTMENT_REQUEST_REPOSITORY,
   APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   DEFAULT_APPOINTMENT_THRESHOLD_DAYS,
@@ -38,6 +40,8 @@ import { PatientInfoModel } from '../../patient-info/patient-info.model';
 import { BadRequestException, HttpModule, NotFoundException } from '@nestjs/common';
 import { PatientStatus } from '../../../common/enums/patient-status';
 import { AppointmentEventPublisher } from '../appointments.event-publisher';
+import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
+import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
 
 const identity: IIdentity = getTestIdentity(42, 5000);
 
@@ -85,8 +89,11 @@ describe('Appointment service', () => {
         { provide: 'PatientInfoService', useValue: {} },
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
+        { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
         AvailabilityValidator,
         AppointmentEventPublisher,
+        AppointmentRequestsService,
       ],
     }).compile();
 
@@ -443,11 +450,14 @@ describe('# Cancel appointment', () => {
         { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
         { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
         { provide: PATIENT_INFO_REPOSITORY, useValue: PatientInfoModel },
+        { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
         PatientInfoService,
         AppointmentsService,
         AvailabilityService,
         AvailabilityValidator,
         AppointmentEventPublisher,
+        AppointmentRequestsService,
       ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
@@ -698,8 +708,12 @@ describe('# Patient appointment history tests', () => {
         { provide: 'PatientInfoService', useValue: {} },
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
+        { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
+
         AvailabilityValidator,
         AppointmentEventPublisher,
+        AppointmentRequestsService,
       ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
@@ -750,8 +764,12 @@ describe('# reschedule appointment', () => {
         { provide: 'PatientInfoService', useValue: {} },
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
+        { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
+
         AvailabilityValidator,
         AppointmentEventPublisher,
+        AppointmentRequestsService,
       ],
     }).compile();
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
@@ -965,8 +983,11 @@ describe('Patient upcoming and next appointments tests', () => {
         { provide: 'PatientInfoService', useValue: {} },
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
+        { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
         AppointmentEventPublisher,
         AvailabilityValidator,
+        AppointmentRequestsService,
       ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);

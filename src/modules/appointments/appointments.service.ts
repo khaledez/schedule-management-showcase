@@ -1487,6 +1487,7 @@ export class AppointmentsService {
         appointmentStatusId: {
           [Op.notIn]: finalStatusId,
         },
+        upcomingAppointment: true,
       },
       include: [
         {
@@ -1732,6 +1733,7 @@ export class AppointmentsService {
           [Op.in]: patientIds,
         },
       },
+      include: [{ model: AppointmentStatusLookupsModel, as: 'status' }],
     });
     if (!appointment) {
       throw new NotFoundException({
@@ -1743,20 +1745,20 @@ export class AppointmentsService {
     identity.clinicId = appointment.clinicId;
 
     //check appointment status
-    const appointmentStatusId_SCHEDULE = await this.lookupsService.getStatusIdByCode(
-      identity,
-      AppointmentStatusEnum.SCHEDULE,
-    );
-    if (appointment.appointmentStatusId !== appointmentStatusId_SCHEDULE) {
+    if (
+      ![AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM1, AppointmentStatusEnum.CONFIRM2].includes(
+        appointment.status.code as AppointmentStatusEnum,
+      )
+    ) {
       throw new NotFoundException({
         fields: ['appointmentStatusId'],
-        message: `Appointment with status = ${appointment.appointmentStatusId} can not be confirmed`,
+        message: `Appointment with status = ${appointment.status.code} can not be ${actionType}`,
         code: ErrorCodes.CONFLICTS,
       });
     }
 
     try {
-      const appointmentStatusId_CONFIRM1 = await this.lookupsService.getStatusIdByCode(
+      const target_appointmentStatusId = await this.lookupsService.getStatusIdByCode(
         identity,
         actionType as AppointmentStatusEnum,
       );
@@ -1764,7 +1766,7 @@ export class AppointmentsService {
       // 3. update database
       await this.appointmentsRepository.update(
         {
-          appointmentStatusId: appointmentStatusId_CONFIRM1,
+          appointmentStatusId: target_appointmentStatusId,
           updatedBy: userId,
         },
         {
@@ -1774,7 +1776,17 @@ export class AppointmentsService {
           transaction,
         },
       );
-      const updatedAppt = (await this.appointmentsRepository.findByPk(appointmentId, { transaction })).get();
+      const updatedAppt = (
+        await this.appointmentsRepository.findByPk(appointmentId, {
+          include: [
+            {
+              all: true,
+              required: false,
+            },
+          ],
+          transaction,
+        })
+      ).get({ plain: true });
       this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
       return { originalAppt: appointment, updatedAppt };
     } catch (error) {

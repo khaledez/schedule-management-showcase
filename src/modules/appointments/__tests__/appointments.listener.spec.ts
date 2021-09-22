@@ -10,6 +10,8 @@ import {
   APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   PATIENT_INFO_REPOSITORY,
+  APPOINTMENT_REQUEST_REPOSITORY,
+  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   SEQUELIZE,
 } from '../../../common/constants';
 import { AvailabilityModel } from '../../availability/models/availability.model';
@@ -31,6 +33,8 @@ import { AppointmentStatusEnum } from '../../../common/enums';
 import { PatientStatus } from '../../../common/enums/patient-status';
 import { AppointmentEventPublisher } from '../appointments.event-publisher';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
+import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
+import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
 
 describe('# Appointment event listener', () => {
   let appointmentsService: AppointmentsService;
@@ -46,11 +50,14 @@ describe('# Appointment event listener', () => {
         { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
         { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
         { provide: PATIENT_INFO_REPOSITORY, useValue: PatientInfoModel },
+        { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
         PatientInfoService,
         AppointmentsService,
         AvailabilityService,
         AvailabilityValidator,
         AppointmentEventPublisher,
+        AppointmentRequestsService,
       ],
     }).compile();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);

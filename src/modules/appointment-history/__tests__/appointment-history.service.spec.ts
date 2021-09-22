@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { APPOINTMENTS_REPOSITORY, AVAILABILITY_REPOSITORY } from 'common/constants';
+import {
+  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
+  APPOINTMENT_REQUEST_REPOSITORY,
+  APPOINTMENTS_REPOSITORY,
+  AVAILABILITY_REPOSITORY,
+} from 'common/constants';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { ConfigurationModule } from 'modules/config/config.module';
 import { DatabaseModule } from 'modules/database/database.module';
@@ -17,6 +22,8 @@ import { AppointmentHistoryModule } from '../appointment-history.module';
 import { AppointmentHistoryService } from '../appointment-history.service';
 import { AppointmentStatusEnum } from '../../../common/enums';
 import { AppointmentStatusHistoryModel } from '../models/appointment-status-history.model';
+import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
+import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
 
 describe('# Appointment status history', () => {
   const identity = getTestIdentity(25, 25);
@@ -34,8 +41,11 @@ describe('# Appointment status history', () => {
         { provide: 'PatientInfoService', useValue: {} },
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
+        { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
         AvailabilityValidator,
         AppointmentEventPublisher,
+        AppointmentRequestsService,
       ],
     }).compile();
     appointmentHistoryService = await testingModule.get<AppointmentHistoryService>(AppointmentHistoryService);
