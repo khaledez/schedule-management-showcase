@@ -754,6 +754,8 @@ export class AppointmentsService {
       const provisionalDate: Date = provisionalAppointment ? provisionalAppointment.startDate : availability.startDate;
 
       // 3.2 create the appointment
+      const startDate = dto.startDate ? new Date(dto.startDate) : availability.startDate;
+      const durationMinutes = dto.durationMinutes ?? availability.durationMinutes;
       const createdAppointment = await this.appointmentsRepository.create(
         {
           ...dto,
@@ -762,9 +764,9 @@ export class AppointmentsService {
           clinicId: identity.clinicId,
           createdBy: identity.userId,
           provisionalDate,
-          startDate: dto.startDate ? new Date(dto.startDate) : availability.startDate,
-          endDate: availability.endDate,
-          durationMinutes: dto.durationMinutes ?? availability.durationMinutes,
+          startDate: startDate,
+          endDate: new Date(startDate.getTime() + durationMinutes * MIN_TO_MILLI_SECONDS),
+          durationMinutes: durationMinutes,
           appointmentVisitModeId,
           appointmentStatusId,
           availabilityId: availability.id,
