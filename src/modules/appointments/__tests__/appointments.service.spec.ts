@@ -1,10 +1,11 @@
 import { IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
+import { BadRequestException, HttpModule, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CRON_JOB_REPOSITORY,
   APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   APPOINTMENT_REQUEST_REPOSITORY,
-  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   DEFAULT_APPOINTMENT_THRESHOLD_DAYS,
   PATIENT_INFO_REPOSITORY,
@@ -29,24 +30,22 @@ import { LookupsService } from 'modules/lookups/lookups.service';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { getPatientTestIdentity, getTestIdentity } from 'utils/test-helpers/common-data-helpers';
+import { PatientStatus } from '../../../common/enums/patient-status';
+import { AppointmentCronJobModel } from '../../appointment-cron-job/appointment-cron-job.model';
+import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
+import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
+import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
+import { AvailabilityValidator } from '../../availability/availability.validator';
+import { AvailabilityModel } from '../../availability/models/availability.model';
+import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
+import { EventsModule } from '../../events/events.module';
+import { PatientInfoService } from '../../patient-info';
+import { PatientInfoModel } from '../../patient-info/patient-info.model';
+import { AppointmentEventPublisher } from '../appointments.event-publisher';
 import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments.model';
 import { AppointmentsService } from '../appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
-import { EventsModule } from '../../events/events.module';
-import { PatientInfoService } from '../../patient-info';
-import { AvailabilityModel } from '../../availability/models/availability.model';
-import { AvailabilityValidator } from '../../availability/availability.validator';
-import { PatientInfoModel } from '../../patient-info/patient-info.model';
-import { BadRequestException, HttpModule, NotFoundException } from '@nestjs/common';
-import { PatientStatus } from '../../../common/enums/patient-status';
-import { AppointmentEventPublisher } from '../appointments.event-publisher';
-import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
-import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
-import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
-import { AppointmentCronJobModel } from '../../appointment-cron-job/appointment-cron-job.model';
-import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
-import {AppointmentCancelRescheduleReasonLookupModel} from "../../lookups/models/appointment-cancel-reschedule-reason.model";
 
 const identity: IIdentity = getTestIdentity(42, 5000);
 

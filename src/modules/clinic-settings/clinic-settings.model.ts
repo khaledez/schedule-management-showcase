@@ -1,4 +1,4 @@
-import { Column, DataType, DefaultScope, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { Column, DataType, DefaultScope, PrimaryKey, Table } from 'sequelize-typescript';
 import { BaseModel, BaseModelAttributes } from '../../common/models/base.model';
 
 export interface clinicSettingsAttributes extends BaseModelAttributes {

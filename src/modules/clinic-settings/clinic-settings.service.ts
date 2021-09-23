@@ -1,10 +1,9 @@
-import { HttpService, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CLINIC_SETTINGS_REPOSITORY } from 'common/constants';
-import { DateTime } from 'luxon';
-import { ClinicSettingsModel } from './clinic-settings.model';
 import { ClinicSettingsEnum } from 'common/enums/clinic-settings.enum';
 import { minusHoursToJsDate, minusMinutesToJsDate } from 'common/helpers/date-time-helpers';
+import { ClinicSettingsModel } from './clinic-settings.model';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 
 @Injectable()

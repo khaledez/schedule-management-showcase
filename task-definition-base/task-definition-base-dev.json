@@ -68,8 +68,16 @@
           "value": "%AWS_DEFAULT_REGION%"
         }
       ],
-      "mountPoints": [],
-      "volumesFrom": [],
+      "portMappings": [
+        {
+          "containerPort": 55681,          
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 4317,          
+          "protocol": "tcp"
+        }
+      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

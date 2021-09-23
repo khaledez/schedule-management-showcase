@@ -7,18 +7,16 @@ import {
   EVENT_APPOINTMENT_REMINDER,
   SCHEDULE_MGMT_TOPIC,
 } from 'common/constants';
-import { AppointmentCronJobModel } from './appointment-cron-job.model';
-import { LookupsService } from '../lookups/lookups.service';
-import { AppointmentsModel } from '../appointments/appointments.model';
+import { AppointmentActionEnum } from 'common/enums';
+import { ClinicSettingsEnum } from 'common/enums/clinic-settings.enum';
+import { AppointmentsService } from 'modules/appointments/appointments.service';
 import { Op, Transaction } from 'sequelize';
 import { AppointmentStatusEnum } from '../../common/enums/appointment-status.enum';
+import { AppointmentsModel } from '../appointments/appointments.model';
+import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
-import { AppointmentCronJobAttributes } from './appointment-cron-job.model';
-import { ClinicSettingsEnum } from 'common/enums/clinic-settings.enum';
+import { AppointmentCronJobAttributes, AppointmentCronJobModel } from './appointment-cron-job.model';
 import { NotificationDates } from './interfaces/notification-dates-interface';
-import { AppointmentsService } from 'modules/appointments/appointments.service';
-import { IIdentity } from '@monmedx/monmedx-common';
-import { AppointmentActionEnum } from 'common/enums';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');

@@ -29,8 +29,7 @@ export default function (serviceName) {
   // add OTLP exporter
   const otlpExporter = new CollectorTraceExporter({
     hostname: serviceName,
-    // port configured in the Collector config, defaults to 55680
-    url: 'localhost:55680',
+    url: 'localhost:55681',
   });
   tracerProvider.addSpanProcessor(new SimpleSpanProcessor(otlpExporter));
   // Register the tracer

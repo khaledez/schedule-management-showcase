@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CRON_JOB_REPOSITORY,
   APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   APPOINTMENT_REQUEST_REPOSITORY,
   AVAILABILITY_REPOSITORY,
-  APPOINTMENT_CRON_JOB_REPOSITORY,
 } from 'common/constants';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { ConfigurationModule } from 'modules/config/config.module';
@@ -13,6 +13,8 @@ import { LookupsModule } from 'modules/lookups/lookups.module';
 import { LookupsService } from 'modules/lookups/lookups.service';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 import { AppointmentStatusEnum } from '../../../common/enums';
+import { AppointmentCronJobModel } from '../../appointment-cron-job/appointment-cron-job.model';
+import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
 import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
 import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
 import { AppointmentEventPublisher } from '../../appointments/appointments.event-publisher';
@@ -20,16 +22,11 @@ import { AppointmentsModel } from '../../appointments/appointments.model';
 import { AppointmentsService } from '../../appointments/appointments.service';
 import { AvailabilityValidator } from '../../availability/availability.validator';
 import { AvailabilityModel } from '../../availability/models/availability.model';
+import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
 import { EventsModule } from '../../events/events.module';
 import { AppointmentHistoryModule } from '../appointment-history.module';
 import { AppointmentHistoryService } from '../appointment-history.service';
 import { AppointmentStatusHistoryModel } from '../models/appointment-status-history.model';
-import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
-import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
-import {
-  AppointmentCronJobAttributes,
-  AppointmentCronJobModel,
-} from '../../appointment-cron-job/appointment-cron-job.model';
 
 describe('# Appointment status history', () => {
   const identity = getTestIdentity(25, 25);
