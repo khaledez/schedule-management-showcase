@@ -66,6 +66,7 @@ import { ActionTypeEnum } from 'aws-sdk/clients/elbv2';
 import { AppointmentActionDto } from './dto/appointment-action.dto';
 import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
 import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
+import { AppointmentPublicActionDto } from './dto/appointment-public-action.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -1814,7 +1815,7 @@ export class AppointmentsService {
     );
   }
 
-  //Confirm Appointment by patient from mobile app
+  //Confirm/CheckIn Appointment by patient from mobile app
   public async appointmentAction(identity: IIdentity, body: AppointmentActionDto, transaction: Transaction) {
     const {
       userId,
@@ -1874,6 +1875,91 @@ export class AppointmentsService {
         {
           appointmentStatusId: target_appointmentStatusId,
           updatedBy: userId,
+        },
+        {
+          where: {
+            id: appointmentId,
+          },
+          transaction,
+        },
+      );
+      const updatedAppt = (
+        await this.appointmentsRepository.findByPk(appointmentId, {
+          include: [
+            {
+              all: true,
+              required: false,
+            },
+          ],
+          transaction,
+        })
+      ).get({ plain: true });
+      this.logger.debug({ method: 'appointmentService/confirmAppointmentByApp', updatedAppt });
+      return { originalAppt: appointment, updatedAppt };
+    } catch (error) {
+      this.logger.error({
+        method: 'appointmentService/confirmAppointmentByApp',
+        message: error.message,
+      });
+      throw new InternalServerErrorException({
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+
+  //Confirm/CheckIn Appointment by patient from Web
+  public async appointmentPublicAction(body: AppointmentPublicActionDto, transaction: Transaction) {
+    const { appointmentId, actionType, appointmentToken } = body;
+    if (![AppointmentActionEnum.CONFIRM1, AppointmentActionEnum.CHECK_IN].includes(actionType)) {
+      throw new NotFoundException({
+        fields: ['appointmentStatusId'],
+        message: `Appointment Action:${actionType} not allowed by patient`,
+        code: ErrorCodes.CONFLICTS,
+      });
+    }
+
+    // 1. fetch appointment
+    const appointment = await this.appointmentsRepository.findOne({
+      transaction,
+      where: {
+        id: appointmentId,
+        appointmentToken,
+      },
+      include: [{ model: AppointmentStatusLookupsModel, as: 'status' }],
+    });
+    if (!appointment) {
+      throw new NotFoundException({
+        fields: ['appointmentId'],
+        message: `Appointment with id = ${appointmentId} not found`,
+        code: ErrorCodes.NOT_FOUND,
+      });
+    }
+
+    //check appointment status
+    if (
+      ![AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM1, AppointmentStatusEnum.CONFIRM2].includes(
+        appointment.status.code as AppointmentStatusEnum,
+      )
+    ) {
+      throw new NotFoundException({
+        fields: ['appointmentStatusId'],
+        message: `Appointment with status = ${appointment.status.code} can not be ${actionType}`,
+        code: ErrorCodes.CONFLICTS,
+      });
+    }
+
+    try {
+      const target_appointmentStatusId = await this.lookupsService.getStatusIdByCode(
+        null,
+        actionType as AppointmentStatusEnum,
+      );
+
+      // 3. update database
+      await this.appointmentsRepository.update(
+        {
+          appointmentStatusId: target_appointmentStatusId,
+          //updatedBy: userId,
         },
         {
           where: {

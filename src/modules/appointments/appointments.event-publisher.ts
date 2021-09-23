@@ -30,7 +30,7 @@ export class AppointmentEventPublisher {
     appointment: AppointmentsModelAttributes,
     previousAppointment: AppointmentsModelAttributes,
     appointmentBeforeUpdate: AppointmentsModelAttributes,
-    identity: IIdentity,
+    identity?: IIdentity,
   ) {
     // A necessary work around for unit tests to work properly
     if (process.env.NODE_ENV === 'test') {
@@ -42,7 +42,7 @@ export class AppointmentEventPublisher {
       source: SCHEDULE_MGMT_TOPIC,
       clinicId: appointment.clinicId,
       patientId: appointment.patientId,
-      triggeringMMXUser: identity.userId,
+      triggeringMMXUser: identity?.userId || null,
       doctorsAffected: this.getAffected([appointment, previousAppointment], 'staffId'),
       appointmentsAffected: this.getAffected([appointment, previousAppointment], 'id'),
       appointment: await this.appointmentToEventAppointmentPayLoad(appointment),
