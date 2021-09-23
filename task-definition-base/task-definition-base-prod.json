@@ -49,7 +49,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/QA%service_name%",
+          "awslogs-group": "/ecs/PORD%service_name%",
           "awslogs-region": "%AWS_DEFAULT_REGION%",
           "awslogs-stream-prefix": "ecs"
         }
