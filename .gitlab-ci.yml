@@ -2,7 +2,6 @@ stages:
  - build
  - DEV
  - QA
- - staging
  - PROD
 #=========
 # Build
@@ -89,7 +88,7 @@ QA:
 # staging
 #=========
 staging:
-  stage: staging
+  stage: PROD
   when: manual
   image: python:3.7.3
   environment:
