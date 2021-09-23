@@ -1,3 +1,4 @@
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { CalendarType, ErrorCodes } from 'common/enums';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { LookupWithCodeAttributes } from 'modules/lookups/models';
@@ -12,20 +13,18 @@ import {
   DataType,
   DefaultScope,
   ForeignKey,
-  HasMany,
   Scopes,
   Table,
 } from 'sequelize-typescript';
 import { AppointmentStatusEnum } from '../../common/enums';
 import { BaseModel } from '../../common/models';
+import { AppointmentStatusHistoryModel } from '../appointment-history/models/appointment-status-history.model';
+import { AppointmentRequestsModel } from '../appointment-requests/models';
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-actions.model';
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { PatientInfoModel } from '../patient-info/patient-info.model';
-import { AppointmentRequestsModel } from '../appointment-requests/models';
-import { AppointmentStatusHistoryModel } from '../appointment-history/models/appointment-status-history.model';
-import { InternalServerErrorException, Logger } from '@nestjs/common';
 const { INTEGER, VIRTUAL } = DataType;
 
 export interface AppointmentsModelAttributes extends CalendarEntry {

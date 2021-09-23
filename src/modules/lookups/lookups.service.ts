@@ -26,19 +26,18 @@ import { AppointmentStatusEnum } from 'common/enums/appointment-status.enum';
 import { AppointmentTypesEnum as AppointmentTypeEnum } from 'common/enums/appointment-type.enum';
 import { FindOptions, Op, Transaction } from 'sequelize';
 import { Cached } from 'utils/cached.decorator';
+import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 import { LookupWithCodeAttributes } from './models';
 import { AppointmentActionsLookupsModel } from './models/appointment-actions.model';
 import { AppointmentCancelRescheduleReasonLookupModel } from './models/appointment-cancel-reschedule-reason.model';
+import { AppointmentRequestStatusLookupsModel } from './models/appointment-request-status.model';
+import { AppointmentRequestTypesLookupsModel } from './models/appointment-request-types.model';
 import { AppointmentStatusLookupsModel } from './models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
-import { AppointmentRequestStatusLookupsModel } from './models/appointment-request-status.model';
-import { AppointmentRequestTypesLookupsModel } from './models/appointment-request-types.model';
-import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
-import { identity } from 'rxjs';
-import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)

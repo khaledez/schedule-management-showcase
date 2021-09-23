@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -40,9 +40,16 @@ import { AvailabilityModel } from 'modules/availability/models/availability.mode
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoAttributes, PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import sequelize, { FindOptions, Op, QueryTypes, Sequelize, Transaction, WhereOptions } from 'sequelize';
+import { Includeable } from 'sequelize/types/lib/model';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
+import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
+import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
+import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { LookupsService } from '../lookups/lookups.service';
+import { PatientInfoService } from '../patient-info';
 import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
+import { AppointmentActionDto } from './dto/appointment-action.dto';
 import { AdhocAppointmentDto } from './dto/appointment-adhoc.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -53,13 +60,6 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
-import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
-import { PatientInfoService } from '../patient-info';
-import { Includeable } from 'sequelize/types/lib/model';
-import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
-import { AppointmentActionDto } from './dto/appointment-action.dto';
-import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
-import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -313,7 +313,7 @@ export class AppointmentsService {
     if (queryParams?.filter?.dob?.eq) {
       where = {
         ...where,
-        dob: { [Op.eq]: queryParams.filter.dob.eq },
+        dob: queryParams.filter.dob.eq,
       };
     }
 
@@ -1352,6 +1352,7 @@ export class AppointmentsService {
     updateDto: UpdateAppointmentDto,
   ): Promise<AppointmentsModelAttributes> {
     return this.appointmentsRepository.sequelize.transaction<AppointmentsModelAttributes>(
+      // eslint-disable-next-line complexity
       async (transaction: Transaction) => {
         // 1. fetch appointment
         const appointment = await this.appointmentsRepository.findOne({

@@ -1,3 +1,4 @@
+import { IIdentity } from '@monmedx/monmedx-common';
 import {
   BadRequestException,
   forwardRef,
@@ -14,19 +15,18 @@ import {
   PATIENT_INFO_REPOSITORY,
   PATIENT_UPDATE_REQUEST_EVENT_NAME,
   SCHEDULE_MGMT_TOPIC,
+  SEQUELIZE,
 } from 'common/constants';
-import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
-import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
 import { Op, Transaction } from 'sequelize';
-import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
-import { PatientStatus } from '../../common/enums/patient-status';
-import { ErrorCodes } from '../../common/enums';
-import { IIdentity } from '@monmedx/monmedx-common';
-import { SEQUELIZE } from 'common/constants';
 import { Sequelize } from 'sequelize-typescript';
+import { ErrorCodes } from '../../common/enums';
+import { PatientStatus } from '../../common/enums/patient-status';
+import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { LookupsService } from '../lookups/lookups.service';
 import { ReactivatePatientDto } from './dto/reactivate-patient-dto';
+import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
+import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -79,6 +79,7 @@ export class PatientInfoService {
 
       const { clinicId, patientId, doctorId } = payload;
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [affected_count, affected_rows] = await this.patientRepo.update(
         {
           doctorId: doctorId,

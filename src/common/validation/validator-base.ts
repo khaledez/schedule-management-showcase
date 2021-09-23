@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import {ErrorCodes} from "../enums";
+import { ErrorCodes } from '../enums';
 
 export class ValidatorBase {
   /**

@@ -20,7 +20,8 @@
         {
           "name": "MYSQL_PASSWORD_PARAMETER",
           "value": "%MYSQL_PASSWORD_PARAMETER%"
-        },{
+        },
+        {
           "name": "DB_PASSWORD",
           "value": "%DB_PASSWORD%"
         },
@@ -39,7 +40,8 @@
         {
           "name": "DB_HOST",
           "value": "%DB_HOST%"
-        },{
+        },
+        {
           "name": "S3_BUCKET_NAME",
           "value": "%S3_BUCKET_NAME%"
         }
@@ -54,18 +56,12 @@
           "awslogs-stream-prefix": "ecs"
         }
       }
-
-    }, {
-      "name": "xray-daemon",
-      "image": "amazon/aws-xray-daemon",
+    },
+    {
+      "name": "aws-otel-collector",
+      "image": "amazon/aws-otel-collector",
+      "command": [""],
       "cpu": 0,
-      "portMappings": [
-        {
-          "containerPort": 2000,
-          "hostPort": 2000,
-          "protocol": "udp"
-        }
-      ],
       "essential": true,
       "environment": [],
       "mountPoints": [],
@@ -75,16 +71,13 @@
         "options": {
           "awslogs-group": "/ecs/DEV%service_name%",
           "awslogs-region": "%AWS_DEFAULT_REGION%",
-          "awslogs-stream-prefix": "xray"
+          "awslogs-stream-prefix": "otel"
         }
       }
-
     }
   ],
   "networkMode": "awsvpc",
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
+  "requiresCompatibilities": ["FARGATE"],
   "taskRoleArn": "arn:aws:iam::%accountID%:role/ecsTaskExecutionRole",
   "executionRoleArn": "arn:aws:iam::%accountID%:role/ecsTaskExecutionRole",
   "cpu": "256",

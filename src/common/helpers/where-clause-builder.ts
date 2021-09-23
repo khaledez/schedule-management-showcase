@@ -1,6 +1,6 @@
-import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
-import sequelize, { Op, where } from 'sequelize';
 import { FilterDateInputDto } from '@monmedx/monmedx-common';
+import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
+import sequelize, { Op } from 'sequelize';
 
 export class WhereClauseBuilder {
   public static getEntityIdWhereClause(entity: FilterIdsInputDto, defaultValue = { [Op.notIn]: [] }) {

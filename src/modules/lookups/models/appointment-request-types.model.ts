@@ -1,4 +1,4 @@
-import { Column, HasMany, Table } from 'sequelize-typescript';
+import { Column, Table } from 'sequelize-typescript';
 import { LookupWithCodeAttributes } from '.';
 import { LookupsModel } from '../../../common/models/lookup.model';
 

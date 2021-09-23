@@ -1,26 +1,26 @@
+import { IIdentity } from '@monmedx/monmedx-common';
 import { BadRequestException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { fn, Op, Sequelize, Transaction } from 'sequelize';
+import * as moment from 'moment';
+import { Op, Sequelize, Transaction } from 'sequelize';
+import {
+  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
+  APPOINTMENT_REQUEST_REPOSITORY,
+  SEQUELIZE,
+} from '../../common/constants';
+import { AppointmentStatusEnum, AppointmentTypesEnum } from '../../common/enums';
+import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
+import { AppointmentsService } from '../appointments/appointments.service';
+import { LookupsService } from '../lookups/lookups.service';
+import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import {
   AppointmentRequestCancelAppointmentDto,
   CreateAppointmentRequestDto,
   RejectAppointmentRequestDto,
   UpdateAppointmentRequestDto,
 } from './dto';
-import { IIdentity } from '@monmedx/monmedx-common';
-import {
-  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
-  APPOINTMENT_REQUEST_REPOSITORY,
-  SEQUELIZE,
-} from '../../common/constants';
-import { AppointmentsService } from '../appointments/appointments.service';
-import * as moment from 'moment';
-import { LookupsService } from '../lookups/lookups.service';
-import { AppointmentStatusEnum, AppointmentTypesEnum } from '../../common/enums';
-import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
-import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
 import { featureStatusDto } from './dto/feature-status.dto';
 import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from './models';
-import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 
 @Injectable()
 export class AppointmentRequestsService {
@@ -81,10 +81,7 @@ export class AppointmentRequestsService {
   public async create(requestDto: CreateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'CreateAppointmentRequestDto', requestDto });
 
-    const {
-      userInfo: { patientIds, clinicIds },
-      userId,
-    } = identity;
+    const { userId } = identity;
 
     const { clinicId } = requestDto;
     identity.clinicId = clinicId;
@@ -154,10 +151,7 @@ export class AppointmentRequestsService {
   public async update(requestDto: UpdateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'create', requestDto });
 
-    const {
-      userInfo: { patientIds, clinicIds },
-      userId,
-    } = identity;
+    const { userId } = identity;
 
     const baseUpdate = { updatedBy: userId };
 
@@ -247,10 +241,7 @@ export class AppointmentRequestsService {
 
     const { appointmentId, cancelReason } = requestDto;
 
-    const {
-      userInfo: { patientIds, clinicIds },
-      userId,
-    } = identity;
+    const { userId } = identity;
 
     //get patient upcoming appointment
     const appointment = await this.appointmentsService.getAppointmentById(
@@ -351,6 +342,7 @@ export class AppointmentRequestsService {
       identity,
     ); //
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [affectedCounts, updatedRequest] = await this.appointmentRequestsModel.update(
       {
         requestStatusId: request_status_REJECTED_id,
@@ -558,8 +550,7 @@ export class AppointmentRequestsService {
 
   protected async checkPatientHasRequest(patientId: number, identity: IIdentity) {
     const {
-      userInfo: { patientIds, clinicIds },
-      userId,
+      userInfo: { patientIds },
     } = identity;
     if (!patientIds.includes(patientId)) {
       throw new BadRequestException({

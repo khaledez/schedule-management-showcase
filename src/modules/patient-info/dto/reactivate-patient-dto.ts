@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsDate, IsISO8601, IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
+import { IsDate, IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
 
 export class ReactivatePatientDto {
   @Transform((value) => Number(value))
