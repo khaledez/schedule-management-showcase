@@ -60,10 +60,15 @@
     {
       "name": "aws-otel-collector",
       "image": "amazon/aws-otel-collector",
-      "command": [""],
+      "command": ["Default"],
       "cpu": 0,
       "essential": true,
-      "environment": [],
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "%AWS_DEFAULT_REGION%"
+        }
+      ],
       "mountPoints": [],
       "volumesFrom": [],
       "logConfiguration": {
