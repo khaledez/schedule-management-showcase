@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Identity, IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
+import { nanoid } from 'nanoid';
 import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
@@ -40,16 +41,9 @@ import { AvailabilityModel } from 'modules/availability/models/availability.mode
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
 import { PatientInfoAttributes, PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import sequelize, { FindOptions, Op, QueryTypes, Sequelize, Transaction, WhereOptions } from 'sequelize';
-import { Includeable } from 'sequelize/types/lib/model';
-import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
-import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
-import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
-import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { LookupsService } from '../lookups/lookups.service';
-import { PatientInfoService } from '../patient-info';
 import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
-import { AppointmentActionDto } from './dto/appointment-action.dto';
 import { AdhocAppointmentDto } from './dto/appointment-adhoc.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -60,6 +54,18 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
+import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
+import { PatientInfoService } from '../patient-info';
+import { Includeable } from 'sequelize/types/lib/model';
+import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
+import { ClinicSettingsService } from 'modules/clinic-settings/clinic-settings.service';
+import { AppointmentCronJobService } from 'modules/appointment-cron-job/appointment-cron-job.service';
+import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
+import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
+import { ActionTypeEnum } from 'aws-sdk/clients/elbv2';
+import { AppointmentActionDto } from './dto/appointment-action.dto';
+import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -96,6 +102,9 @@ export class AppointmentsService {
     private readonly availabilityService: AvailabilityService,
     @Inject(forwardRef(() => PatientInfoService))
     private readonly patientInfoSvc: PatientInfoService,
+    private readonly clinicSettingsService: ClinicSettingsService,
+    @Inject(forwardRef(() => AppointmentCronJobService))
+    private readonly appointmentCronJobService: AppointmentCronJobService,
     @Inject(forwardRef(() => AppointmentRequestsService))
     private readonly apptRequestServiceSvc: AppointmentRequestsService,
   ) {}
@@ -753,6 +762,8 @@ export class AppointmentsService {
       await this.isAllowedSchedulingStatus(identity, appointmentStatusId);
       const provisionalDate: Date = provisionalAppointment ? provisionalAppointment.startDate : availability.startDate;
 
+      const appointmentToken = nanoid();
+
       // 3.2 create the appointment
       const startDate = dto.startDate ? new Date(dto.startDate) : availability.startDate;
       const durationMinutes = dto.durationMinutes ?? availability.durationMinutes;
@@ -771,8 +782,17 @@ export class AppointmentsService {
           appointmentStatusId,
           availabilityId: availability.id,
           upcomingAppointment,
+          appointmentToken,
         },
         { transaction },
+      );
+
+      // 3.3 prepare notifications dates
+      await this.createNotifications(
+        createdAppointment.id,
+        createdAppointment.clinicId,
+        createdAppointment.endDate,
+        transaction,
       );
 
       if (dto.staffChangedPermanent) {
@@ -802,6 +822,55 @@ export class AppointmentsService {
       return this.appointmentsRepository.sequelize.transaction(validateInputThenArrangeAttributesAndCommit);
     }
     return validateInputThenArrangeAttributesAndCommit(transaction);
+  }
+
+  async appointmentInfoPublic(token: string) {
+    const appointment = await this.appointmentsRepository.findOne({
+      where: {
+        appointmentToken: token,
+      },
+      include: [AppointmentVisitModeLookupModel, AppointmentTypesLookupsModel, AppointmentStatusLookupsModel],
+    });
+
+    if (!appointment) {
+      throw new NotFoundException({
+        fields: [],
+        code: ErrorCodes.NOT_FOUND,
+        message: 'The appointment does not exits!',
+      });
+    }
+
+    const lastEvent = await this.appointmentCronJobService.lastEventSent(appointment.id);
+
+    if (!lastEvent) {
+      throw new NotFoundException({
+        fields: [],
+        code: ErrorCodes.NOT_FOUND,
+        message: 'The appointment does not exits!',
+      });
+    }
+
+    const responseResult = appointment.get({ plain: true }) as AppointmentsModel & {
+      checkinBeforeApptMinutes: number;
+      actionType: ActionTypeEnum;
+    };
+
+    responseResult.checkinBeforeApptMinutes = lastEvent?.metaData?.apptCheckinBeforeAppt_M;
+    responseResult.actionType = lastEvent.actionType;
+
+    return { appointment: responseResult };
+  }
+
+  private async createNotifications(
+    appointmentId: number,
+    clinicId: number,
+    startDate: Date,
+    transaction: Transaction,
+  ) {
+    // prepare notifications dates
+    const notificationDates = await this.clinicSettingsService.prepareCronJobs(clinicId, startDate);
+    // save notifications dates
+    return this.appointmentCronJobService.createJobs(notificationDates, clinicId, appointmentId, transaction);
   }
 
   protected async changePatientAssignedDoctor(payload: ChangeAssingedDoctorPayload) {
@@ -1008,7 +1077,10 @@ export class AppointmentsService {
 
     const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
 
-    return this.appointmentsRepository.create(
+    // generate token for patient check-in/confirmation dates
+    const appointmentToken = nanoid();
+
+    const appointmentResult = await this.appointmentsRepository.create(
       {
         ...dto,
         staffId: dto.staffId,
@@ -1019,9 +1091,19 @@ export class AppointmentsService {
         complaintsNotes: dto.complaintsNotes,
         appointmentStatusId,
         upcomingAppointment: true,
+        appointmentToken,
       },
       { transaction },
     );
+
+    await this.createNotifications(
+      appointmentResult.id,
+      appointmentResult.clinicId,
+      appointmentResult.startDate,
+      transaction,
+    );
+
+    return appointmentResult;
   }
 
   /**
@@ -1346,6 +1428,19 @@ export class AppointmentsService {
     );
   }
 
+  updateAppointmentStatusBulk(appointmentIds: number[], appointmentStatusId: number) {
+    return this.appointmentsRepository.update(
+      {
+        appointmentStatusId,
+      },
+      {
+        where: {
+          id: appointmentIds,
+        },
+      },
+    );
+  }
+
   updateAppointment(
     identity: IIdentity,
     appointmentId: number,
@@ -1386,7 +1481,15 @@ export class AppointmentsService {
         try {
           // 3. update database
           const attributes = mapUpdateDtoToAttributes(identity, appointment, updateDto);
+          if (
+            updateDto.startDate &&
+            new Date(attributes.startDate).getMilliseconds() !== appointment.startDate.getMilliseconds()
+          ) {
+            await this.appointmentCronJobService.deleteCronJob(appointmentId, transaction);
+            await this.createNotifications(appointment.id, appointment.clinicId, attributes.startDate, transaction);
+          }
           this.logger.debug({ method: 'appointmentService/updateAppointment', updateDto, attributes });
+
           await this.appointmentsRepository.update(attributes, {
             where: {
               id: appointmentId,

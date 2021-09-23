@@ -1,6 +1,7 @@
 import { Dialect } from 'sequelize/types';
 import { PATIENT_MGMT_TOPIC, VISIT_MGMT_TOPIC } from '../src/common/constants';
 
+// eslint-disable-next-line complexity
 export const config = () => ({
   serviceName: 'schedule-management',
   baseURL: undefined,
@@ -34,5 +35,13 @@ export const config = () => ({
   paginationInfo: {
     default: 10,
     max: 100,
+  },
+  clinicSettings: {
+    apptCheckinNotificationBeforeAppt_M: 15,
+    notifySecNotConfirmedBeforeAppt_H: 120,
+    apptCheckinBeforeAppt_M: 15,
+    appointmentRequestEnabled: true,
+    confirmBeforeAppt_H: 168,
+    remindBeforeAppt_H: 48,
   },
 });

@@ -22,6 +22,8 @@ import { AppointmentRequestStatusLookupsModel } from '../lookups/models/appointm
 import { AppointmentRequestTypesLookupsModel } from '../lookups/models/appointment-request-types.model';
 import { AppointmentRequestFeatureStatusModel } from '../appointment-requests/models';
 import { AppointmentStatusHistoryModel } from '../appointment-history/models/appointment-status-history.model';
+import { ClinicSettingsModel } from '../clinic-settings/clinic-settings.model';
+import { AppointmentCronJobModel } from '../appointment-cron-job/appointment-cron-job.model';
 
 export const databaseProviders = [
   {
@@ -38,6 +40,8 @@ export const databaseProviders = [
         ...config,
       });
       sequelize.addModels([
+        ClinicSettingsModel,
+        AppointmentCronJobModel,
         AppointmentsModel,
         AvailabilityModel,
         AvailabilityTemplateModel,

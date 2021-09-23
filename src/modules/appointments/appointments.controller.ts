@@ -6,6 +6,7 @@ import {
   PagingInfoInterface,
   PermissionCode,
   Permissions,
+  Public,
   TransactionInterceptor,
   TransactionParam,
 } from '@monmedx/monmedx-common';
@@ -96,6 +97,12 @@ export class AppointmentsController {
   @Permissions(PermissionCode.APPOINTMENT_READ)
   findOne(@Identity() identity: IIdentity, @Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.findOne(identity, id);
+  }
+
+  @Public()
+  @Get('web-action/:token')
+  appointmentInfoPublic(@Param('token') token: string) {
+    return this.appointmentsService.appointmentInfoPublic(token);
   }
 
   @Patch(':id')

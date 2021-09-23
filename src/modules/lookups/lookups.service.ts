@@ -394,8 +394,11 @@ export class LookupsService {
     ]);
   }
 
-  @Cached(({ clinicId }: IIdentity, code: AppointmentStatusEnum) => `apptstatusid-${clinicId}-${code.toString()}`)
-  public async getStatusIdByCode({ clinicId }: IIdentity | null, code: AppointmentStatusEnum): Promise<number> {
+  @Cached(
+    (identity: IIdentity | null, code: AppointmentStatusEnum) =>
+      `apptstatusid-${~~identity?.clinicId}-${code.toString()}`,
+  )
+  public async getStatusIdByCode(identity: IIdentity | null, code: AppointmentStatusEnum): Promise<number> {
     if (!Object.keys(AppointmentStatusEnum).includes(code)) {
       throw new BadRequestException({
         fields: [],
@@ -407,7 +410,7 @@ export class LookupsService {
       where: {
         code,
         clinicId: {
-          [Op.or]: [null, clinicId],
+          [Op.or]: [null, ~~identity?.clinicId],
         },
       },
       attributes: ['id'],
@@ -753,22 +756,31 @@ export class LookupsService {
     });
   }
 
+  public async getApptRequestTypeIdByCode(
+    code: ApptRequestTypesEnum,
+    identity,
+    transaction?: Transaction,
+  ): Promise<number> {
+    const statuses = await this.findAllAppointmentRequestTypesLookups(identity, transaction);
+    const status: any = statuses.filter((el) => el.code === code);
+    return status.id || null;
+  }
+
+  public async getMultipleApptRequestTypeIdByCode(
+    code: string[],
+    identity,
+    transaction?: Transaction,
+  ): Promise<number[]> {
+    const statuses = await this.findAllAppointmentRequestTypesLookups(identity, transaction);
+    return statuses.filter((el) => code.includes(el.code)).map(({ id }) => id);
+  }
+
   public async getApptRequestStatusIdByCode(
     code: ApptRequestStatusEnum,
     identity,
     transaction?: Transaction,
   ): Promise<number> {
     const rows = await this.findAllAppointmentRequestStatusLookups(identity, transaction);
-    const row: any = rows.map((el) => el.get({ plain: true })).filter((el) => el.code === code);
-    return row[0]?.id || null;
-  }
-
-  public async getApptRequestTypeIdByCode(
-    code: ApptRequestTypesEnum,
-    identity,
-    transaction?: Transaction,
-  ): Promise<number> {
-    const rows = await this.findAllAppointmentRequestTypesLookups(identity, transaction);
     const row: any = rows.map((el) => el.get({ plain: true })).filter((el) => el.code === code);
     return row[0]?.id || null;
   }

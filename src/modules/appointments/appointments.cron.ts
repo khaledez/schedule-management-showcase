@@ -22,20 +22,18 @@ export class AppointmentsCron {
   @Cron('0 7 * * *') // Everyday at 7AM
   async handleCron() {
     const startTime = DateTime.now();
-    await Promise.allSettled([
-      this.notifyDueProvisionalAppointments(),
-      this.notifyUnconfirmedAppointments(),
-      this.notifyMissedAppointments(),
-    ]).then((result) => {
-      const endTime = DateTime.now();
-      const diff = endTime.diff(startTime);
-      this.logger.log({
-        message: `CRON Service executed at ${startTime.toISO()}, EXECUTION TIME: ${
-          diff.toObject().milliseconds
-        } Milliseconds`,
-        result,
-      });
-    });
+    await Promise.allSettled([this.notifyDueProvisionalAppointments(), this.notifyMissedAppointments()]).then(
+      (result) => {
+        const endTime = DateTime.now();
+        const diff = endTime.diff(startTime);
+        this.logger.log({
+          message: `CRON Service executed at ${startTime.toISO()}, EXECUTION TIME: ${
+            diff.toObject().milliseconds
+          } Milliseconds`,
+          result,
+        });
+      },
+    );
   }
 
   async notifyDueProvisionalAppointments() {

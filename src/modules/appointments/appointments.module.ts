@@ -9,10 +9,14 @@ import { AppointmentsController } from './appointments.controller';
 import { appointmentsProviders } from './appointments.provider';
 import { AppointmentsService } from './appointments.service';
 import { AppointmentEventPublisher } from './appointments.event-publisher';
+import { ClinicSettingsModule } from 'modules/clinic-settings/clinic-settings.module';
+import { AppointmentCronJobModule } from 'modules/appointment-cron-job/appointment-cron-job.module';
 import { AppointmentRequestsModule } from '../appointment-requests/appointment-requests.module';
 
 @Module({
   imports: [
+    ClinicSettingsModule,
+    forwardRef(() => AppointmentCronJobModule),
     LookupsModule,
     forwardRef(() => AvailabilityModule),
     EventsModule,

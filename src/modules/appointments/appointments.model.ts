@@ -4,7 +4,6 @@ import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { LookupWithCodeAttributes } from 'modules/lookups/models';
 import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
-import { Op } from 'sequelize';
 import {
   AfterCreate,
   AfterUpdate,
@@ -16,6 +15,7 @@ import {
   Scopes,
   Table,
 } from 'sequelize-typescript';
+import { Op, STRING } from 'sequelize';
 import { AppointmentStatusEnum } from '../../common/enums';
 import { BaseModel } from '../../common/models';
 import { AppointmentStatusHistoryModel } from '../appointment-history/models/appointment-status-history.model';
@@ -45,6 +45,7 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
   visitSummaryDocumentId?: string;
   appointmentRequestId?: number;
   appointmentRequestDate?: Date;
+  appointmentToken?: string;
 
   primaryAction?: LookupWithCodeAttributes;
   secondaryActions?: LookupWithCodeAttributes[];
@@ -177,6 +178,9 @@ export class AppointmentsModel
 
   @Column
   visitSummaryDocumentId: string;
+
+  @Column
+  appointmentToken: string;
 
   @BelongsTo(() => PatientInfoModel, 'patientId')
   patient: PatientInfoModel;
