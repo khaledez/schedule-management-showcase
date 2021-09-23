@@ -59,8 +59,7 @@
     },
     {
       "name": "aws-otel-collector",
-      "image": "amazon/aws-otel-collector",
-      "command": ["--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml"],
+      "image": "%accountID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/otel-collector:latest",
       "cpu": 0,
       "essential": true,
       "environment": [
