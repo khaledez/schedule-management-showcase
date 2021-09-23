@@ -324,6 +324,7 @@ export class AppointmentsController {
         appointmentTypeId: dto.appointmentTypeId ?? previousAppointment.appointmentTypeId,
         startDate: dto.provisionalDate ?? previousAppointment.startDate.toISOString(),
         durationMinutes: previousAppointment.durationMinutes,
+        staffChangedPermanent: true,
       },
       true,
       await this.lookupsService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.CHANGE_DOCTOR),
