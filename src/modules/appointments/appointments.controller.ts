@@ -65,6 +65,7 @@ export class AppointmentsController {
   // search using post method
   @Post('search')
   @UseInterceptors(PaginationInterceptor)
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   async search(
     @Identity() identity: IIdentity,
     @PagingInfo() pagingInfo: PagingInfoInterface,
@@ -90,7 +91,7 @@ export class AppointmentsController {
     this.logger.log({ query });
     this.logger.log({ identity });
     return {
-      dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(identity.clinicId, query),
+      dayAppointments: await this.appointmentsService.getAppointmentsByPeriods(identity, query),
     };
   }
 
@@ -129,6 +130,7 @@ export class AppointmentsController {
    * Get patient upcoming appointment
    */
   @Get('patient-upcoming/:patientId')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   getAppointmentByPatientId(@Identity() identity: IIdentity, @Param('patientId', ParseIntPipe) patientId: number) {
     return this.appointmentsService.getAppointmentByPatientId(identity, patientId);
   }
@@ -142,6 +144,7 @@ export class AppointmentsController {
    * @returns Created Appointment
    */
   @Post('provisional')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createProvisionalAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
@@ -178,6 +181,7 @@ export class AppointmentsController {
    * @param dto
    */
   @Post()
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async createAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
@@ -212,6 +216,7 @@ export class AppointmentsController {
   }
 
   @Post('reschedule')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async rescheduleAppointment(@Identity() identity: IIdentity, @Body() dto: RescheduleAppointmentDto) {
     const previousAppointment = await this.appointmentsService.findOne(identity, dto.appointmentId);
     await this.validateVisitNotInProgress(identity, previousAppointment);
@@ -224,6 +229,7 @@ export class AppointmentsController {
   }
 
   @Post('cancel')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async cancelAppointment(@Identity() identity: IIdentity, @Body() dto: CancelAppointmentDto) {
     const previousAppointment = await this.appointmentsService.findOne(identity, dto.appointmentId);
     await this.validateVisitNotInProgress(identity, previousAppointment);
@@ -245,6 +251,7 @@ export class AppointmentsController {
    *
    */
   @Post('adhoc')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async adhocAppointment(
     @Identity() identity: IIdentity,
     @Headers('Authorization') authToken: string,
@@ -280,6 +287,7 @@ export class AppointmentsController {
 
   // search using post method
   @Post('user-appointments')
+  @Permissions(PermissionCode.APPOINTMENT_READ)
   @UseInterceptors(PaginationInterceptor)
   async userAppointments(
     @Identity() identity: IIdentity,
@@ -300,6 +308,7 @@ export class AppointmentsController {
   }
 
   @Post('changeDoctor')
+  @Permissions(PermissionCode.APPOINTMENT_WRITE)
   async changeAppointmentDoctor(
     @Identity() identity: IIdentity,
     @Body() dto: ChangeAppointmentDoctorDto,

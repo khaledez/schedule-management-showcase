@@ -4,6 +4,7 @@ import {
   APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   APPOINTMENT_REQUEST_REPOSITORY,
   AVAILABILITY_REPOSITORY,
+  APPOINTMENT_CRON_JOB_REPOSITORY,
 } from 'common/constants';
 import { AvailabilityService } from 'modules/availability/availability.service';
 import { ConfigurationModule } from 'modules/config/config.module';
@@ -23,6 +24,12 @@ import { EventsModule } from '../../events/events.module';
 import { AppointmentHistoryModule } from '../appointment-history.module';
 import { AppointmentHistoryService } from '../appointment-history.service';
 import { AppointmentStatusHistoryModel } from '../models/appointment-status-history.model';
+import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
+import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
+import {
+  AppointmentCronJobAttributes,
+  AppointmentCronJobModel,
+} from '../../appointment-cron-job/appointment-cron-job.model';
 
 describe('# Appointment status history', () => {
   const identity = getTestIdentity(25, 25);
@@ -33,14 +40,23 @@ describe('# Appointment status history', () => {
 
   beforeAll(async () => {
     testingModule = await Test.createTestingModule({
-      imports: [ConfigurationModule, DatabaseModule, AppointmentHistoryModule, LookupsModule, EventsModule],
+      imports: [
+        ConfigurationModule,
+        DatabaseModule,
+        AppointmentHistoryModule,
+        LookupsModule,
+        EventsModule,
+        ClinicSettingsModule,
+      ],
       providers: [
         { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
         { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
         { provide: 'PatientInfoService', useValue: {} },
         { provide: 'AppointmentsService', useClass: AppointmentsService },
         { provide: 'AvailabilityService', useClass: AvailabilityService },
+        { provide: 'AppointmentCronJobService', useClass: AppointmentCronJobService },
         { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
+        { provide: APPOINTMENT_CRON_JOB_REPOSITORY, useValue: AppointmentCronJobModel },
         { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
         AvailabilityValidator,
         AppointmentEventPublisher,

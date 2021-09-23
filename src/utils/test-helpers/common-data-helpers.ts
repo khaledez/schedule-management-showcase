@@ -1,4 +1,4 @@
-import { IIdentity } from '@monmedx/monmedx-common';
+import { IIdentity, UserTypeEnum } from '@monmedx/monmedx-common';
 
 export function getTestIdentity(userId, clinicId): IIdentity {
   return {
@@ -9,15 +9,21 @@ export function getTestIdentity(userId, clinicId): IIdentity {
     userInfo: {
       cognitoId: null,
       status: null,
-      userId: null,
+      userId: userId,
       clinicIds: [clinicId],
       username: null,
-      userType: null,
+      userType: UserTypeEnum.STAFF,
       firstName: null,
       lastName: null,
       languageCode: null,
       clinics: [],
-      patientIds: [],
+      patientIds: [userId],
     },
   };
+}
+
+export function getPatientTestIdentity(userId, clinicId): IIdentity {
+  const patientIdentity = getTestIdentity(userId, clinicId);
+  patientIdentity.userInfo.userType = UserTypeEnum.PATIENT;
+  return patientIdentity;
 }

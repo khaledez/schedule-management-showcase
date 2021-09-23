@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Identity, IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
+import { Identity, IIdentity, PagingInfoInterface, UserTypeEnum } from '@monmedx/monmedx-common';
 import { nanoid } from 'nanoid';
 import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
 import {
@@ -12,8 +12,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -180,7 +180,9 @@ export class AppointmentsService {
         limit,
         offset,
       };
-      const { rows: appointments } = await this.appointmentsRepository.findAndCountAll(options);
+      const { rows: appointments } = await this.appointmentsRepository
+        .scope([{ method: ['patientScope', identity] }])
+        .findAndCountAll(options);
       const searchResult = await this.buildAppointmentConnectionResponseForPatient(appointments, identity);
 
       return [searchResult, appointments.length];
@@ -269,8 +271,9 @@ export class AppointmentsService {
         limit,
         offset,
       };
-      const { rows: appointments } = await this.appointmentsRepository.findAndCountAll(options);
-
+      const { rows: appointments } = await this.appointmentsRepository
+        .scope([{ method: ['patientScope', identity] }])
+        .findAndCountAll(options);
       const filterAppointments = appointments.filter((appointment) => {
         if (!queryParams?.filter?.time?.between) {
           return true;
@@ -376,7 +379,9 @@ export class AppointmentsService {
         limit,
         offset,
       };
-      const { rows: appointments, count } = await this.appointmentsRepository.findAndCountAll(options);
+      const { rows: appointments, count } = await this.appointmentsRepository
+        .scope([{ method: ['patientScope', identity] }])
+        .findAndCountAll(options);
       const searchResult = await this.buildAppointmentConnectionResponse(appointments);
       return [searchResult, count];
     } catch (error) {
@@ -1013,7 +1018,7 @@ export class AppointmentsService {
     id: number,
     transaction?: Transaction,
   ): Promise<AppointmentsModelAttributes> {
-    const appointment = await this.appointmentsRepository.unscoped().findByPk(id, {
+    const appointment = await this.appointmentsRepository.scope([{ method: ['patientScope', identity] }]).findByPk(id, {
       include: [
         {
           all: true,
@@ -1031,6 +1036,9 @@ export class AppointmentsService {
     }
     const provisionalStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
     const appointmentAsPlain = appointment.get({ plain: true });
+    if (identity.userInfo.userType === UserTypeEnum.PATIENT) {
+      return appointmentAsPlain;
+    }
     const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
     this.logger.debug({
       title: 'appointment actions',
@@ -1603,8 +1611,10 @@ export class AppointmentsService {
         },
       ],
     };
-    const appointment = await this.appointmentsRepository.findOne(options);
-    if (!appointment) {
+    const appointment = await this.appointmentsRepository
+      .scope([{ method: ['patientScope', identity] }])
+      .findOne(options);
+    if (!appointment || identity.userInfo.userType === UserTypeEnum.PATIENT) {
       return appointment;
     }
     const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
@@ -1619,7 +1629,7 @@ export class AppointmentsService {
   }
 
   async getAppointmentsByPeriods(
-    clinicId: number,
+    identity: IIdentity,
     query: QueryAppointmentsByPeriodsDto,
   ): Promise<{ date: string; count: number }[]> {
     const where: any = {
@@ -1632,7 +1642,7 @@ export class AppointmentsService {
       availabilityId: {
         [Op.ne]: null,
       },
-      clinicId,
+      clinicId: { [Op.in]: identity.userInfo.clinicIds },
       startDate: {
         [Op.between]: [query.fromDate, query.toDate],
       },
@@ -1642,7 +1652,7 @@ export class AppointmentsService {
     }
 
     // Get all appointments
-    const result = await this.appointmentsRepository.findAll({
+    const result = await this.appointmentsRepository.scope([{ method: ['patientScope', identity] }]).findAll({
       include: [
         {
           model: AppointmentStatusLookupsModel,

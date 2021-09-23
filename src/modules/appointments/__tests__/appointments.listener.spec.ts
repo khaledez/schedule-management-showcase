@@ -13,6 +13,7 @@ import {
   APPOINTMENT_REQUEST_REPOSITORY,
   APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   SEQUELIZE,
+  APPOINTMENT_CRON_JOB_REPOSITORY,
 } from '../../../common/constants';
 import { AvailabilityModel } from '../../availability/models/availability.model';
 import { AvailabilityService } from '../../availability/availability.service';
@@ -35,6 +36,9 @@ import { AppointmentEventPublisher } from '../appointments.event-publisher';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
 import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
+import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
+import { AppointmentCronJobModel } from '../../appointment-cron-job/appointment-cron-job.model';
+import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
 
 describe('# Appointment event listener', () => {
   let appointmentsService: AppointmentsService;
@@ -45,13 +49,15 @@ describe('# Appointment event listener', () => {
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [ConfigurationModule, DatabaseModule, LookupsModule, EventsModule, HttpModule],
+      imports: [ConfigurationModule, DatabaseModule, LookupsModule, EventsModule, HttpModule, ClinicSettingsModule],
       providers: [
         { provide: APPOINTMENTS_REPOSITORY, useValue: AppointmentsModel },
         { provide: AVAILABILITY_REPOSITORY, useValue: AvailabilityModel },
         { provide: PATIENT_INFO_REPOSITORY, useValue: PatientInfoModel },
         { provide: APPOINTMENT_REQUEST_REPOSITORY, useValue: AppointmentRequestsModel },
         { provide: APPOINTMENT_REQUEST_FEATURE_REPOSITORY, useValue: AppointmentRequestFeatureStatusModel },
+        { provide: APPOINTMENT_CRON_JOB_REPOSITORY, useValue: AppointmentCronJobModel },
+        { provide: 'AppointmentCronJobService', useClass: AppointmentCronJobService },
         PatientInfoService,
         AppointmentsService,
         AvailabilityService,

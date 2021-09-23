@@ -433,7 +433,7 @@ export function getAppointmentWithActionsTestCases() {
   ];
 }
 
-function createAppointment(
+export function createAppointment(
   identity: IIdentity,
   patientId: number,
   staffId: number,

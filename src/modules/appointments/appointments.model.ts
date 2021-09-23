@@ -15,8 +15,6 @@ import {
   Scopes,
   Table,
 } from 'sequelize-typescript';
-import { Op, STRING } from 'sequelize';
-import { AppointmentStatusEnum } from '../../common/enums';
 import { BaseModel } from '../../common/models';
 import { AppointmentStatusHistoryModel } from '../appointment-history/models/appointment-status-history.model';
 import { AppointmentRequestsModel } from '../appointment-requests/models';
@@ -25,6 +23,9 @@ import { AppointmentActionsLookupsModel } from '../lookups/models/appointment-ac
 import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-status.model';
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { PatientInfoModel } from '../patient-info/patient-info.model';
+import { AppointmentsDefaultScope } from './scopes/appointments-default-scope';
+import { AppointmentsPatientScope } from './scopes/appointments-patient-scope';
+
 const { INTEGER, VIRTUAL } = DataType;
 
 export interface AppointmentsModelAttributes extends CalendarEntry {
@@ -47,49 +48,20 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
   appointmentRequestDate?: Date;
   appointmentToken?: string;
 
+  type?: AppointmentTypesLookupsModel;
+  availability?: AvailabilityModel;
+  visitMode?: AppointmentVisitModeLookupModel;
+  status?: AppointmentStatusLookupsModel;
+  cancelRescheduleReason?: AppointmentCancelRescheduleReasonLookupModel;
   primaryAction?: LookupWithCodeAttributes;
   secondaryActions?: LookupWithCodeAttributes[];
   provisionalAppointment?: boolean;
 }
 
 // note that the id will auto added by sequelize.
-@DefaultScope(() => ({
-  where: {
-    deletedAt: null,
-    deletedBy: null,
-  },
-  attributes: { exclude: ['deletedAt', 'deletedBy'] },
-  individualHooks: true,
-}))
-// TODO update scope to correctly connect patient and lookups
+@DefaultScope(AppointmentsDefaultScope)
 @Scopes(() => ({
-  id: {
-    attributes: {
-      include: ['id'],
-    },
-  },
-  active: {
-    attributes: {
-      exclude: ['deletedAt', 'deletedBy'],
-    },
-    where: {
-      [`$status.code$`]: {
-        [Op.notIn]: [AppointmentStatusEnum.COMPLETE, AppointmentStatusEnum.CANCELED],
-      },
-      [`$patient.status_code$`]: {
-        [Op.eq]: 'ACTIVE',
-      },
-      deletedBy: null,
-    },
-  },
-  provisional: {
-    include: [AppointmentStatusLookupsModel],
-    where: {
-      '$status.code$': {
-        [Op.eq]: AppointmentStatusEnum.WAIT_LIST,
-      },
-    },
-  },
+  patientScope: AppointmentsPatientScope,
 }))
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel
