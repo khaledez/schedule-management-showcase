@@ -46,12 +46,14 @@ export class AppointmentCronJobService {
       include: [
         {
           model: AppointmentsModel,
+          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'appointmentToken'],
           where: {
             appointmentRequestId: null,
           },
           include: [
             {
               model: AppointmentStatusLookupsModel,
+              attributes: ['id', 'code'],
               where: {
                 code: AppointmentStatusEnum.SCHEDULE,
               },
@@ -59,6 +61,12 @@ export class AppointmentCronJobService {
           ],
         },
       ],
+    });
+
+    this.logger.log({
+      function: 'notifyNotConfirmedAppointments',
+      appointments: cronJobNotConfirmedAppointment,
+      count: cronJobNotConfirmedAppointment.length,
     });
 
     if (cronJobNotConfirmedAppointment.length === 0) {
@@ -93,12 +101,14 @@ export class AppointmentCronJobService {
       include: [
         {
           model: AppointmentsModel,
+          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'appointmentToken'],
           where: {
             appointmentRequestId: null,
           },
           include: [
             {
               model: AppointmentStatusLookupsModel,
+              attributes: ['id', 'code'],
               where: {
                 code: AppointmentStatusEnum.CONFIRM1,
               },
@@ -108,9 +118,16 @@ export class AppointmentCronJobService {
       ],
     });
 
+    this.logger.log({
+      function: 'notifyNotRemindedAppointments',
+      appointments: cronJobNotRemindedAppointment,
+      count: cronJobNotRemindedAppointment.length,
+    });
+
     if (cronJobNotRemindedAppointment.length === 0) {
       return;
     }
+
     await this.sendNotifications(cronJobNotRemindedAppointment, EVENT_APPOINTMENT_REMINDER);
 
     const confirm2StatusId = await this.lookupsService.getStatusIdByCode(null, AppointmentStatusEnum.CONFIRM2);
@@ -134,12 +151,14 @@ export class AppointmentCronJobService {
       include: [
         {
           model: AppointmentsModel,
+          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'appointmentToken'],
           where: {
             appointmentRequestId: null,
           },
           include: [
             {
               model: AppointmentStatusLookupsModel,
+              attributes: ['id', 'code'],
               where: {
                 code: AppointmentStatusEnum.CONFIRM1,
               },
@@ -147,6 +166,12 @@ export class AppointmentCronJobService {
           ],
         },
       ],
+    });
+
+    this.logger.log({
+      function: 'notifySecNotConfirmedBeforeAppt',
+      appointments: notConfirmedApptForSecretary,
+      count: notConfirmedApptForSecretary.length,
     });
 
     if (notConfirmedApptForSecretary.length === 0) {
@@ -170,17 +195,27 @@ export class AppointmentCronJobService {
       include: [
         {
           model: AppointmentsModel,
+          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'appointmentToken'],
           where: {
             appointmentRequestId: null,
           },
-        },
-        {
-          model: AppointmentStatusLookupsModel,
-          where: {
-            code: [AppointmentStatusEnum.CONFIRM1, AppointmentStatusEnum.CONFIRM2, AppointmentStatusEnum.SCHEDULE],
-          },
+          include: [
+            {
+              model: AppointmentStatusLookupsModel,
+              attributes: ['id', 'code'],
+              where: {
+                code: [AppointmentStatusEnum.CONFIRM1, AppointmentStatusEnum.CONFIRM2, AppointmentStatusEnum.SCHEDULE],
+              },
+            },
+          ],
         },
       ],
+    });
+
+    this.logger.log({
+      function: 'sendCheckinNotificationBeforeAppt',
+      appointments: cronJobSendCheckinNotificationBeforeAppt,
+      count: cronJobSendCheckinNotificationBeforeAppt.length,
     });
 
     if (cronJobSendCheckinNotificationBeforeAppt.length === 0) {
@@ -212,6 +247,13 @@ export class AppointmentCronJobService {
   }
 
   createJobs(notificationDates: NotificationDates, clinicId: number, appointmentId: number, transaction: Transaction) {
+    this.logger.log({
+      function: 'createJobs',
+      notificationDates,
+      clinicId,
+      appointmentId,
+    });
+
     const cronJobs = [
       {
         type: ClinicSettingsEnum.APPT_CHECKIN_NOTIFICATION_BEFORE_APPT_M,
@@ -309,6 +351,12 @@ export class AppointmentCronJobService {
           [Op.not]: null,
         },
       },
+    });
+
+    this.logger.log({
+      function: 'lastEventSent',
+      result,
+      appointmentId,
     });
 
     const checkInSent = result.find(({ type }) => type === ClinicSettingsEnum.APPT_CHECKIN_NOTIFICATION_BEFORE_APPT_M);

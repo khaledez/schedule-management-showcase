@@ -50,6 +50,13 @@ export class ClinicSettingsService {
       settings[ClinicSettingsEnum.REMIND_BEFORE_APPT_H] = clinicSettings.remindBeforeAppt_H;
     }
 
+    this.logger.log({
+      function: 'prepareCronJobs',
+      clinicId,
+      startDate,
+      settings,
+    });
+
     const apptCheckinNotificationBeforeApptDate = minusMinutesToJsDate(
       startDate,
       settings[ClinicSettingsEnum.APPT_CHECKIN_NOTIFICATION_BEFORE_APPT_M],
