@@ -1,15 +1,15 @@
 import { IIdentity } from '@monmedx/monmedx-common';
-import { Op } from 'sequelize';
 import { PatientInfoModel } from '../../patient-info/patient-info.model';
 import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 import { AppointmentVisitModeLookupModel } from '../../lookups/models/appointment-visit-mode.model';
 import { AppointmentRequestsModel } from '../../appointment-requests/models';
+import { AvailabilityModel } from '../../availability/models/availability.model';
+import { AppointmentCancelRescheduleReasonLookupModel } from '../../lookups/models/appointment-cancel-reschedule-reason.model';
 
-export const AppointmentsPatientScope = (identity: IIdentity) => {
-  const { clinicIds, patientIds } = identity.userInfo;
+export const StaffPatientScope = (identity: IIdentity) => {
   return {
-    where: { clinicId: { [Op.in]: clinicIds }, deletedAt: null, deletedBy: null, patientId: { [Op.in]: patientIds } },
+    where: { clinicId: identity.clinicId, deletedAt: null, deletedBy: null },
     include: [
       {
         model: PatientInfoModel,
@@ -31,29 +31,14 @@ export const AppointmentsPatientScope = (identity: IIdentity) => {
         model: AppointmentRequestsModel,
         required: false,
       },
+      {
+        model: AvailabilityModel,
+        required: false,
+      },
+      {
+        model: AppointmentCancelRescheduleReasonLookupModel,
+        required: false,
+      },
     ],
-    attributes: {
-      exclude: [
-        'availability',
-        'deletedAt',
-        'deletedBy',
-        'updatedAt',
-        'updatedBy',
-        'createdAt',
-        'createdBy',
-        'canceledAt',
-        'canceledBy',
-        'availabilityId',
-        'entryType',
-        'provisionalDate',
-        'cancelRescheduleText',
-        'cancelRescheduleReasonId',
-        'cancelRescheduleReason',
-        'actualStartDate',
-        'actualEndDate',
-        'visitSummaryDocumentId',
-        'visitId',
-      ],
-    },
   };
 };

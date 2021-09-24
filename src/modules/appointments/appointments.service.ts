@@ -169,19 +169,13 @@ export class AppointmentsService {
         };
       }
       const options: FindOptions = {
-        include: [
-          {
-            all: true,
-            required: false,
-          },
-        ],
         where,
         order,
         limit,
         offset,
       };
       const { rows: appointments } = await this.appointmentsRepository
-        .scope([{ method: ['patientScope', identity] }])
+        .scope([{ method: ['roleScope', identity] }])
         .findAndCountAll(options);
       const searchResult = await this.buildAppointmentConnectionResponseForPatient(appointments, identity);
 
@@ -260,10 +254,6 @@ export class AppointmentsService {
       const options: FindOptions = {
         include: [
           {
-            all: true,
-            required: false,
-          },
-          {
             ...patientInfoInclude,
           },
         ],
@@ -276,7 +266,7 @@ export class AppointmentsService {
         offset,
       };
       const { rows: appointments } = await this.appointmentsRepository
-        .scope([{ method: ['patientScope', identity] }])
+        .scope([{ method: ['roleScope', identity] }])
         .findAndCountAll(options);
       const filterAppointments = appointments.filter((appointment) => {
         if (!queryParams?.filter?.time?.between) {
@@ -369,22 +359,15 @@ export class AppointmentsService {
     this.logger.log(order);
     try {
       const options: FindOptions = {
-        include: [
-          {
-            all: true,
-            required: false,
-          },
-        ],
         where: {
           patientId: payload.patientId,
-          clinicId: identity.clinicId,
         },
         order,
         limit,
         offset,
       };
       const { rows: appointments, count } = await this.appointmentsRepository
-        .scope([{ method: ['patientScope', identity] }])
+        .scope([{ method: ['roleScope', identity] }])
         .findAndCountAll(options);
       const searchResult = await this.buildAppointmentConnectionResponse(appointments);
       return [searchResult, count];
@@ -1030,13 +1013,7 @@ export class AppointmentsService {
     id: number,
     transaction?: Transaction,
   ): Promise<AppointmentsModelAttributes> {
-    const appointment = await this.appointmentsRepository.scope([{ method: ['patientScope', identity] }]).findByPk(id, {
-      include: [
-        {
-          all: true,
-          required: false,
-        },
-      ],
+    const appointment = await this.appointmentsRepository.scope([{ method: ['roleScope', identity] }]).findByPk(id, {
       transaction,
     });
     if (!appointment) {
@@ -1611,22 +1588,13 @@ export class AppointmentsService {
     const options: FindOptions = {
       where: {
         patientId: patientId,
-        clinicId: identity.clinicId,
         appointmentStatusId: {
           [Op.notIn]: finalStatusId,
         },
         upcomingAppointment: true,
       },
-      include: [
-        {
-          all: true,
-          required: false,
-        },
-      ],
     };
-    const appointment = await this.appointmentsRepository
-      .scope([{ method: ['patientScope', identity] }])
-      .findOne(options);
+    const appointment = await this.appointmentsRepository.scope([{ method: ['roleScope', identity] }]).findOne(options);
     if (!appointment || identity.userInfo.userType === UserTypeEnum.PATIENT) {
       return appointment;
     }
@@ -1665,7 +1633,7 @@ export class AppointmentsService {
     }
 
     // Get all appointments
-    const result = await this.appointmentsRepository.scope([{ method: ['patientScope', identity] }]).findAll({
+    const result = await this.appointmentsRepository.scope([{ method: ['roleScope', identity] }]).findAll({
       include: [
         {
           model: AppointmentStatusLookupsModel,

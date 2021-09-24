@@ -24,7 +24,7 @@ import { AppointmentStatusLookupsModel } from '../lookups/models/appointment-sta
 import { AppointmentTypesLookupsModel } from '../lookups/models/appointment-types.model';
 import { PatientInfoModel } from '../patient-info/patient-info.model';
 import { AppointmentsDefaultScope } from './scopes/appointments-default-scope';
-import { AppointmentsPatientScope } from './scopes/appointments-patient-scope';
+import { AppointmentsRoleScope } from './scopes/appointments-role-scope';
 
 const { INTEGER, VIRTUAL } = DataType;
 
@@ -61,7 +61,7 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
 // note that the id will auto added by sequelize.
 @DefaultScope(AppointmentsDefaultScope)
 @Scopes(() => ({
-  patientScope: AppointmentsPatientScope,
+  roleScope: AppointmentsRoleScope,
 }))
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel

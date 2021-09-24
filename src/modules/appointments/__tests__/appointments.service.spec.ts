@@ -1000,12 +1000,11 @@ describe('Appointment service for patient scope', () => {
         'status',
         'visitMode',
         'appointmentRequest',
-        'availability',
-        'cancelRescheduleReason',
+        'appointmentTypeId',
+        'appointmentStatusId',
+        'appointmentVisitModeId',
       ].sort(),
     );
-    expect(result.availability).toBeNull();
-    expect(result.cancelRescheduleReason).toBeNull();
   });
 });
 
