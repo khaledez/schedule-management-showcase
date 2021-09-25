@@ -1,39 +1,35 @@
-import { propagation, trace } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { CollectorTraceExporter } from '@opentelemetry/exporter-collector-grpc';
 import { AWSXRayIdGenerator } from '@opentelemetry/id-generator-aws-xray';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
-import { SimpleSpanProcessor } from '@opentelemetry/tracing';
+import { Resource } from '@opentelemetry/resources';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
-export default function (serviceName) {
-  // set global propagator
-  propagation.setGlobalPropagator(new AWSXRayPropagator());
-  // create a provider for activating and tracking with AWS IdGenerator
-  const tracerConfig = {
-    idGenerator: new AWSXRayIdGenerator(),
-    // Any instrumentation plugins will be declared here
-    plugins: {
-      express: {
-        enabled: true,
-        path: '@opentelemetry/instrumentation-express',
-      },
-      mysql2: {
-        enabled: true,
-        path: '@opentelemetry/instrumentation-mysql2',
-      },
-    },
-    // Any resources can be declared here
-    resources: {},
-  };
-  const tracerProvider = new NodeTracerProvider(tracerConfig);
-  // add OTLP exporter
-  const otlpExporter = new CollectorTraceExporter({
-    hostname: serviceName,
-    url: 'localhost:55681',
-  });
-  tracerProvider.addSpanProcessor(new SimpleSpanProcessor(otlpExporter));
-  // Register the tracer
-  tracerProvider.register();
-  // Return an tracer instance
-  return trace.getTracer('sample-instrumentation');
-}
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
+
+const provider = new NodeTracerProvider({
+  resource: Resource.default().merge(
+    new Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: 'aws-otel-integ-test',
+    }),
+  ),
+  idGenerator: new AWSXRayIdGenerator(),
+});
+provider.register({ propagator: new AWSXRayPropagator() });
+
+provider.addSpanProcessor(new BatchSpanProcessor(new CollectorTraceExporter()));
+
+registerInstrumentations({
+  instrumentations: [
+    // Express instrumentation expects HTTP layer to be instrumented
+    new HttpInstrumentation(),
+    new ExpressInstrumentation(),
+  ],
+});
+
+export const tracer = provider.getTracer('schedule-management');

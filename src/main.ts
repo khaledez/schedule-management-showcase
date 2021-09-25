@@ -10,9 +10,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { CONFIG_SERVICE, PORT, SERVICE_NAME } from './common/constants';
 import { FireEventService } from './fire-event.service';
-import tracer from './otlp.tracing';
-
-tracer('schedule-management');
+import './otlp.tracing';
 
 async function bootstrap() {
   const logger = new Logger('bootstrap');
