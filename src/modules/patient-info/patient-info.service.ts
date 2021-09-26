@@ -226,6 +226,7 @@ export class PatientInfoService {
     return this.sequelize.transaction(async (transaction) => {
       patientInfo.statusCode = PatientStatus.ACTIVE;
       await this.update(patientInfo, transaction);
+      await this.appointmentsService.removeUpcomingAppointmentFlag(identity, patientInfo.id, transaction);
       const appointment = await this.appointmentsService.createProvisionalAppointment(
         identity,
         {

@@ -10,6 +10,7 @@ import { PatientStatus } from '../../../common/enums/patient-status';
 import { getTestIdentity } from '../../../utils/test-helpers/common-data-helpers';
 import { AppointmentsService } from '../../appointments/appointments.service';
 import { AppointmentsModel } from '../../appointments/appointments.model';
+import { AvailabilityModel } from '../../availability/models/availability.model';
 
 describe('patient-info service', () => {
   let patientInfoSvc: PatientInfoService;
@@ -35,6 +36,7 @@ describe('patient-info service', () => {
   afterEach(async () => {
     await patientInfoSvc.deleteByIdsList(createdPatientInfoIds);
     await AppointmentsModel.destroy({ where: {} });
+    await AvailabilityModel.destroy({ where: {} });
     createdPatientInfoIds = [];
   });
 

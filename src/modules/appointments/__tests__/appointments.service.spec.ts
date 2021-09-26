@@ -942,6 +942,21 @@ describe('Patient upcoming and next appointments tests', () => {
     const result = await appointmentsService.getAppointmentByPatientId(identity, testCase.patientId);
     expect(result?.startDate).toEqual(testCase.date);
   });
+
+  test('# removeUpcomingAppointmentFlag', async () => {
+    const patientId = 947;
+    const createdAppointment = await appointmentsService.createProvisionalAppointment(identity, {
+      appointmentTypeId: 1,
+      durationMinutes: 15,
+      patientId: patientId,
+      startDate: new Date('2021-06-12'),
+    });
+    createdAppointmentsIds.push(createdAppointment.id);
+    expect(createdAppointment.upcomingAppointment).toEqual(true);
+    await appointmentsService.removeUpcomingAppointmentFlag(identity, patientId);
+    const updatedAppointment = await appointmentsService.findOne(identity, createdAppointment.id);
+    expect(updatedAppointment.upcomingAppointment).toEqual(false);
+  });
 });
 
 describe('Appointment service for patient scope', () => {

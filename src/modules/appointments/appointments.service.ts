@@ -1117,6 +1117,22 @@ export class AppointmentsService {
   }
 
   /**
+   * set upcomingAppointment flag of appointment to false for the given patient
+   */
+  removeUpcomingAppointmentFlag(identity: IIdentity, patientId: number, transaction?: Transaction) {
+    return this.appointmentsRepository.update(
+      { upcomingAppointment: false, updatedBy: identity.userId },
+      {
+        where: {
+          patientId: patientId,
+          clinicId: identity.clinicId,
+        },
+        transaction: transaction,
+      },
+    );
+  }
+
+  /**
    * Get patient next provisional appointment
    * @param identity
    * @param patientId
