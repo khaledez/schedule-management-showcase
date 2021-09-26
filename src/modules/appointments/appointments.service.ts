@@ -737,6 +737,15 @@ export class AppointmentsService {
       }
 
       if (!dto.availabilityId && isProvisional) {
+        if (dto.staffChangedPermanent) {
+          //change assigned doctor
+          await this.changePatientAssignedDoctor({
+            patientId: dto.patientId,
+            doctorId: dto.staffId,
+            clinicId: identity.clinicId,
+          });
+        }
+
         return this.createProvisionalAppointment(
           identity,
           {
