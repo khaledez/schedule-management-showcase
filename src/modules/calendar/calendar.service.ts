@@ -1,26 +1,35 @@
-import { FilterStringInputDto, IIdentity } from '@monmedx/monmedx-common';
-import { Injectable, Logger } from '@nestjs/common';
-import { CalendarType } from 'common/enums';
-import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
-import { CalendarEntry } from 'common/interfaces/calendar-entry';
-import { DateTime } from 'luxon';
-import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
-import { LookupsService } from 'modules/lookups/lookups.service';
-import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
-import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
-import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
-import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
-import { Op, WhereOptions } from 'sequelize';
-import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
-import { AvailabilityModel } from '../availability/models/availability.model';
-import { EventModel } from '../events/models';
-import { CalendarSearchInput, CalendarSearchResult, DayCalendarEntry } from './calendar.interface';
+import {FilterStringInputDto, IIdentity} from '@monmedx/monmedx-common';
+import {Inject, Injectable, Logger} from '@nestjs/common';
+import {CalendarType} from 'common/enums';
+import {processFilterDatesInput, processFilterIdsInput} from 'common/filters/basic-filter-to-query';
+import {CalendarEntry} from 'common/interfaces/calendar-entry';
+import {DateTime} from 'luxon';
+import {AvailabilityModelAttributes} from 'modules/availability/models/availability.interfaces';
+import {LookupsService} from 'modules/lookups/lookups.service';
+import {AppointmentCancelRescheduleReasonLookupModel} from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
+import {AppointmentStatusLookupsModel} from 'modules/lookups/models/appointment-status.model';
+import {AppointmentTypesLookupsModel} from 'modules/lookups/models/appointment-types.model';
+import {AppointmentVisitModeLookupModel} from 'modules/lookups/models/appointment-visit-mode.model';
+import {Op, WhereOptions} from 'sequelize';
+import {AppointmentsModel, AppointmentsModelAttributes} from '../appointments/appointments.model';
+import {AvailabilityModel} from '../availability/models/availability.model';
+import {EventModel} from '../events/models';
+import {CalendarSearchInput, CalendarSearchResult, DayCalendarEntry} from './calendar.interface';
+import {APPOINTMENTS_REPOSITORY, AVAILABILITY_REPOSITORY, EVENTS_REPOSITORY} from '../../common/constants';
 
 @Injectable()
 export class CalendarService {
   private readonly logger = new Logger(CalendarService.name);
 
-  constructor(private readonly lookupService: LookupsService) {}
+  constructor(
+    private readonly lookupService: LookupsService,
+    @Inject(APPOINTMENTS_REPOSITORY)
+    private readonly appointmentsRepository: typeof AppointmentsModel,
+    @Inject(AVAILABILITY_REPOSITORY)
+    private readonly availabilityRepository: typeof AvailabilityModel,
+    @Inject(EVENTS_REPOSITORY)
+    private readonly eventRepository: typeof EventModel,
+  ) {}
 
   async search(identity: IIdentity, query: CalendarSearchInput): Promise<CalendarSearchResult> {
     this.logger.debug({
@@ -128,7 +137,7 @@ export class CalendarService {
       };
     }
 
-    const appointments = await AppointmentsModel.findAll({
+    const appointments = await this.appointmentsRepository.findAll({
       where: appointmentWhereClauses,
       include: [
         AppointmentStatusLookupsModel,
@@ -183,7 +192,7 @@ export class CalendarService {
       };
     }
 
-    return EventModel.findAll({
+    return this.eventRepository.findAll({
       where: eventWhereClauses,
     });
   }
@@ -223,7 +232,7 @@ export class CalendarService {
       };
     }
 
-    return AvailabilityModel.findAll({
+    return this.availabilityRepository.findAll({
       where: availabilityWhereClauses,
       include: [AppointmentTypesLookupsModel],
     });

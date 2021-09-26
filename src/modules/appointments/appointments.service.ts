@@ -479,7 +479,7 @@ export class AppointmentsService {
     if (cancelReason.code === CancelRescheduleReasonCode.RELEASE_PATIENT) {
       const patientInfo = await this.patientInfoSvc.releasePatient(identity.clinicId, appointment.patientId);
       await this.releasePatientAppointments(patientInfo);
-      return AppointmentsModel.findOne({ transaction, where: { id: appointment.id } });
+      return this.appointmentsRepository.findOne({ transaction, where: { id: appointment.id } });
     }
 
     return this.appointmentsRepository.sequelize.transaction(async (transaction: Transaction) => {
@@ -550,7 +550,7 @@ export class AppointmentsService {
       },
     };
 
-    const availabilities = (await AppointmentsModel.findAll(options))
+    const availabilities = (await this.appointmentsRepository.findAll(options))
       .filter((appointment) => appointment.availabilityId)
       .map((appointment) => appointment.availabilityId);
 
@@ -570,15 +570,15 @@ export class AppointmentsService {
         visitId: visitId,
       };
     }
-    await AppointmentsModel.update(updateValues, options);
+    await this.appointmentsRepository.update(updateValues, options);
 
     if (keepAvailabilitySlot !== false) {
-      await AvailabilityModel.update(
+      await this.availabilityRepository.update(
         { isOccupied: false, updatedBy: identity.userId },
         { transaction, where: { id: { [Op.in]: availabilities } } },
       );
     } else {
-      await AvailabilityModel.update(
+      await this.availabilityRepository.update(
         {
           deletedBy: identity.userId,
           deletedAt: new Date(),
@@ -1327,7 +1327,7 @@ export class AppointmentsService {
           AppointmentStatusEnum.RESCHEDULED,
         );
         const [rescheduleResult, createResult] = await Promise.all([
-          AppointmentsModel.update(
+          this.appointmentsRepository.update(
             {
               updatedBy: identity.userId,
               appointmentStatusId: rescheduleStatusId,

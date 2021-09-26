@@ -6,6 +6,8 @@ import { EventsModule } from '../events/events.module';
 import { EventModel } from '../events/models';
 import { CalendarController } from './calendar.controller';
 import { CalendarService } from './calendar.service';
+import { AppointmentsModule } from '../appointments/appointments.module';
+import { AvailabilityModule } from '../availability/availability.module';
 
 const repoProviders = [
   {
@@ -15,7 +17,7 @@ const repoProviders = [
 ];
 
 @Module({
-  imports: [DatabaseModule, EventsModule, LookupsModule],
+  imports: [DatabaseModule, EventsModule, LookupsModule, AppointmentsModule, AvailabilityModule],
   controllers: [CalendarController],
   providers: [CalendarService, ...repoProviders],
   exports: [CalendarService],

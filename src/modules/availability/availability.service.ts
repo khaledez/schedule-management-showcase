@@ -143,7 +143,9 @@ export class AvailabilityService {
         // here we're not using bulkCreate as it will fail in MySQL if some required info are missing (staffId, createdBy)
         // even though bulkCreate uses UPSERT query
         return [
-          AvailabilityModel.update(availability, { transaction, where: { id: availability.id } }).then((r) => r[1]),
+          this.availabilityRepository
+            .update(availability, { transaction, where: { id: availability.id } })
+            .then((r) => r[1]),
           avId,
         ];
       })
@@ -157,7 +159,7 @@ export class AvailabilityService {
       );
     await Promise.all(availabilityUpdates);
 
-    return AvailabilityModel.findAll({ transaction, raw: true, where: { id: { [Op.in]: ids } } });
+    return this.availabilityRepository.findAll({ transaction, raw: true, where: { id: { [Op.in]: ids } } });
   }
 
   bulkCreate(
@@ -169,7 +171,7 @@ export class AvailabilityService {
 
     const createExec: Promise<AvailabilityModel[]> =
       createInput.length > 0
-        ? AvailabilityModel.bulkCreate(createInput, {
+        ? this.availabilityRepository.bulkCreate(createInput, {
             transaction,
           })
         : Promise.resolve([]);
