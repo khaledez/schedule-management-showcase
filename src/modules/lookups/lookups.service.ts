@@ -761,9 +761,9 @@ export class LookupsService {
     identity,
     transaction?: Transaction,
   ): Promise<number> {
-    const statuses = await this.findAllAppointmentRequestTypesLookups(identity, transaction);
-    const status: any = statuses.filter((el) => el.code === code);
-    return status.id || null;
+    const rows = await this.findAllAppointmentRequestTypesLookups(identity, transaction);
+    const row: any = rows.map((el) => el.get({ plain: true })).filter((el) => el.code === code);
+    return row[0]?.id || null;
   }
 
   public async getMultipleApptRequestTypeIdByCode(

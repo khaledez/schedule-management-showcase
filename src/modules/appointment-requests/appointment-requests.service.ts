@@ -21,6 +21,8 @@ import {
 } from './dto';
 import { featureStatusDto } from './dto/feature-status.dto';
 import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from './models';
+import { AppointmentEventPublisher, AppointmentsEventName } from '../appointments/appointments.event-publisher';
+import { AppointmentRequestTypesLookupsModel } from '../lookups/models/appointment-request-types.model';
 
 @Injectable()
 export class AppointmentRequestsService {
@@ -36,6 +38,7 @@ export class AppointmentRequestsService {
     @Inject(forwardRef(() => AppointmentsService))
     private readonly appointmentsService: AppointmentsService,
     private readonly lookupsService: LookupsService,
+    private readonly eventPublisher: AppointmentEventPublisher,
   ) {}
 
   public async getRequestById(id: number, identity: IIdentity, transaction: Transaction) {
@@ -328,6 +331,12 @@ export class AppointmentRequestsService {
         id,
         clinicId,
       },
+      include: [
+        {
+          model: AppointmentRequestTypesLookupsModel,
+          as: 'requestType',
+        },
+      ],
     });
     if (!appointmentRequest) {
       throw new BadRequestException({
@@ -337,13 +346,14 @@ export class AppointmentRequestsService {
       });
     }
 
+    const appointmentId = appointmentRequest.originalAppointmentId;
+
     const request_status_REJECTED_id = await this.lookupsService.getApptRequestStatusIdByCode(
       ApptRequestStatusEnum.REJECTED,
       identity,
     ); //
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [affectedCounts, updatedRequest] = await this.appointmentRequestsModel.update(
+    await this.appointmentRequestsModel.update(
       {
         requestStatusId: request_status_REJECTED_id,
         rejectionReason,
@@ -358,14 +368,28 @@ export class AppointmentRequestsService {
       },
     );
 
-    //update original appointment
-    /*await this.appointmentsService.updateAppointmentAddRequestData(
-      appointmentRequest.originalAppointmentId,
-      updatedRequest,
-      transaction,
-    );*/
+    appointmentRequest.reload({ plain: true });
 
-    return appointmentRequest.reload({ plain: true });
+    //update original appointment
+    await this.appointmentsService.updateAppointmentAddRequestData(
+      appointmentId,
+      { id: null, date: null },
+      transaction,
+    );
+
+    const appointment = await this.appointmentsService.getAppointmentById(identity, appointmentId);
+    const requestTypeCode: ApptRequestTypesEnum = appointmentRequest.requestType.code as ApptRequestTypesEnum;
+
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_REQUEST_DECLINED,
+      appointment,
+      null,
+      null,
+      { requestTypeCode: requestTypeCode, rejectionReason },
+      identity,
+    );
+
+    return appointmentRequest;
   }
 
   public async featureStatus(requestDto: featureStatusDto, identity: IIdentity, transaction: Transaction) {

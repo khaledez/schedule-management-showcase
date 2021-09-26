@@ -24,6 +24,7 @@ export class PatientInfoController {
       result.appointment,
       null,
       null,
+      null,
       identity,
     );
     return result;

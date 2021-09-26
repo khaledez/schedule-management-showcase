@@ -6,6 +6,7 @@ import { TimeGroupsLookupsModel } from '../../lookups/models/time-groups.model';
 import { AppointmentVisitModeLookupModel } from '../../lookups/models/appointment-visit-mode.model';
 import { AppointmentRequestTypesLookupsModel } from '../../lookups/models/appointment-request-types.model';
 import { AppointmentRequestStatusLookupsModel } from '../../lookups/models/appointment-request-status.model';
+import { ApptRequestTypesEnum } from '../../../common/enums/appt-request-types.enum';
 
 export interface AppointmentsRequestModelAttributes extends BaseModelAttributes {
   clinicId: number;
@@ -27,6 +28,12 @@ export interface AppointmentsRequestModelAttributes extends BaseModelAttributes 
   updatedAt?: Date;
 }
 
+export interface AppointmentsRequestData {
+  requestTypeCode?: ApptRequestTypesEnum;
+  requestReason?: string;
+  rejectionReason?: string;
+}
+
 @DefaultScope(() => ({
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
@@ -37,7 +44,7 @@ export interface AppointmentsRequestModelAttributes extends BaseModelAttributes 
     exclude: ['deletedAt', 'deletedBy'],
     include: [
       {
-        model: AppointmentTypesLookupsModel,
+        model: AppointmentRequestTypesLookupsModel,
         as: 'requestType',
       },
       {

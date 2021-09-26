@@ -5,6 +5,8 @@ import { AppointmentsEventPayload, LookupModelPayload } from './events/appointme
 import { AppointmentsModelAttributes } from './appointments.model';
 import { LookupsService } from '../lookups/lookups.service';
 import { IIdentity } from '@monmedx/monmedx-common';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
+import { AppointmentsRequestData, AppointmentsRequestModelAttributes } from '../appointment-requests/models';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -15,6 +17,7 @@ export enum AppointmentsEventName {
   APPOINTMENT_RESCHEDULED = 'APPOINTMENT_RESCHEDULED',
   APPOINTMENT_CANCELED = 'APPOINTMENT_CANCELED',
   APPOINTMENT_REMINDER = 'APPOINTMENT_REMINDER',
+  APPOINTMENT_REQUEST_DECLINED = 'APPOINTMENT_REQUEST_DECLINED',
 }
 
 @Injectable()
@@ -30,6 +33,7 @@ export class AppointmentEventPublisher {
     appointment: AppointmentsModelAttributes,
     previousAppointment: AppointmentsModelAttributes,
     appointmentBeforeUpdate: AppointmentsModelAttributes,
+    requestData?: AppointmentsRequestData,
     identity?: IIdentity,
   ) {
     // A necessary work around for unit tests to work properly

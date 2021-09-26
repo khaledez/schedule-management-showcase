@@ -121,6 +121,7 @@ export class AppointmentsController {
       appointment,
       null,
       appointmentBeforeUpdate,
+      null,
       identity,
     );
     return appointment;
@@ -169,6 +170,7 @@ export class AppointmentsController {
       appointment,
       null,
       null,
+      null,
       identity,
     );
     return { appointment };
@@ -211,7 +213,7 @@ export class AppointmentsController {
     const eventName = appointment
       ? AppointmentsEventName.APPOINTMENT_RESCHEDULED
       : AppointmentsEventName.APPOINTMENT_SCHEDULED;
-    this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, identity);
+    this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, null, identity);
     return { appointment };
   }
 
@@ -224,7 +226,7 @@ export class AppointmentsController {
     const eventName = dto.staffChangedPermanent
       ? AppointmentsEventName.APPOINTMENT_CANCELED
       : AppointmentsEventName.APPOINTMENT_RESCHEDULED;
-    this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, identity);
+    this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, null, identity);
     return { appointment: appointment };
   }
 
@@ -238,6 +240,7 @@ export class AppointmentsController {
       AppointmentsEventName.APPOINTMENT_CANCELED,
       appointment,
       previousAppointment,
+      null,
       null,
       identity,
     );
@@ -266,6 +269,7 @@ export class AppointmentsController {
       appointment,
       wasAppointmentUpdated ? null : previousAppointment,
       wasAppointmentUpdated ? previousAppointment : null,
+      null,
       identity,
     );
     return appointment;
@@ -335,6 +339,7 @@ export class AppointmentsController {
       appointment,
       previousAppointment,
       null,
+      null,
       identity,
     );
     return { appointment: appointment };
@@ -359,6 +364,7 @@ export class AppointmentsController {
       updatedAppt,
       null,
       originalAppt,
+      null,
       identity,
     );
     return { appointment: updatedAppt };
