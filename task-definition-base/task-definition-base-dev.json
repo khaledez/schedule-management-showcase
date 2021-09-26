@@ -70,7 +70,7 @@
       ],
       "portMappings": [
         {
-          "containerPort": 55681,          
+          "containerPort": 55681,
           "protocol": "tcp"
         },
         {

@@ -1,21 +1,21 @@
-import {FilterStringInputDto, IIdentity} from '@monmedx/monmedx-common';
-import {Inject, Injectable, Logger} from '@nestjs/common';
-import {CalendarType} from 'common/enums';
-import {processFilterDatesInput, processFilterIdsInput} from 'common/filters/basic-filter-to-query';
-import {CalendarEntry} from 'common/interfaces/calendar-entry';
-import {DateTime} from 'luxon';
-import {AvailabilityModelAttributes} from 'modules/availability/models/availability.interfaces';
-import {LookupsService} from 'modules/lookups/lookups.service';
-import {AppointmentCancelRescheduleReasonLookupModel} from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
-import {AppointmentStatusLookupsModel} from 'modules/lookups/models/appointment-status.model';
-import {AppointmentTypesLookupsModel} from 'modules/lookups/models/appointment-types.model';
-import {AppointmentVisitModeLookupModel} from 'modules/lookups/models/appointment-visit-mode.model';
-import {Op, WhereOptions} from 'sequelize';
-import {AppointmentsModel, AppointmentsModelAttributes} from '../appointments/appointments.model';
-import {AvailabilityModel} from '../availability/models/availability.model';
-import {EventModel} from '../events/models';
-import {CalendarSearchInput, CalendarSearchResult, DayCalendarEntry} from './calendar.interface';
-import {APPOINTMENTS_REPOSITORY, AVAILABILITY_REPOSITORY, EVENTS_REPOSITORY} from '../../common/constants';
+import { FilterStringInputDto, IIdentity } from '@monmedx/monmedx-common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { CalendarType } from 'common/enums';
+import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
+import { CalendarEntry } from 'common/interfaces/calendar-entry';
+import { DateTime } from 'luxon';
+import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
+import { LookupsService } from 'modules/lookups/lookups.service';
+import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
+import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
+import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
+import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
+import { Op, WhereOptions } from 'sequelize';
+import { APPOINTMENTS_REPOSITORY, AVAILABILITY_REPOSITORY, EVENTS_REPOSITORY } from '../../common/constants';
+import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
+import { AvailabilityModel } from '../availability/models/availability.model';
+import { EventModel } from '../events/models';
+import { CalendarSearchInput, CalendarSearchResult, DayCalendarEntry } from './calendar.interface';
 
 @Injectable()
 export class CalendarService {
@@ -97,7 +97,7 @@ export class CalendarService {
       return [];
     }
     let appointmentWhereClauses: WhereOptions<AppointmentsModel> = {
-      clinicId: { [Op.eq]: identity.clinicId },
+      clinicId: identity.clinicId,
 
       deletedBy: { [Op.is]: null },
     };
@@ -174,7 +174,7 @@ export class CalendarService {
       return Promise.resolve([]);
     }
     let eventWhereClauses: WhereOptions<AppointmentsModel> = {
-      clinicId: { [Op.eq]: identity.clinicId },
+      clinicId: identity.clinicId,
       deletedBy: { [Op.is]: null },
     };
 
@@ -206,8 +206,8 @@ export class CalendarService {
       return Promise.resolve([]);
     }
     let availabilityWhereClauses: WhereOptions<AvailabilityModelAttributes> = {
-      clinicId: { [Op.eq]: identity.clinicId },
-      isOccupied: { [Op.eq]: false },
+      clinicId: identity.clinicId,
+      isOccupied: false,
       deletedBy: { [Op.is]: null },
     };
 

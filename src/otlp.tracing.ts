@@ -1,5 +1,5 @@
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
-import { CollectorTraceExporter } from '@opentelemetry/exporter-collector-grpc';
+import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
 import { AWSXRayIdGenerator } from '@opentelemetry/id-generator-aws-xray';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
