@@ -63,4 +63,7 @@ export class RescheduleAppointmentDto {
   @IsOptional()
   @Type(() => Number)
   appointmentStatusId?: number;
+
+  @IsOptional()
+  complaintsNotes?: string;
 }

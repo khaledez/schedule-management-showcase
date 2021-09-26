@@ -207,11 +207,15 @@ export class AppointmentsService {
       },
       deletedBy: null,
     };
+
     if (queryParams.filter?.id) {
-      where.id = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.id);
+      where.id = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter.id);
+    }
+    if (queryParams.filter?.patientId) {
+      where.patientId = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter.patientId);
     }
     if (queryParams.filter?.doctorId) {
-      where.staffId = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter?.doctorId);
+      where.staffId = WhereClauseBuilder.getEntityIdWhereClause(queryParams.filter.doctorId);
     }
     if (queryParams.filter?.appointmentStatusId) {
       where.appointmentStatusId = await this.getAppointmentStatusIdWhereClause(
@@ -458,13 +462,17 @@ export class AppointmentsService {
     transaction?: Transaction,
   ): Promise<AppointmentsModel> {
     const procedureInTx = async (transaction: Transaction) => {
-      await this.reschedulePatientAppointments(
+      const rescheduledUppointment = await this.reschedulePatientAppointments(
         identity,
         dto.patientId,
         rescheduleReasonId,
         rescheduleReasonText,
         transaction,
       );
+      //Get complaintsNotes from Waitlist appointment
+      if (!dto.complaintsNotes && rescheduledUppointment && rescheduledUppointment.complaintsNotes) {
+        dto.complaintsNotes = rescheduledUppointment.complaintsNotes;
+      }
       return this.createAppointment(identity, dto, upcomingAppointment, transaction);
     };
     if (transaction) {
@@ -626,7 +634,9 @@ export class AppointmentsService {
       },
     };
 
-    await AppointmentsModel.update(
+    const appointment = await this.appointmentsRepository.findOne(options);
+
+    await appointment.update(
       {
         appointmentStatusId: rescheduleStatus,
         cancelRescheduleReasonId: rescheduleReasonId,
@@ -638,6 +648,8 @@ export class AppointmentsService {
       },
       options,
     );
+
+    return appointment.reload({ plain: true });
   }
 
   async releasePatientAppointments(patientAttr: PatientInfoAttributes, transaction?: Transaction) {
@@ -1360,6 +1372,7 @@ export class AppointmentsService {
               availabilityId: dto.availabilityId,
               startDate: dto.startDate,
               durationMinutes: dto.durationMinutes,
+              complaintsNotes: dto.complaintsNotes,
             },
             true,
             transaction,
