@@ -368,7 +368,7 @@ export class AppointmentRequestsService {
       },
     );
 
-    appointmentRequest.reload({ plain: true });
+    await appointmentRequest.reload({ plain: true, transaction });
 
     //update original appointment
     await this.appointmentsService.updateAppointmentAddRequestData(
@@ -377,7 +377,7 @@ export class AppointmentRequestsService {
       transaction,
     );
 
-    const appointment = await this.appointmentsService.getAppointmentById(identity, appointmentId);
+    const appointment = await this.appointmentsService.getAppointmentById(identity, appointmentId, null, transaction);
     const requestTypeCode: ApptRequestTypesEnum = appointmentRequest.requestType.code as ApptRequestTypesEnum;
 
     this.eventPublisher.publishAppointmentEvent(
