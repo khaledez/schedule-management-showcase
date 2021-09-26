@@ -143,10 +143,10 @@ export class AppointmentsService {
       }
 
       where = {
-        ...where,
         patientId: {
           [Op.in]: patientIds,
         },
+        ...where,
         [Op.or]: [
           { appointmentStatusId: { [Op.not]: appt_status_Waitlist } },
           { appointmentRequestId: { [Op.not]: null } },
