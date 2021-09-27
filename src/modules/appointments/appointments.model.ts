@@ -66,7 +66,8 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
 @Table({ tableName: 'Appointments', underscored: true })
 export class AppointmentsModel
   extends BaseModel<AppointmentsModelAttributes, AppointmentsModelAttributes>
-  implements AppointmentsModelAttributes {
+  implements AppointmentsModelAttributes
+{
   private static readonly logger = new Logger(AppointmentsModel.name);
 
   @Column

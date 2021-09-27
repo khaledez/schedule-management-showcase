@@ -5,7 +5,8 @@ import { AvailabilityTemplateSlotModel } from './availability-template-slot.mode
 @Table({ tableName: 'AvailabilityTemplate', underscored: true, paranoid: false })
 export class AvailabilityTemplateModel
   extends Model<AvailabilityTemplateAttributes>
-  implements AvailabilityTemplateAttributes {
+  implements AvailabilityTemplateAttributes
+{
   @Column
   name: string;
 

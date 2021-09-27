@@ -1,12 +1,12 @@
 import { BelongsTo, Column, DefaultScope, ForeignKey, IsDate, Scopes, Table } from 'sequelize-typescript';
-import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
-import { AppointmentsModel } from '../../appointments/appointments.model';
-import { BaseModel, BaseModelAttributes } from '../../../common/models';
-import { TimeGroupsLookupsModel } from '../../lookups/models/time-groups.model';
-import { AppointmentVisitModeLookupModel } from '../../lookups/models/appointment-visit-mode.model';
-import { AppointmentRequestTypesLookupsModel } from '../../lookups/models/appointment-request-types.model';
-import { AppointmentRequestStatusLookupsModel } from '../../lookups/models/appointment-request-status.model';
 import { ApptRequestTypesEnum } from '../../../common/enums/appt-request-types.enum';
+import { BaseModel, BaseModelAttributes } from '../../../common/models';
+import { AppointmentsModel } from '../../appointments/appointments.model';
+import { AppointmentRequestStatusLookupsModel } from '../../lookups/models/appointment-request-status.model';
+import { AppointmentRequestTypesLookupsModel } from '../../lookups/models/appointment-request-types.model';
+import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-types.model';
+import { AppointmentVisitModeLookupModel } from '../../lookups/models/appointment-visit-mode.model';
+import { TimeGroupsLookupsModel } from '../../lookups/models/time-groups.model';
 
 export interface AppointmentsRequestModelAttributes extends BaseModelAttributes {
   clinicId: number;
@@ -69,7 +69,8 @@ export interface AppointmentsRequestData {
 @Table({ tableName: 'AppointmentRequests', underscored: true })
 export class AppointmentRequestsModel
   extends BaseModel<AppointmentsRequestModelAttributes>
-  implements AppointmentsRequestModelAttributes {
+  implements AppointmentsRequestModelAttributes
+{
   @Column
   clinicId: number;
 

@@ -39,7 +39,8 @@ import { AvailabilityEventName, AvailabilityEventPublisher } from '../availabili
 @Table({ tableName: 'Availability', underscored: true })
 export class AvailabilityModel
   extends BaseModel<AvailabilityModelAttributes, AvailabilityCreationAttributes>
-  implements AvailabilityModelAttributes {
+  implements AvailabilityModelAttributes
+{
   public static DATE_COLUMN = 'start_date';
 
   @Column

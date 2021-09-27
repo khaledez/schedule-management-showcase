@@ -9,7 +9,8 @@ export interface TimeGroupsLookupsAttributes extends LookupWithCodeAttributes {
 @Table({ tableName: 'TimeGroupsLookups', underscored: true })
 export class TimeGroupsLookupsModel
   extends LookupsModel<TimeGroupsLookupsAttributes>
-  implements TimeGroupsLookupsAttributes {
+  implements TimeGroupsLookupsAttributes
+{
   @Column
   code: string;
 

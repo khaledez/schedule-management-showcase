@@ -1,12 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ErrorCodes } from '../../common/enums';
-import { SCHEDULE_MGMT_TOPIC } from '../../common/constants';
-import { AppointmentsEventPayload, LookupModelPayload } from './events/appointments-event-payload';
-import { AppointmentsModelAttributes } from './appointments.model';
-import { LookupsService } from '../lookups/lookups.service';
 import { IIdentity } from '@monmedx/monmedx-common';
-import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
-import { AppointmentsRequestData, AppointmentsRequestModelAttributes } from '../appointment-requests/models';
+import { Injectable, Logger } from '@nestjs/common';
+import { SCHEDULE_MGMT_TOPIC } from '../../common/constants';
+import { ErrorCodes } from '../../common/enums';
+import { AppointmentsRequestData } from '../appointment-requests/models';
+import { LookupsService } from '../lookups/lookups.service';
+import { AppointmentsModelAttributes } from './appointments.model';
+import { AppointmentsEventPayload, LookupModelPayload } from './events/appointments-event-payload';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 

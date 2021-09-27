@@ -5,10 +5,8 @@ import { AvailabilityModelAttributes } from '../models/availability.interfaces';
 
 export class UpdateAvailabilityDto
   implements
-    Omit<
-      AvailabilityModelAttributes,
-      keyof BaseModelAttributes | '__typename' | 'entryType' | 'endDate' | 'startDate'
-    > {
+    Omit<AvailabilityModelAttributes, keyof BaseModelAttributes | '__typename' | 'entryType' | 'endDate' | 'startDate'>
+{
   @IsOptional()
   @Transform((val) => parseInt(val))
   staffId: number;

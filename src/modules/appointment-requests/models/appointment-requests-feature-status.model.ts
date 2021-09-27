@@ -14,7 +14,8 @@ export interface AppointmentRequestFeatureStatusModelAttributes extends BaseMode
 @Table({ tableName: 'AppointmentRequestFeatureStatus', underscored: true })
 export class AppointmentRequestFeatureStatusModel
   extends BaseModel<AppointmentRequestFeatureStatusModelAttributes>
-  implements AppointmentRequestFeatureStatusModelAttributes {
+  implements AppointmentRequestFeatureStatusModelAttributes
+{
   @Column
   clinicId: number;
 

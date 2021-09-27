@@ -6,7 +6,8 @@ import { AvailabilityTemplateModel } from './availability-template.model';
 @Table({ tableName: 'AvailabilityTemplateSlot', underscored: true, paranoid: false })
 export class AvailabilityTemplateSlotModel
   extends Model<AvailabilitySlotAttributes>
-  implements AvailabilitySlotAttributes {
+  implements AvailabilitySlotAttributes
+{
   @Column
   clinicId: number;
 

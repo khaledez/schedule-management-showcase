@@ -4,19 +4,15 @@ module.exports = {
     project: 'tsconfig.json',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin'],
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier/@typescript-eslint',
-    'plugin:prettier/recommended',
-  ],
+  plugins: ['prettier', '@typescript-eslint/eslint-plugin'],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
   root: true,
   env: {
     node: true,
     jest: true,
   },
   rules: {
+    'prettier/prettier': ['error'],
     'no-lone-blocks': 'error',
     'no-loop-func': 'error',
     'no-new-func': 'error',
@@ -57,7 +53,7 @@ module.exports = {
     'default-case': 'error', // default for switch
     curly: 'warn', // curly for all control statement
     'consistent-return': 'error', // avoid return; in the functions
-    complexity: ['error', { max: 6 }], // control the comlexity around the project
+    complexity: ['error', { max: 7 }], // control the comlexity around the project
     // "class-methods-use-this": "warn", // avoid static classes
     'no-console': 'warn', // no console
     'block-scoped-var': 'error', // use the var inside the scope

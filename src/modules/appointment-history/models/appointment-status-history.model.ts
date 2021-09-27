@@ -19,7 +19,8 @@ export interface AppointmentStatusHistoryAttributes extends BaseModelAttributes 
 @Table({ tableName: 'AppointmentStatusHistory', underscored: true })
 export class AppointmentStatusHistoryModel
   extends BaseModel<AppointmentStatusHistoryAttributes, AppointmentStatusHistoryAttributes>
-  implements AppointmentStatusHistoryAttributes {
+  implements AppointmentStatusHistoryAttributes
+{
   @Column
   @ForeignKey(() => AppointmentsModel)
   appointmentId: number;

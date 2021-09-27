@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Identity, IIdentity, PagingInfoInterface, UserTypeEnum } from '@monmedx/monmedx-common';
-import { nanoid } from 'nanoid';
 import { FilterIdsInputDto } from '@monmedx/monmedx-common/src/dto/filter-ids-input.dto';
 import {
   BadRequestException,
@@ -12,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -34,17 +33,30 @@ import {
 } from 'common/enums';
 import { addMinutesToDate } from 'common/helpers/date-time-helpers';
 import { DateTime } from 'luxon';
+import { AppointmentCronJobService } from 'modules/appointment-cron-job/appointment-cron-job.service';
 import { GetPatientAppointmentHistoryDto } from 'modules/appointments/dto/get-patient-appointment-history-dto';
 import { CreateAvailabilityDto } from 'modules/availability/dto/create.dto';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
 import { AvailabilityModel } from 'modules/availability/models/availability.model';
+import { ClinicSettingsService } from 'modules/clinic-settings/clinic-settings.service';
 import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointment-status.model';
+import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
+import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { PatientInfoAttributes, PatientInfoModel } from 'modules/patient-info/patient-info.model';
+import { nanoid } from 'nanoid';
 import sequelize, { FindOptions, Op, QueryTypes, Sequelize, Transaction, WhereOptions } from 'sequelize';
+import { Includeable } from 'sequelize/types/lib/model';
+import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
+import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
+import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
+import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { LookupsService } from '../lookups/lookups.service';
+import { PatientInfoService } from '../patient-info';
 import { AppointmentsModel, AppointmentsModelAttributes } from './appointments.model';
+import { AppointmentActionDto } from './dto/appointment-action.dto';
 import { AdhocAppointmentDto } from './dto/appointment-adhoc.dto';
+import { AppointmentPublicActionDto } from './dto/appointment-public-action.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { CreateProvisionalAppointmentDto } from './dto/create-provisional-appointment-dto';
@@ -54,19 +66,6 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
-import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
-import { PatientInfoService } from '../patient-info';
-import { Includeable } from 'sequelize/types/lib/model';
-import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
-import { ClinicSettingsService } from 'modules/clinic-settings/clinic-settings.service';
-import { AppointmentCronJobService } from 'modules/appointment-cron-job/appointment-cron-job.service';
-import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
-import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
-import { ActionTypeEnum } from 'aws-sdk/clients/elbv2';
-import { AppointmentActionDto } from './dto/appointment-action.dto';
-import { AppointmentRequestsService } from '../appointment-requests/appointment-requests.service';
-import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
-import { AppointmentPublicActionDto } from './dto/appointment-public-action.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -862,7 +861,7 @@ export class AppointmentsService {
 
     const responseResult = appointment.get({ plain: true }) as AppointmentsModel & {
       checkinBeforeApptMinutes: number;
-      actionType: ActionTypeEnum;
+      actionType: AppointmentActionEnum;
     };
 
     responseResult.checkinBeforeApptMinutes = lastEvent?.metaData?.apptCheckinBeforeAppt_M;

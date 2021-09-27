@@ -264,9 +264,7 @@ export class LookupsService {
    * find Appointments Primary And Secondary Actions By Array Of Status Ids
    * @param ids AppointmentsStatusId
    */
-  public async findAppointmentsActions(
-    ids: Array<number>,
-  ): Promise<
+  public async findAppointmentsActions(ids: Array<number>): Promise<
     {
       currentActionId: number;
       secondaryActions: LookupWithCodeAttributes[];
