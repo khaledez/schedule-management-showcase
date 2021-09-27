@@ -430,6 +430,7 @@ export class AppointmentRequestsService {
     identity: IIdentity,
     transaction?: Transaction,
   ) {
+    this.logger.log({ function: 'handleAppointmentRequest', appointmentId, action, fullfillmentAppointmentId });
     const appointment = await this.appointmentsService.getAppointmentById(
       identity,
       appointmentId,
@@ -492,6 +493,7 @@ export class AppointmentRequestsService {
     identity: IIdentity,
     transaction: Transaction,
   ) {
+    this.logger.log({ function: 'updateAppointmentRequestStatus', id, newStatusCode, fullfillmentAppointmentId });
     const target_status_id = await this.lookupsService.getApptRequestStatusIdByCode(newStatusCode, identity);
 
     await this.appointmentRequestsModel.update(
@@ -516,6 +518,7 @@ export class AppointmentRequestsService {
     identity: IIdentity,
     transaction: Transaction,
   ) {
+    this.logger.log({ function: 'createUnfulfilledRequestForNextProvisional', appointment });
     const newAppointment = await this.appointmentsService.getAppointmentByPatientId(identity, appointment.patientId);
     if (newAppointment) {
       const request_status_PENDING_id = await this.lookupsService.getApptRequestStatusIdByCode(
