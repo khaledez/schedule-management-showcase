@@ -409,7 +409,7 @@ interface UpdatePair {
 }
 
 function mapCreateDtoToModelAttributes(identity: IIdentity, dto: CreateAvailabilityDto): AvailabilityModelAttributes {
-  const isoDate = DateTime.fromISO(dto.startDate);
+  const isoDate = DateTime.fromISO(dto.startDate, { zone: 'utc' });
   return {
     ...dto,
     clinicId: identity.clinicId,
@@ -422,7 +422,7 @@ function mapCreateDtoToModelAttributes(identity: IIdentity, dto: CreateAvailabil
 }
 
 function mapUpdateDtoToModelAttributes(identity: IIdentity, dto: UpdateAvailabilityDto): AvailabilityModelAttributes {
-  const isoDate = DateTime.fromISO(dto.startDate);
+  const isoDate = DateTime.fromISO(dto.startDate, { zone: 'utc' });
   return {
     ...dto,
     updatedBy: identity.userId,

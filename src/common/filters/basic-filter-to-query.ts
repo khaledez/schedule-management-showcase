@@ -1,8 +1,9 @@
 import { FilterDateInputDto, FilterIdsInputDto } from '@monmedx/monmedx-common';
 import { Op, WhereAttributeHash } from 'sequelize';
 import { BadRequestException } from '@nestjs/common';
-import { BAD_REQUEST } from 'common/constants';
+import { BAD_REQUEST, DAY_TO_MILLI_SECOND } from 'common/constants';
 import { DateTime } from 'luxon';
+import { ErrorCodes } from '../enums';
 
 export function processFilterIdsInput(
   columnName: string,
@@ -49,6 +50,7 @@ export function processFilterIdsInput(
   return {};
 }
 
+// eslint-disable-next-line complexity
 export function processFilterDatesInput(
   columnName: string,
   filterName: string,
@@ -59,7 +61,7 @@ export function processFilterDatesInput(
     throw new BadRequestException({
       fields: [filterName],
       message: 'unsupported filter operation, supported: between, eq',
-      code: BAD_REQUEST,
+      code: ErrorCodes.BAD_REQUEST,
     });
   }
 
@@ -67,7 +69,7 @@ export function processFilterDatesInput(
     throw new BadRequestException({
       fields: [filterName],
       message: 'only one filter at a time is supported',
-      code: BAD_REQUEST,
+      code: ErrorCodes.BAD_REQUEST,
     });
   }
 
@@ -78,14 +80,25 @@ export function processFilterDatesInput(
   }
 
   if (filter.between) {
-    const startOfDate1 = DateTime.fromJSDate(filter.between[0]).toSQLDate();
-    const endOfDate2 = `${DateTime.fromJSDate(filter.between[1]).toSQLDate()} 23:59:59`; //Append end of day time
+    if (isStartOfDay(filter.between[0]) && isStartOfDay(filter.between[1])) {
+      const startOfDate1 = new Date(filter.between[0]);
+      const endOfDate2 = new Date(filter.between[1].getTime() + DAY_TO_MILLI_SECOND - 1);
+      return {
+        [columnName]: {
+          [Op.between]: [startOfDate1, endOfDate2],
+        },
+      };
+    }
     return {
       [columnName]: {
-        [Op.between]: [startOfDate1, endOfDate2],
+        [Op.between]: [filter.between[0], filter.between[1]],
       },
     };
   }
 
   return {};
+}
+
+export function isStartOfDay(date: Date): boolean {
+  return date.toISOString().endsWith('00:00:00.000Z');
 }

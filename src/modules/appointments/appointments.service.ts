@@ -2005,7 +2005,7 @@ function mapUpdateDtoToAttributes(
 ): AppointmentsModelAttributes {
   let startDate = appointment.startDate;
   if (updateDto.startDate) {
-    const startDateDto = DateTime.fromISO(updateDto.startDate);
+    const startDateDto = DateTime.fromISO(updateDto.startDate, { zone: 'utc' });
     if (!startDateDto.isValid) {
       throw new BadRequestException({
         code: ErrorCodes.BAD_REQUEST,

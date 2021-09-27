@@ -7,12 +7,12 @@ export function addMinutesToDate(startDateTime: Date, durationMinutes: number) {
   return new Date(endDateTimeInMilli);
 }
 
-export function addMinutesToStringDate(startDateTime: string, durationMinutes: number) {
-  return addMinutesToDate(DateTime.fromISO(startDateTime).toJSDate(), durationMinutes);
-}
-
-// minus hours from jsDate format
-export function minusHoursToJsDate(fromDate: Date, hours: number) {
+/**
+ * Subtract {@link hours} from {@link fromDate}
+ * @param fromDate Date to be subtracted from
+ * @param hours Number of hours to subtract
+ */
+export function subtractHoursFromJsDate(fromDate: Date, hours: number) {
   return DateTime.fromJSDate(fromDate)
     .minus({
       hours,
@@ -20,8 +20,12 @@ export function minusHoursToJsDate(fromDate: Date, hours: number) {
     .toJSDate();
 }
 
-// minus minutes from jsDate format
-export function minusMinutesToJsDate(fromDate: Date, minutes: number) {
+/**
+ * Subtract {@link minutes} from {@link fromDate}
+ * @param fromDate Date to be subtracted from
+ * @param minutes Number of hours to subtract
+ */
+export function subtractMinutesFromJsDate(fromDate: Date, minutes: number) {
   return DateTime.fromJSDate(fromDate)
     .minus({
       minutes,

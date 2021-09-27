@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CLINIC_SETTINGS_REPOSITORY } from 'common/constants';
 import { ClinicSettingsEnum } from 'common/enums/clinic-settings.enum';
-import { minusHoursToJsDate, minusMinutesToJsDate } from 'common/helpers/date-time-helpers';
+import { subtractHoursFromJsDate, subtractMinutesFromJsDate } from 'common/helpers/date-time-helpers';
 import { ClinicSettingsModel } from './clinic-settings.model';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 
@@ -56,19 +56,22 @@ export class ClinicSettingsService {
       settings,
     });
 
-    const apptCheckinNotificationBeforeApptDate = minusMinutesToJsDate(
+    const apptCheckinNotificationBeforeApptDate = subtractMinutesFromJsDate(
       startDate,
       settings[ClinicSettingsEnum.APPT_CHECKIN_NOTIFICATION_BEFORE_APPT_M],
     );
 
-    const notifySecNotConfirmedBeforeApptDate = minusHoursToJsDate(
+    const notifySecNotConfirmedBeforeApptDate = subtractHoursFromJsDate(
       startDate,
       settings[ClinicSettingsEnum.NOTIFY_SEC_NOT_CONFIRMED_BEFORE_APPT_H],
     );
 
-    const confirmBeforeApptDate = minusHoursToJsDate(startDate, settings[ClinicSettingsEnum.CONFIRM_BEFORE_APPT_H]);
+    const confirmBeforeApptDate = subtractHoursFromJsDate(
+      startDate,
+      settings[ClinicSettingsEnum.CONFIRM_BEFORE_APPT_H],
+    );
 
-    const remindBeforeApptDate = minusHoursToJsDate(startDate, settings[ClinicSettingsEnum.REMIND_BEFORE_APPT_H]);
+    const remindBeforeApptDate = subtractHoursFromJsDate(startDate, settings[ClinicSettingsEnum.REMIND_BEFORE_APPT_H]);
 
     const confirmationThresholdForSecDays = Math.round(
       settings[ClinicSettingsEnum.NOTIFY_SEC_NOT_CONFIRMED_BEFORE_APPT_H] / 24,
