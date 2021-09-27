@@ -1,4 +1,5 @@
 import { AuthModule, requestLoggerMiddleware } from '@monmedx/monmedx-common';
+import { TelemetryModule } from '@monmedx/telemetry';
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TerminusModule } from '@nestjs/terminus';
@@ -38,6 +39,10 @@ import { GeneralHealthIndicator } from './general-health.provider';
     AppointmentHistoryModule,
     AppointmentCronJobModule,
     ClinicSettingsModule,
+    TelemetryModule.register({
+      serviceName: `${process.env.NODE_ENV}-schedule-management`,
+      routesToExclude: ['/health-check', '/metrics'],
+    }),
   ],
   controllers: [AppController],
   providers: [AppService, GeneralHealthIndicator, FireEventService],

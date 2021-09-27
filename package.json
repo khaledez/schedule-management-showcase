@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@monmedx/monmedx-common": "^4.2.3",
+    "@monmedx/telemetry": "^0.2.5",
     "@nestjs/common": "^7.0.1",
     "@nestjs/config": "^0.6.1",
     "@nestjs/core": "^7.0.1",
