@@ -66,6 +66,7 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
+import { patientApptSecondaryActionType } from '../../common/enums/appointmnet-patient-secondary-action.enum';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -385,26 +386,57 @@ export class AppointmentsService {
   }
 
   private async buildAppointmentConnectionResponseForPatient(appointments, identity: IIdentity) {
-    const status_Scheduled_id = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE); //2
-    const status_Reminded_id = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM2); //8
-
     //TODO check if notification sent
 
-    const CONFIRM1 = await this.lookupsService.findAppointmentActionByCode(AppointmentActionEnum.CONFIRM1, identity);
-    const CHECK_IN = await this.lookupsService.findAppointmentActionByCode(AppointmentActionEnum.CHECK_IN, identity);
+    const CONFIRM1_action = await this.lookupsService.findAppointmentActionByCode(
+      AppointmentActionEnum.CONFIRM1,
+      identity,
+    );
+    const CHECK_IN_action = await this.lookupsService.findAppointmentActionByCode(
+      AppointmentActionEnum.CHECK_IN,
+      identity,
+    );
     return appointments.map((e) => {
       const appt = e.get({ plain: true });
+      const apptStatusCode = appt.status.code;
       const patientActions = [];
-      if (!appt.appointmentRequestId && [status_Scheduled_id, status_Reminded_id].includes(appt.appointmentStatusId)) {
-        if (status_Scheduled_id === appt.appointmentStatusId) {
-          patientActions.push(CONFIRM1);
-        } else if (status_Reminded_id === appt.appointmentStatusId) {
-          patientActions.push(CHECK_IN);
+      const patientSecondaryActions = [];
+      if (
+        !appt.appointmentRequestId &&
+        [AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM2].includes(apptStatusCode)
+      ) {
+        if (apptStatusCode === AppointmentStatusEnum.SCHEDULE) {
+          patientActions.push(CONFIRM1_action);
+        } else if (apptStatusCode === AppointmentStatusEnum.CONFIRM2) {
+          patientActions.push(CHECK_IN_action);
         }
       }
+
+      if (appt.appointmentRequestId) {
+        patientSecondaryActions.push(
+          patientApptSecondaryActionType.EDIT_REQUEST,
+          patientApptSecondaryActionType.CANCEL_REQUEST,
+        );
+      }
+      if (
+        [
+          AppointmentStatusEnum.SCHEDULE,
+          AppointmentStatusEnum.CONFIRM1,
+          AppointmentStatusEnum.CONFIRM2,
+          AppointmentStatusEnum.CHECK_IN,
+          AppointmentStatusEnum.READY,
+        ].includes(apptStatusCode)
+      ) {
+        patientSecondaryActions.push(patientApptSecondaryActionType.CANCEL_APPT);
+        if (!appt.appointmentRequestId) {
+          patientSecondaryActions.push(patientApptSecondaryActionType.RESCHEDULE);
+        }
+      }
+
       return {
         ...appt,
         patientActions: patientActions,
+        patientSecondaryActions,
       };
     });
   }
@@ -1860,6 +1892,8 @@ export class AppointmentsService {
   }
 
   async updateAppointmentAddRequestData(appointmentId: number, requestData, transaction: Transaction) {
+    this.logger.log({ function: 'updateAppointmentAddRequestData', appointmentId, requestData });
+
     const { id: appointmentRequestId, date: appointmentRequestDate } = requestData;
     await this.appointmentsRepository.update(
       {

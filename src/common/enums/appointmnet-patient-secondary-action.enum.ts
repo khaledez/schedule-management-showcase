@@ -1,0 +1,6 @@
+export enum patientApptSecondaryActionType {
+  CANCEL_APPT = 'CANCEL_APPT',
+  RESCHEDULE = 'RESCHEDULE',
+  CANCEL_REQUEST = 'CANCEL_REQUEST',
+  EDIT_REQUEST = 'EDIT_REQUEST',
+}
