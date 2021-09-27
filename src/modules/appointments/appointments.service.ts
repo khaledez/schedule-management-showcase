@@ -1541,7 +1541,7 @@ export class AppointmentsService {
           );
 
           if (appointment.appointmentRequestId) {
-            this.apptRequestServiceSvc.handleAppointmentRequest(appointment.id, null,null, identity, transaction);
+            this.apptRequestServiceSvc.handleAppointmentRequest(appointment.id, null, null, identity, transaction);
           }
 
           return updatedAppt;
