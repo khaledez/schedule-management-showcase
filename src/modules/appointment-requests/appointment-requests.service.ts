@@ -426,6 +426,7 @@ export class AppointmentRequestsService {
   async handleAppointmentRequest(
     appointmentId: number,
     action: ApptRequestTypesEnum | null,
+    fullfillmentAppointmentId: number | null,
     identity: IIdentity,
     transaction?: Transaction,
   ) {
@@ -443,6 +444,7 @@ export class AppointmentRequestsService {
       await this.updateAppointmentRequestStatus(
         appointment.appointmentRequestId,
         ApptRequestStatusEnum.CANCELED,
+        fullfillmentAppointmentId,
         identity,
         transaction,
       );
@@ -454,6 +456,7 @@ export class AppointmentRequestsService {
       await this.updateAppointmentRequestStatus(
         appointment.appointmentRequestId,
         ApptRequestStatusEnum.FULLFILLED,
+        fullfillmentAppointmentId,
         identity,
         transaction,
       );
@@ -485,6 +488,7 @@ export class AppointmentRequestsService {
   protected async updateAppointmentRequestStatus(
     id: number,
     newStatusCode: ApptRequestStatusEnum,
+    fullfillmentAppointmentId: number,
     identity: IIdentity,
     transaction: Transaction,
   ) {
@@ -493,6 +497,7 @@ export class AppointmentRequestsService {
     await this.appointmentRequestsModel.update(
       {
         requestStatusId: target_status_id,
+        fullfillmentAppointmentId,
         updatedBy: identity.userId,
         updatedAt: new Date(),
       },

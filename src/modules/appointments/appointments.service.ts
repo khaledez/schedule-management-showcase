@@ -492,16 +492,7 @@ export class AppointmentsService {
         transaction,
       );
 
-      if (appointment.appointmentRequestId) {
-        this.apptRequestServiceSvc.handleAppointmentRequest(
-          appointment.id,
-          ApptRequestTypesEnum.CANCEL,
-          identity,
-          transaction,
-        );
-      }
-
-      return this.createAppointment(
+      const createdAppointment = await this.createAppointment(
         identity,
         {
           patientId: appointment.patientId,
@@ -515,6 +506,18 @@ export class AppointmentsService {
         true,
         transaction,
       );
+
+      if (appointment.appointmentRequestId) {
+        this.apptRequestServiceSvc.handleAppointmentRequest(
+          appointment.id,
+          ApptRequestTypesEnum.CANCEL,
+          createdAppointment?.id,
+          identity,
+          transaction,
+        );
+      }
+
+      return createdAppointment;
     });
   }
 
@@ -819,6 +822,7 @@ export class AppointmentsService {
         this.apptRequestServiceSvc.handleAppointmentRequest(
           provisionalAppointment.id,
           ApptRequestTypesEnum.SCHEDULE,
+          createdAppointment.id,
           identity,
           transaction,
         );
@@ -1368,6 +1372,7 @@ export class AppointmentsService {
           this.apptRequestServiceSvc.handleAppointmentRequest(
             appointment.id,
             ApptRequestTypesEnum.RESCHEDULE,
+            createResult.id,
             identity,
             transaction,
           );
@@ -1536,7 +1541,7 @@ export class AppointmentsService {
           );
 
           if (appointment.appointmentRequestId) {
-            this.apptRequestServiceSvc.handleAppointmentRequest(appointment.id, null, identity, transaction);
+            this.apptRequestServiceSvc.handleAppointmentRequest(appointment.id, null,null, identity, transaction);
           }
 
           return updatedAppt;
