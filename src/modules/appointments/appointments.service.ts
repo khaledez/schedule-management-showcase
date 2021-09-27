@@ -224,8 +224,26 @@ export class AppointmentsService {
       });
     }
     if (queryParams.filter?.date) {
-      const startDateWhereClause = WhereClauseBuilder.getDateWhereClause(queryParams.filter?.date || {});
-      where[Op.or] = [{ startDate: startDateWhereClause }, { appointmentRequestDate: startDateWhereClause }];
+      const startDateWhereClause = WhereClauseBuilder.getDateWhereClause('startDate', 'date', queryParams.filter?.date);
+      const startDateWhereClauseWhereClause = WhereClauseBuilder.getDateWhereClause(
+        'appointmentRequestDate',
+        'date',
+        queryParams.filter?.date,
+      );
+      where[Op.or] = [{ ...startDateWhereClause }, { ...startDateWhereClauseWhereClause }];
+    }
+    if (queryParams.filter?.dateTime) {
+      const startDateWhereClause = WhereClauseBuilder.getDateTimeWhereClause(
+        'startDate',
+        'dateTime',
+        queryParams.filter?.dateTime,
+      );
+      const startDateWhereClauseWhereClause = WhereClauseBuilder.getDateTimeWhereClause(
+        'appointmentRequestDate',
+        'dateTime',
+        queryParams.filter?.dateTime,
+      );
+      where[Op.or] = [{ ...startDateWhereClause }, { ...startDateWhereClauseWhereClause }];
     }
     if (queryParams.filter?.time) {
       where[Op.and] = WhereClauseBuilder.getTimeWhereClause(

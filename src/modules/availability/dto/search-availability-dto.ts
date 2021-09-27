@@ -8,7 +8,14 @@ export class SearchAvailabilityDto {
   @Type(() => FilterDateInputDto)
   @IsNotEmptyObject()
   @HasOne(['eq', 'between'])
-  dateRange: FilterDateInputDto;
+  @IsOptional()
+  dateRange?: FilterDateInputDto;
+
+  @Type(() => FilterDateInputDto)
+  @IsNotEmptyObject()
+  @HasOne(['between'])
+  @IsOptional()
+  dateTimeRange?: FilterDateInputDto;
 
   @IsOptional()
   @Type(() => FilterIdsInputDto)

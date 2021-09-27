@@ -1,12 +1,19 @@
 import { Op } from 'sequelize';
 
 export function getDateWhereClauseTestCases() {
-  const dateA = new Date('2021-10-24T00:00:00.000Z');
-  const dateB = new Date('2021-10-25T00:00:00.000Z');
   return [
-    { filter: { eq: dateA }, expected: { [Op.between]: [dateA, new Date('2021-10-24T23:59:59.999Z')] } },
-    { filter: { between: [dateA, dateB] }, expected: { [Op.between]: [dateA, new Date('2021-10-25T23:59:59.999Z')] } },
-    { filter: {}, expected: { [Op.notIn]: [] } },
+    {
+      filter: {
+        between: [new Date('2021-10-25'), new Date('2021-10-26')],
+      },
+      expected: { start: '2021-10-25', end: '2021-10-26T23:59:59.999Z' },
+    },
+    {
+      filter: {
+        between: [new Date('2021-10-24T13:44:59.999Z'), new Date('2021-10-29T00:59:59.999Z')],
+      },
+      expected: { start: '2021-10-24', end: '2021-10-29T23:59:59.999Z' },
+    },
   ];
 }
 

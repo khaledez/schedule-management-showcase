@@ -1,7 +1,7 @@
 import { FilterStringInputDto, IIdentity } from '@monmedx/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CalendarType } from 'common/enums';
-import { processFilterDatesInput, processFilterIdsInput } from 'common/filters/basic-filter-to-query';
+import { processFilterIdsInput } from 'common/filters/basic-filter-to-query';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { DateTime } from 'luxon';
 import { AvailabilityModelAttributes } from 'modules/availability/models/availability.interfaces';
@@ -16,6 +16,7 @@ import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/
 import { AvailabilityModel } from '../availability/models/availability.model';
 import { EventModel } from '../events/models';
 import { CalendarSearchInput, CalendarSearchResult, DayCalendarEntry } from './calendar.interface';
+import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
 
 @Injectable()
 export class CalendarService {
@@ -133,7 +134,14 @@ export class CalendarService {
     if (query.dateRange) {
       appointmentWhereClauses = {
         ...appointmentWhereClauses,
-        ...processFilterDatesInput('startDate', 'dateRange', query.dateRange),
+        ...WhereClauseBuilder.getDateWhereClause('startDate', 'dateRange', query.dateRange),
+      };
+    }
+
+    if (query.dateTimeRange) {
+      appointmentWhereClauses = {
+        ...appointmentWhereClauses,
+        ...WhereClauseBuilder.getDateTimeWhereClause('startDate', 'dateTimeRange', query.dateTimeRange),
       };
     }
 
@@ -188,7 +196,14 @@ export class CalendarService {
     if (query.dateRange) {
       eventWhereClauses = {
         ...eventWhereClauses,
-        ...processFilterDatesInput('startDate', 'dateRange', query.dateRange),
+        ...WhereClauseBuilder.getDateWhereClause('startDate', 'dateRange', query.dateRange),
+      };
+    }
+
+    if (query.dateTimeRange) {
+      eventWhereClauses = {
+        ...eventWhereClauses,
+        ...WhereClauseBuilder.getDateTimeWhereClause('startDate', 'dateTimeRange', query.dateTimeRange),
       };
     }
 
@@ -228,7 +243,14 @@ export class CalendarService {
     if (query.dateRange) {
       availabilityWhereClauses = {
         ...availabilityWhereClauses,
-        ...processFilterDatesInput(AvailabilityModel.DATE_COLUMN, 'dateRange', query.dateRange),
+        ...WhereClauseBuilder.getDateWhereClause(AvailabilityModel.DATE_COLUMN, 'dateRange', query.dateRange),
+      };
+    }
+
+    if (query.dateTimeRange) {
+      availabilityWhereClauses = {
+        ...availabilityWhereClauses,
+        ...WhereClauseBuilder.getDateTimeWhereClause(AvailabilityModel.DATE_COLUMN, 'dateTimeRange', query.dateTimeRange),
       };
     }
 

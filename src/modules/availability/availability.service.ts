@@ -370,19 +370,41 @@ export class AvailabilityService {
   }
 
   async searchForAvailabilities(identity: IIdentity, payload: SearchAvailabilityDto): Promise<CalendarEntry[]> {
-    const dateWhereClause = WhereClauseBuilder.getDateWhereClause(payload.dateRange);
     const staffIdWhereClause = this.getEntityIdWhereClause(payload.staffId);
     const appointmentTypeIdWhereClause = this.getEntityIdWhereClause(payload.appointmentTypeId);
     const options: FindOptions = {
       where: {
         isOccupied: false,
         appointmentTypeId: appointmentTypeIdWhereClause,
-        [AvailabilityModel.DATE_COLUMN]: dateWhereClause,
         staffId: staffIdWhereClause,
         clinicId: identity.clinicId,
       },
       order: [[AvailabilityModel.DATE_COLUMN, 'ASC']],
     };
+    if (payload.dateRange) {
+      const dateWhereClause = WhereClauseBuilder.getDateWhereClause(
+        AvailabilityModel.DATE_COLUMN,
+        'dateRange',
+        payload.dateRange,
+      );
+      options.where = {
+        ...options.where,
+        ...dateWhereClause,
+      };
+    }
+
+    if (payload.dateTimeRange) {
+      const dateWhereClause = WhereClauseBuilder.getDateTimeWhereClause(
+        AvailabilityModel.DATE_COLUMN,
+        'dateTimeRange',
+        payload.dateTimeRange,
+      );
+      options.where = {
+        ...options.where,
+        ...dateWhereClause,
+      };
+    }
+
     let result = await this.availabilityRepository.findAll(options);
     if (payload.timeGroup) {
       const timeGroup: TimeGroup = getTimeGroup(payload.timeGroup);

@@ -16,6 +16,7 @@ export interface CalendarSearchResult extends ResultWithErrors {
 export interface CalendarSearchInput {
   entryType?: FilterStringInputDto;
   dateRange?: FilterDateInputDto;
+  dateTimeRange?: FilterDateInputDto;
   staffId?: FilterIdsInputDto;
   appointmentTypeId?: FilterIdsInputDto;
   appointmentStatusId?: FilterIdsInputDto;
