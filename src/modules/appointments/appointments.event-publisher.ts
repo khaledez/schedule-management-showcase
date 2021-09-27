@@ -51,6 +51,7 @@ export class AppointmentEventPublisher {
       appointment: await this.appointmentToEventAppointmentPayLoad(appointment),
       previousAppointment: await this.appointmentToEventAppointmentPayLoad(previousAppointment),
       appointmentBeforeUpdate: await this.appointmentToEventAppointmentPayLoad(appointmentBeforeUpdate),
+      requestData: requestData,
     };
     snsTopic
       .sendSnsMessage(SCHEDULE_MGMT_TOPIC, {

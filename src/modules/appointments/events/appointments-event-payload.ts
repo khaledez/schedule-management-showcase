@@ -1,3 +1,5 @@
+import { AppointmentsRequestData } from '../../appointment-requests/models';
+
 export class AppointmentsEventPayload {
   eventName: string;
   changeType: string;
@@ -10,6 +12,7 @@ export class AppointmentsEventPayload {
   appointment: EventAppointmentPayload;
   previousAppointment?: EventAppointmentPayload;
   appointmentBeforeUpdate?: EventAppointmentPayload;
+  requestData: AppointmentsRequestData;
 }
 
 export interface EventAppointmentPayload {
