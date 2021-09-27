@@ -334,6 +334,7 @@ export class AppointmentsService {
       model: PatientInfoModel,
       as: 'patient',
       where: where,
+      required: true,
     };
   }
 
@@ -620,6 +621,10 @@ export class AppointmentsService {
     };
 
     const appointment = await this.appointmentsRepository.findOne(options);
+
+    if (!appointment) {
+      return null;
+    }
 
     await appointment.update(
       {
