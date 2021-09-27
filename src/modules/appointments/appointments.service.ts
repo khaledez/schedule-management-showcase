@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -478,7 +478,7 @@ export class AppointmentsService {
     const transaction = usedTransaction ? usedTransaction : await this.sequelizeInstance.transaction();
     if (cancelReason.code === CancelRescheduleReasonCode.RELEASE_PATIENT) {
       const patientInfo = await this.patientInfoSvc.releasePatient(identity.clinicId, appointment.patientId);
-      await this.releasePatientAppointments(patientInfo);
+      await this.releasePatientAppointments(identity, patientInfo);
       return this.appointmentsRepository.findOne({ transaction, where: { id: appointment.id } });
     }
 
@@ -642,27 +642,30 @@ export class AppointmentsService {
     return appointment.reload({ plain: true });
   }
 
-  async releasePatientAppointments(patientAttr: PatientInfoAttributes, transaction?: Transaction) {
+  async releasePatientAppointments(identity: IIdentity, patientAttr: PatientInfoAttributes, transaction?: Transaction) {
     const { id: patientId, clinicId, statusCode } = patientAttr;
-    const identity = {
-      cognitoId: null,
-      clinicId: clinicId,
-      userLang: null,
-      userId: null,
-      userInfo: null,
-    };
     const statusReleasedId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED);
+    const statusCanceledId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
     const appointmentFinalStateIds: number[] = await this.lookupsService.getAppointmentFinalStateIds();
 
+    const appointment = await this.appointmentsRepository.findOne({
+      where: {
+        patientId,
+        clinicId,
+        appointmentStatusId: {
+          [Op.notIn]: [...appointmentFinalStateIds],
+        },
+      },
+      transaction: transaction,
+    });
     await this.appointmentsRepository.update(
       {
         updatedBy: identity.userId,
-        appointmentStatusId: statusReleasedId,
+        appointmentStatusId: statusCanceledId,
         cancelRescheduleText: statusCode,
-        upcomingAppointment: true,
+        upcomingAppointment: false,
       },
       {
-        transaction,
         where: {
           patientId,
           clinicId,
@@ -670,8 +673,10 @@ export class AppointmentsService {
             [Op.notIn]: [...appointmentFinalStateIds],
           },
         },
+        transaction: transaction,
       },
     );
+    await this.createReleasedAppointment(identity, appointment.patientId, appointment.staffId, new Date(), transaction);
   }
 
   /**
@@ -840,6 +845,36 @@ export class AppointmentsService {
       return this.appointmentsRepository.sequelize.transaction(validateInputThenArrangeAttributesAndCommit);
     }
     return validateInputThenArrangeAttributesAndCommit(transaction);
+  }
+
+  /**
+   * Create an appointment with status released. Used for releasing patient.
+   */
+  async createReleasedAppointment(
+    identity: IIdentity,
+    patientId: number,
+    staffId: number,
+    date: Date,
+    transaction?: Transaction,
+  ): Promise<AppointmentsModel> {
+    return this.appointmentsRepository.create(
+      {
+        clinicId: identity.clinicId,
+        createdBy: identity.userId,
+        patientId: patientId,
+        staffId: staffId,
+        startDate: date,
+        endDate: date,
+        provisionalDate: date,
+        durationMinutes: 0,
+        appointmentStatusId: await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED),
+        appointmentTypeId: await this.lookupsService.getFUBAppointmentTypeId(identity),
+        upcomingAppointment: true,
+      },
+      {
+        transaction: transaction,
+      },
+    );
   }
 
   async appointmentInfoPublic(token: string) {

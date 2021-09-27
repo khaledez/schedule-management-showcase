@@ -4,6 +4,7 @@ import { AppointmentsService } from '../appointments/appointments.service';
 import { PatientInfoAttributes } from './patient-info.model';
 import { PatientInfoService } from './patient-info.service';
 import { patientInactiveStatuses } from '../../common/enums/patient-status';
+import { IIdentity } from '@monmedx/monmedx-common';
 
 const PATIENT_PROFILE_UPDATED_EVENT = 'patient_profile_updated';
 
@@ -31,6 +32,7 @@ interface PatientProfileUpdatedEvent {
   credentials: unknown;
   source: string;
   clinicId: number;
+  userId: number;
   patientId: number;
   data: PatientInfoPayload;
 }
@@ -51,11 +53,6 @@ export class PatientInfoListener {
       function: 'handlePatientProfileUpdatedEvent',
       payload,
     });
-
-    if (payload.eventName !== 'patient_profile_updated') {
-      return;
-    }
-
     const patientAttr = patientInfoPayloadToAttributes(payload.data);
 
     try {
@@ -68,7 +65,14 @@ export class PatientInfoListener {
 
       if (patientInactiveStatuses.includes(patientAttr.statusCode)) {
         //Release patient appointment
-        await this.appointmentsService.releasePatientAppointments(patientAttr);
+        const identity: IIdentity = {
+          cognitoId: null,
+          clinicId: payload.clinicId,
+          userLang: null,
+          userId: payload.userId,
+          userInfo: null,
+        };
+        await this.appointmentsService.releasePatientAppointments(identity, patientAttr);
       }
     } catch (error) {
       this.logger.error(error, 'while handlePatientProfileUpdatedEvent', JSON.stringify(payload));

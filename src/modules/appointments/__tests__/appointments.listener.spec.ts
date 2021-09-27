@@ -39,6 +39,7 @@ import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '
 import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
 import { AppointmentCronJobModel } from '../../appointment-cron-job/appointment-cron-job.model';
 import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
+import { AppointmentFilterDto } from '../dto/appointment-filter.dto';
 
 describe('# Appointment event listener', () => {
   let appointmentsService: AppointmentsService;
@@ -141,11 +142,18 @@ describe('# Appointment event listener', () => {
     const eventPayLoad = buildIConfirmCompleteVisitEvent(patientInfo, appointment, appointment, true);
     await appointmentListener.handleCompleteVisitEvent(eventPayLoad);
 
-    const updatedAppointment = await AppointmentsModel.findOne({
-      where: { id: appointment.id },
+    const completedAppointment = await appointmentsService.findOne(identity, appointment.id);
+    expect(completedAppointment.status.code).toEqual(AppointmentStatusEnum.COMPLETE);
+
+    const releasedAppointments = await AppointmentsModel.findOne({
+      where: {
+        patientId: patientInfo.id,
+        upcomingAppointment: true,
+      },
       include: [{ model: AppointmentStatusLookupsModel }],
     });
-    expect(updatedAppointment.status.code).toEqual(AppointmentStatusEnum.RELEASED);
+    expect(releasedAppointments.status.code).toEqual(AppointmentStatusEnum.RELEASED);
+
     const updatePatientInfo = await patientInfoService.getById(patientInfo.id);
     expect(updatePatientInfo.statusCode).toEqual(PatientStatus.RELEASED);
   });

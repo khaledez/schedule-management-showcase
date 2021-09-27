@@ -74,24 +74,19 @@ export class AppointmentsListener {
           },
         },
       } = payload;
-
-      if (release) {
-        const patientInfo = await this.patientInfoService.releasePatient(clinicId, patientId);
-        await this.appointmentsService.releasePatientAppointments(patientInfo, transaction);
-      } else {
-        await this.completeVisitFlow(
-          clinicId,
-          staffId,
-          userId,
-          patientId,
-          appointmentId,
-          visitId,
-          documentId,
-          appointmentTypeId ?? visitAppointmentTypeId,
-          startDate ?? visitAppointmentStartDate,
-          transaction,
-        );
-      }
+      await this.completeVisitFlow(
+        clinicId,
+        staffId,
+        userId,
+        patientId,
+        appointmentId,
+        visitId,
+        documentId,
+        appointmentTypeId ?? visitAppointmentTypeId,
+        startDate ?? visitAppointmentStartDate.toISOString(),
+        release,
+        transaction,
+      );
       await transaction.commit();
     } catch (error) {
       this.logger.error({
@@ -151,17 +146,22 @@ export class AppointmentsListener {
     }
   }
 
+  /**
+   * Will complete the visit flow, the appointment in progress will be changed to completed
+   * And depending on {link @release} flag, it will either create a provisional appointment or release the patient
+   */
   async completeVisitFlow(
-    clinicId,
-    staffId,
-    userId,
-    patientId,
-    appointmentId,
-    visitId,
-    documentId,
-    appointmentTypeId,
-    startDate,
-    transaction,
+    clinicId: number,
+    staffId: number,
+    userId: number,
+    patientId: number,
+    appointmentId: number,
+    visitId: number,
+    documentId: string,
+    appointmentTypeId: number,
+    startDate: string,
+    release: boolean,
+    transaction: Transaction,
   ) {
     const identity: IIdentity = { clinicId, userId, cognitoId: null, userInfo: null, userLang: null };
 
@@ -181,18 +181,24 @@ export class AppointmentsListener {
     );
 
     await this.appointmentsService.completeAppointment(identity, appointmentId, visitId, documentId, transaction);
-    await this.appointmentsService.createAppointment(
-      identity,
-      {
-        patientId,
-        staffId,
-        startDate,
-        durationMinutes: DEFAULT_EVENT_DURATION_MINS,
-        appointmentTypeId,
-        appointmentStatusId: await this.lookupsService.getProvisionalAppointmentStatusId(identity),
-      },
-      true,
-      transaction,
-    );
+
+    if (release) {
+      await this.patientInfoService.releasePatient(clinicId, patientId);
+      await this.appointmentsService.createReleasedAppointment(identity, patientId, staffId, new Date(), transaction);
+    } else {
+      await this.appointmentsService.createAppointment(
+        identity,
+        {
+          patientId,
+          staffId,
+          startDate,
+          durationMinutes: DEFAULT_EVENT_DURATION_MINS,
+          appointmentTypeId,
+          appointmentStatusId: await this.lookupsService.getProvisionalAppointmentStatusId(identity),
+        },
+        true,
+        transaction,
+      );
+    }
   }
 }

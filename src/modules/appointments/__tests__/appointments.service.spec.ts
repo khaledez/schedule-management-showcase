@@ -445,12 +445,15 @@ describe('# Cancel appointment', () => {
     ]);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await Promise.all([
       AvailabilityModel.destroy({ where: {} }),
       AppointmentsModel.destroy({ where: {} }),
       PatientInfoModel.destroy({ where: {} }),
     ]);
+  });
+
+  afterAll(async () => {
     await moduleRef.close();
   });
 
@@ -561,7 +564,7 @@ describe('# Cancel appointment', () => {
     });
   });
 
-  test('# Cancel appointment with reason RELEASE_PATIENT will set patient and appointment status to RELEASED', async () => {
+  test('# Cancel appointment with reason RELEASE_PATIENT will set patient and appointment status to Cancelled then create a RELEASED appointment', async () => {
     const patientInfo = await patientInfoService.create(getReleasePatientInfoAfterCompleteVisit());
     const identity = getTestIdentity(546, patientInfo.clinicId);
     const readyStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.READY);
@@ -579,6 +582,7 @@ describe('# Cancel appointment', () => {
     );
 
     const releasedStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED);
+    const canceledStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
     const releaseReasonId = await lookupsService.getCancelRescheduleReasonByCode(
       identity,
       CancelRescheduleReasonCode.RELEASE_PATIENT,
@@ -590,9 +594,12 @@ describe('# Cancel appointment', () => {
       cancelReasonText: '',
       keepAvailabiltySlot: false,
     });
-    expect(updatedAppointment.appointmentStatusId).toEqual(releasedStatusId);
+    expect(updatedAppointment.appointmentStatusId).toEqual(canceledStatusId);
     const updatedPatientInfo = await patientInfoService.getById(patientInfo.id);
     expect(updatedPatientInfo.statusCode).toEqual(PatientStatus.RELEASED);
+    const releasedAppointment = await AppointmentsModel.findOne({ where: { upcomingAppointment: true } });
+    expect(releasedAppointment).toBeDefined();
+    expect(releasedAppointment.appointmentStatusId).toEqual(releasedStatusId);
   });
 
   test('# Reschedule current active appointment and create a new one', async () => {
