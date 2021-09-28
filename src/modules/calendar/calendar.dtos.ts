@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { IsObject, IsOptional, ValidateNested } from 'class-validator';
 import { FilterDateInputDto } from '../../common/dtos';
 import { CalendarSearchInput } from './calendar.interface';
+import { HasOne } from '../../common/decorators/has-one';
 
 export class CalendarSearchDto implements CalendarSearchInput {
   @IsOptional()
@@ -12,6 +13,11 @@ export class CalendarSearchDto implements CalendarSearchInput {
   @IsOptional()
   @Type(() => FilterDateInputDto)
   dateRange: FilterDateInputDto;
+
+  @IsOptional()
+  @Type(() => FilterDateInputDto)
+  @HasOne(['between'])
+  dateTimeRange?: FilterDateInputDto;
 
   @IsOptional()
   @Type(() => FilterIdsInputDto)
