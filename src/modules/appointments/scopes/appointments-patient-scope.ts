@@ -51,7 +51,6 @@ export const AppointmentsPatientScope = (identity: IIdentity) => {
         'cancelRescheduleReason',
         'actualStartDate',
         'actualEndDate',
-        'visitSummaryDocumentId',
         'visitId',
       ],
     },
