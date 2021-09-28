@@ -23,6 +23,7 @@ import { featureStatusDto } from './dto/feature-status.dto';
 import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from './models';
 import { AppointmentEventPublisher, AppointmentsEventName } from '../appointments/appointments.event-publisher';
 import { AppointmentRequestTypesLookupsModel } from '../lookups/models/appointment-request-types.model';
+import { AppointmentRequestStatusLookupsModel } from '../lookups/models/appointment-request-status.model';
 
 @Injectable()
 export class AppointmentRequestsService {
@@ -163,6 +164,23 @@ export class AppointmentRequestsService {
       ...baseUpdate,
     };
 
+    const appointmentRequest = await this.appointmentRequestsModel.findByPk(requestDto.id, {
+      include: [
+        {
+          model: AppointmentRequestStatusLookupsModel,
+          as: 'requestStatus',
+        },
+      ],
+      transaction,
+    });
+    if (appointmentRequest.requestStatus.code !== ApptRequestStatusEnum.PENDING) {
+      throw new BadRequestException({
+        fields: ['requestStatusId'],
+        code: '410',
+        message: 'Can update only the Pending request',
+      });
+    }
+
     await this.appointmentRequestsModel.update(
       { ...data },
       {
@@ -173,7 +191,16 @@ export class AppointmentRequestsService {
         transaction,
       },
     );
-    return this.appointmentRequestsModel.findByPk(requestDto.id, { transaction });
+
+    await appointmentRequest.reload({ transaction });
+
+    //update original appointment
+    await this.appointmentsService.updateAppointmentAddRequestData(
+      appointmentRequest.originalAppointmentId,
+      { id: appointmentRequest.id, date: appointmentRequest.date },
+      transaction,
+    );
+    return appointmentRequest;
   }
 
   public async cancelRequest(id: number, identity: IIdentity, transaction: Transaction) {
