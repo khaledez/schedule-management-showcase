@@ -1025,6 +1025,7 @@ describe('Appointment service for patient scope', () => {
         'appointmentTypeId',
         'appointmentStatusId',
         'appointmentVisitModeId',
+        'visitSummaryDocumentId',
       ].sort(),
     );
   });
