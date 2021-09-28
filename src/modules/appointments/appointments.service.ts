@@ -43,7 +43,6 @@ import { AppointmentStatusLookupsModel } from 'modules/lookups/models/appointmen
 import { AppointmentTypesLookupsModel } from 'modules/lookups/models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
 import { PatientInfoAttributes, PatientInfoModel } from 'modules/patient-info/patient-info.model';
-import { nanoid } from 'nanoid';
 import sequelize, { FindOptions, Op, QueryTypes, Sequelize, Transaction, WhereOptions } from 'sequelize';
 import { Includeable } from 'sequelize/types/lib/model';
 import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
@@ -834,8 +833,6 @@ export class AppointmentsService {
       await this.isAllowedSchedulingStatus(identity, appointmentStatusId);
       const provisionalDate: Date = provisionalAppointment ? provisionalAppointment.startDate : availability.startDate;
 
-      const appointmentToken = nanoid();
-
       // 3.2 create the appointment
       const startDate = dto.startDate ? new Date(dto.startDate) : availability.startDate;
       const durationMinutes = dto.durationMinutes ?? availability.durationMinutes;
@@ -854,7 +851,6 @@ export class AppointmentsService {
           appointmentStatusId,
           availabilityId: availability.id,
           upcomingAppointment,
-          appointmentToken,
         },
         { transaction },
       );
@@ -1177,8 +1173,6 @@ export class AppointmentsService {
 
     const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
 
-    // generate token for patient check-in/confirmation dates
-    const appointmentToken = nanoid();
 
     const appointmentResult = await this.appointmentsRepository.create(
       {
@@ -1191,7 +1185,6 @@ export class AppointmentsService {
         complaintsNotes: dto.complaintsNotes,
         appointmentStatusId,
         upcomingAppointment: true,
-        appointmentToken,
       },
       { transaction },
     );

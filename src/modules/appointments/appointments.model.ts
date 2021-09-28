@@ -4,6 +4,7 @@ import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { LookupWithCodeAttributes } from 'modules/lookups/models';
 import { AppointmentCancelRescheduleReasonLookupModel } from 'modules/lookups/models/appointment-cancel-reschedule-reason.model';
 import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointment-visit-mode.model';
+import { nanoid } from 'nanoid';
 import {
   AfterCreate,
   AfterUpdate,
@@ -152,7 +153,10 @@ export class AppointmentsModel
   @Column
   visitSummaryDocumentId: string;
 
-  @Column
+  @Column({
+    defaultValue: () => nanoid(),
+    type: DataType.STRING(255),
+  })
   appointmentToken: string;
 
   @BelongsTo(() => PatientInfoModel, 'patientId')
