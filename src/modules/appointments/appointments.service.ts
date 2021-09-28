@@ -1127,7 +1127,7 @@ export class AppointmentsService {
     }
     const provisionalStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
     const appointmentAsPlain = appointment.get({ plain: true });
-    if (identity.userInfo.userType === UserTypeEnum.PATIENT) {
+    if (this.isPatientIdentity(identity)) {
       return appointmentAsPlain;
     }
     const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
@@ -1720,7 +1720,7 @@ export class AppointmentsService {
       },
     };
     const appointment = await this.appointmentsRepository.scope([{ method: ['roleScope', identity] }]).findOne(options);
-    if (!appointment || identity.userInfo.userType === UserTypeEnum.PATIENT) {
+    if (!appointment || this.isPatientIdentity(identity)) {
       return appointment;
     }
     const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
@@ -2109,6 +2109,9 @@ export class AppointmentsService {
         message: error.message,
       });
     }
+  }
+  private isPatientIdentity(identity: IIdentity): boolean {
+    return identity.userInfo?.userType === UserTypeEnum.PATIENT;
   }
 }
 
