@@ -250,7 +250,11 @@ export class CalendarService {
     if (query.dateTimeRange) {
       availabilityWhereClauses = {
         ...availabilityWhereClauses,
-        ...WhereClauseBuilder.getDateTimeWhereClause(AvailabilityModel.DATE_COLUMN, 'dateTimeRange', query.dateTimeRange),
+        ...WhereClauseBuilder.getDateTimeWhereClause(
+          AvailabilityModel.DATE_COLUMN,
+          'dateTimeRange',
+          query.dateTimeRange,
+        ),
       };
     }
 

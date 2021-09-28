@@ -3,7 +3,7 @@ import { BaseModel, BaseModelAttributes } from '../../common/models/base.model';
 
 export interface clinicSettingsAttributes extends BaseModelAttributes {
   id: number;
-  clinicId: number;
+  clinicId?: number;
   staffId?: number;
   settings: any;
 }
@@ -15,7 +15,7 @@ export interface clinicSettingsAttributes extends BaseModelAttributes {
   },
   attributes: { exclude: ['deletedAt', 'deletedBy'] },
 }))
-@Table({ tableName: 'ClinicSettings', underscored: true, paranoid: true })
+@Table({ tableName: 'ClinicsSettings', underscored: true, paranoid: true })
 export class ClinicSettingsModel extends BaseModel<clinicSettingsAttributes> {
   @PrimaryKey
   @Column

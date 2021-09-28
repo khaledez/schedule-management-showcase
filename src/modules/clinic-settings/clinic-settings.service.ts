@@ -4,7 +4,8 @@ import { CLINIC_SETTINGS_REPOSITORY } from 'common/constants';
 import { ClinicSettingsEnum } from 'common/enums/clinic-settings.enum';
 import { subtractHoursFromJsDate, subtractMinutesFromJsDate } from 'common/helpers/date-time-helpers';
 import { ClinicSettingsModel } from './clinic-settings.model';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+import { IUserPrincipal } from '@monmedx/monmedx-common';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class ClinicSettingsService {
@@ -15,39 +16,35 @@ export class ClinicSettingsService {
     private configService: ConfigService,
   ) {}
 
-  getClinicSettings(clinicId: number) {
-    return this.clinicSettingsRepo.findOne({
+  async getClinicSettings(principal: IUserPrincipal) {
+    const { clinicIds } = principal.user;
+    const setting = await this.clinicSettingsRepo.findOne({
       where: {
-        clinicId,
+        clinicId: {
+          [Op.or]: [...clinicIds, null],
+        },
       },
+      order: [['id', 'desc']],
     });
+    return { data: setting };
+  }
+
+  async getClinicSettingsByClinicId(clinicId: number) {
+    const setting = await this.clinicSettingsRepo.findOne({
+      where: {
+        clinicId: {
+          [Op.or]: [clinicId, null],
+        },
+      },
+      order: [['id', 'desc']],
+    });
+    return setting;
   }
 
   async prepareCronJobs(clinicId: number, startDate: Date) {
     // get thresholds for clinic
-    const clinicSettings = await this.clinicSettingsRepo.findOne({
-      where: {
-        clinicId,
-      },
-    });
-
-    const settings = clinicSettings?.settings || {};
-    // get settings default settings from config
-    if (Object.keys(settings).length === 0) {
-      const clinicSettings = this.configService.get('clinicSettings');
-      // number for minutes for check-in notification before appointment
-      settings[ClinicSettingsEnum.APPT_CHECKIN_NOTIFICATION_BEFORE_APPT_M] =
-        clinicSettings.apptCheckinNotificationBeforeAppt_M;
-
-      settings[ClinicSettingsEnum.APPT_CHECKIN_BEFORE_APPT_M] = clinicSettings.apptCheckinBeforeAppt_M;
-
-      settings[ClinicSettingsEnum.NOTIFY_SEC_NOT_CONFIRMED_BEFORE_APPT_H] =
-        clinicSettings.notifySecNotConfirmedBeforeAppt_H;
-
-      settings[ClinicSettingsEnum.CONFIRM_BEFORE_APPT_H] = clinicSettings.confirmBeforeAppt_H;
-
-      settings[ClinicSettingsEnum.REMIND_BEFORE_APPT_H] = clinicSettings.remindBeforeAppt_H;
-    }
+    const clinicSettings = await this.getClinicSettingsByClinicId(clinicId);
+    const settings = clinicSettings.settings;
 
     this.logger.log({
       function: 'prepareCronJobs',
