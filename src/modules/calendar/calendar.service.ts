@@ -123,12 +123,6 @@ export class CalendarService {
         ...appointmentWhereClauses,
         ...processFilterIdsInput('appointmentStatusId', 'appointmentStatusId', query.appointmentStatusId),
       };
-    } else {
-      const finalStatuses = await this.lookupService.getFinalStatusIds(identity);
-      appointmentWhereClauses = {
-        ...appointmentWhereClauses,
-        appointmentStatusId: { [Op.notIn]: [provisionalStatusId, ...finalStatuses] },
-      };
     }
 
     if (query.dateRange) {

@@ -13,6 +13,8 @@ import { Sequelize } from 'sequelize-typescript';
 import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 import { CalendarModule } from '../calendar.module';
 import { CalendarService } from '../calendar.service';
+import { LookupsService } from '../../lookups/lookups.service';
+import { AppointmentStatusEnum } from '../../../common/enums';
 
 const identity: IIdentity = getTestIdentity(17, 18);
 
@@ -24,6 +26,7 @@ describe('Calendar service', () => {
   let apptRepo: typeof AppointmentsModel;
   let availRepo: typeof AvailabilityModel;
   let eventService: EventsService;
+  let lookupService: LookupsService;
   let apptService: AppointmentsService;
 
   beforeAll(async () => {
@@ -38,6 +41,7 @@ describe('Calendar service', () => {
     availRepo = moduleRef.get<typeof AvailabilityModel>(AVAILABILITY_REPOSITORY);
     eventService = moduleRef.get<EventsService>(EventsService);
     apptService = moduleRef.get<AppointmentsService>(AppointmentsService);
+    lookupService = moduleRef.get<LookupsService>(LookupsService);
   });
 
   afterAll(async () => {
@@ -123,11 +127,25 @@ describe('Calendar service', () => {
         lt: null,
         ne: null,
       },
+      appointmentStatusId: {
+        or: null,
+        in: [
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM1),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.CONFIRM2),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.CHECK_IN),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.READY),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.VISIT),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.RESCHEDULED),
+        ],
+      },
     });
     expect(allEvents.entries).toHaveLength(1);
   });
 
-  test('Should return 2 events, an appointment and its corresponding availability, on non-provisional appointment creation', async () => {
+  test('Should return 2 events, an appointment and its corresponding availability, on non-SCHEDULE status appointment creation', async () => {
     // Event (Counts #1)
     await eventService.create(identity, {
       staffId: 100,
@@ -160,6 +178,20 @@ describe('Calendar service', () => {
       },
       false,
     );
+    // Non-Provisional
+    // Doesn't count
+    await apptService.createAppointment(
+      identity,
+      {
+        staffId: 100,
+        patientId: 2,
+        appointmentTypeId: 1,
+        appointmentStatusId: 3,
+        durationMinutes: 120,
+        startDate: '2021-09-03',
+      },
+      false,
+    );
     const allEvents = await calendarService.search(identity, {
       staffId: {
         eq: 100,
@@ -172,6 +204,10 @@ describe('Calendar service', () => {
         gt: null,
         lt: null,
         ne: null,
+      },
+      appointmentStatusId: {
+        or: null,
+        in: [await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE)],
       },
     });
     expect(allEvents.entries).toHaveLength(3);
