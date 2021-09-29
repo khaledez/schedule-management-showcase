@@ -211,10 +211,7 @@ export class AppointmentsController {
       cancelReasonId,
       'create new appointment',
     );
-    const eventName =
-      appointment && appointment?.status?.code === AppointmentStatusEnum.SCHEDULE
-        ? AppointmentsEventName.APPOINTMENT_SCHEDULED
-        : AppointmentsEventName.APPOINTMENT_RESCHEDULED;
+    const eventName = AppointmentsEventName.APPOINTMENT_SCHEDULED;
     this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, null, identity);
     return { appointment };
   }
