@@ -62,13 +62,6 @@ export class AppointmentRequestsService {
       order: [['id', 'desc']],
       transaction,
     });
-    if (!apptRequest) {
-      throw new BadRequestException({
-        fields: ['id'],
-        code: '404',
-        message: 'appointmentRequest not found',
-      });
-    }
 
     return apptRequest;
   }
