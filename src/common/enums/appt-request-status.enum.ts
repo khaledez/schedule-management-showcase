@@ -1,5 +1,5 @@
 export enum ApptRequestStatusEnum {
-  FULLFILLED = 'FULLFILLED',
+  FULFILLED = 'FULFILLED',
   CANCELED = 'CANCELED',
   PENDING = 'PENDING',
   REJECTED = 'REJECTED',

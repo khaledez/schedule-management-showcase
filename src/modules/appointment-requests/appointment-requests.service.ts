@@ -483,7 +483,7 @@ export class AppointmentRequestsService {
     ) {
       await this.updateAppointmentRequestStatus(
         appointment.appointmentRequestId,
-        ApptRequestStatusEnum.FULLFILLED,
+        ApptRequestStatusEnum.FULFILLED,
         fullfillmentAppointmentId,
         identity,
         transaction,
