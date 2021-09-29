@@ -7,6 +7,7 @@ import {
   PermissionCode,
   Permissions,
   Public,
+  SimplePaginationInterceptor,
   TransactionInterceptor,
   TransactionParam,
 } from '@monmedx/monmedx-common';
@@ -64,7 +65,7 @@ export class AppointmentsController {
 
   // search using post method
   @Post('search')
-  @UseInterceptors(PaginationInterceptor)
+  @UseInterceptors(SimplePaginationInterceptor)
   @Permissions(PermissionCode.APPOINTMENT_READ)
   async search(
     @Identity() identity: IIdentity,
@@ -293,7 +294,7 @@ export class AppointmentsController {
   // search using post method
   @Post('user-appointments')
   @Permissions(PermissionCode.APPOINTMENT_READ)
-  @UseInterceptors(PaginationInterceptor)
+  @UseInterceptors(SimplePaginationInterceptor)
   async userAppointments(
     @Identity() identity: IIdentity,
     @PagingInfo() pagingInfo: PagingInfoInterface,

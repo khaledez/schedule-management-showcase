@@ -170,7 +170,7 @@ export class AppointmentsService {
       const options: FindOptions = {
         where,
         order,
-        limit,
+        limit: limit + 1,
         offset,
       };
       const { rows: appointments } = await this.appointmentsRepository
@@ -279,7 +279,7 @@ export class AppointmentsService {
           upcomingAppointment: true,
         },
         order,
-        limit,
+        limit: limit + 1,
         offset,
       };
       const { rows: appointments } = await this.appointmentsRepository
