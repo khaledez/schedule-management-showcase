@@ -212,7 +212,7 @@ export class AppointmentsController {
       'create new appointment',
     );
     const eventName =
-      appointment.status.code === AppointmentStatusEnum.SCHEDULE
+      appointment && appointment?.status?.code === AppointmentStatusEnum.SCHEDULE
         ? AppointmentsEventName.APPOINTMENT_SCHEDULED
         : AppointmentsEventName.APPOINTMENT_RESCHEDULED;
     this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, null, identity);
