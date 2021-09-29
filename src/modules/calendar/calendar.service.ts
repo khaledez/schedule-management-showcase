@@ -149,9 +149,7 @@ export class CalendarService {
       ],
     });
 
-    const actions = await this.lookupService.findAppointmentsActions(
-      appointments.map((appt) => appt.appointmentStatusId),
-    );
+    const actions = await this.lookupService.findAppointmentsActions(appointments);
     this.logger.debug({
       title: 'appointment actions',
       actions,

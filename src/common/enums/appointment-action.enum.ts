@@ -13,4 +13,5 @@ export enum AppointmentActionEnum {
   IN_PROGRESS = 'IN_PROGRESS',
   V_PENDING = 'V_PENDING',
   REACTIVATE = 'REACTIVATE',
+  DECLINE_REQUEST = 'DECLINE_REQUEST',
 }

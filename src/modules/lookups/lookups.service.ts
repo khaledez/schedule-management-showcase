@@ -38,6 +38,7 @@ import { AppointmentTypesLookupsModel } from './models/appointment-types.model';
 import { AppointmentVisitModeLookupModel } from './models/appointment-visit-mode.model';
 import { DurationMinutesLookupsModel } from './models/duration-minutes.model';
 import { TimeGroupsLookupsModel } from './models/time-groups.model';
+import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments/appointments.model';
 
 @Injectable()
 @UseInterceptors(CacheInterceptor)
@@ -264,7 +265,7 @@ export class LookupsService {
    * find Appointments Primary And Secondary Actions By Array Of Status Ids
    * @param ids AppointmentsStatusId
    */
-  public async findAppointmentsActions(ids: Array<number>): Promise<
+  public async findAppointmentsActions(appointments: Array<AppointmentsModelAttributes>): Promise<
     {
       currentActionId: number;
       secondaryActions: LookupWithCodeAttributes[];
@@ -356,11 +357,15 @@ export class LookupsService {
       const internalStatuses = internalAppointmentsStatus.map((el) => el.get({ plain: true }));
       // TODO: MMX-S4/S5 create fcm and check the status
       // At S2 status are sorted in the order so the next id is next status
-      const appointmentsActions = ids.map((id: number) => {
+      const appointmentsActions = appointments.map((appointment: AppointmentsModel) => {
+        const id = appointment.appointmentStatusId;
         const statusData = internalStatuses.find((statusObj) => statusObj.id === id);
         const primaryAction = nextActions[statusData.code].Primary[0];
         //console.log(util.inspect(primaryAction));
         const secondaryActions = nextActions[statusData.code].Secondary || [];
+        if (appointment.appointmentRequestId) {
+          secondaryActions.push(AppointmentActionEnum.DECLINE_REQUEST);
+        }
         return {
           currentActionId: id,
           // next status type calculated depend ids !!!

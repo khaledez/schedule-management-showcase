@@ -466,7 +466,7 @@ export class AppointmentsService {
       return e.get({ plain: true });
     });
 
-    const actions = await this.lookupsService.findAppointmentsActions(appointmentsStatusIds);
+    const actions = await this.lookupsService.findAppointmentsActions(appointmentsAsPlain);
 
     return appointmentsAsPlain.map((appt: AppointmentsModel, i) => ({
       ...appt,
@@ -1130,7 +1130,7 @@ export class AppointmentsService {
     if (this.isPatientIdentity(identity)) {
       return appointmentAsPlain;
     }
-    const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
+    const actions = await this.lookupsService.findAppointmentsActions([appointment]);
     this.logger.debug({
       title: 'appointment actions',
       actions,
@@ -1723,7 +1723,7 @@ export class AppointmentsService {
     if (!appointment || this.isPatientIdentity(identity)) {
       return appointment;
     }
-    const actions = await this.lookupsService.findAppointmentsActions([appointment.appointmentStatusId]);
+    const actions = await this.lookupsService.findAppointmentsActions([appointment]);
     const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
     return {
       ...appointment.get(),

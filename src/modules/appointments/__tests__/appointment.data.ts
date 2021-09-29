@@ -1,9 +1,10 @@
 import { IConfirmCompleteVisitEvent, IIdentity } from '@monmedx/monmedx-common';
 import { AppointmentActionEnum, Order } from 'common/enums';
-import { AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
+import { AppointmentsModel, AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
 import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
 import { Key } from 'modules/appointments/dto/appointment-sort-dto';
 import { PatientInfoAttributes } from '../../patient-info/patient-info.model';
+import { getTestIdentity } from '../../../utils/test-helpers/common-data-helpers';
 
 export function getReleasePatientInfoAfterCompleteVisit() {
   return {
@@ -348,7 +349,15 @@ export function getAppointmentByPatientIdTestCases() {
 }
 
 export function getAppointmentWithActionsTestCases() {
-  return [
+  const identity = getTestIdentity(174, 174);
+  const appointment = createAppointment(
+    identity,
+    67,
+    1,
+    new Date('2032-05-25T08:00:00.000Z'),
+    new Date('2032-05-25T08:30:00.000Z'),
+  );
+  const actions = [
     {
       statusId: 1, //WAIT_LIST
       Primary: [AppointmentActionEnum.SCHEDULE],
@@ -431,6 +440,14 @@ export function getAppointmentWithActionsTestCases() {
       Secondary: [],
     },
   ];
+
+  return actions.map((el) => ({
+    appointment: {
+      ...appointment,
+      appointmentStatusId: el.statusId,
+    },
+    ...el,
+  }));
 }
 
 export function createAppointment(
