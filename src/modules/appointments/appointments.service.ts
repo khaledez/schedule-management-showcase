@@ -505,7 +505,19 @@ export class AppointmentsService {
       if (!dto.complaintsNotes && rescheduledUppointment && rescheduledUppointment.complaintsNotes) {
         dto.complaintsNotes = rescheduledUppointment.complaintsNotes;
       }
-      return this.createAppointment(identity, dto, upcomingAppointment, transaction);
+
+      const createdAppointment = await this.createAppointment(identity, dto, upcomingAppointment, transaction);
+
+      if (rescheduledUppointment.appointmentRequestId) {
+        await this.apptRequestServiceSvc.handleAppointmentRequest(
+          rescheduledUppointment.id,
+          ApptRequestTypesEnum.SCHEDULE,
+          createdAppointment?.id,
+          identity,
+          transaction,
+        );
+      }
+      return createdAppointment;
     };
     if (transaction) {
       return procedureInTx(transaction);
@@ -1172,7 +1184,6 @@ export class AppointmentsService {
     }
 
     const appointmentStatusId = await this.lookupsService.getProvisionalAppointmentStatusId(identity);
-
 
     const appointmentResult = await this.appointmentsRepository.create(
       {
