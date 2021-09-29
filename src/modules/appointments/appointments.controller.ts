@@ -222,9 +222,7 @@ export class AppointmentsController {
     const previousAppointment = await this.appointmentsService.findOne(identity, dto.appointmentId);
     await this.validateVisitNotInProgress(identity, previousAppointment);
     const appointment = await this.appointmentsService.rescheduleAppointment(identity, dto);
-    const eventName = dto.staffChangedPermanent
-      ? AppointmentsEventName.APPOINTMENT_CANCELED
-      : AppointmentsEventName.APPOINTMENT_RESCHEDULED;
+    const eventName = AppointmentsEventName.APPOINTMENT_RESCHEDULED;
     this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, null, identity);
     return { appointment: appointment };
   }
