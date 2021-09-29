@@ -42,6 +42,37 @@ export class AppointmentRequestsService {
     private readonly eventPublisher: AppointmentEventPublisher,
   ) {}
 
+  public async getRequestByPatientId(patientId: number, identity: IIdentity, transaction: Transaction) {
+    this.logger.log({ function: 'getRequestByPatientId', patientId });
+    const {
+      userInfo: { clinicIds },
+    } = identity;
+
+    const apptRequest = await this.appointmentRequestsModel.findOne({
+      where: {
+        patientId,
+        requestStatusId: await this.lookupsService.getApptRequestStatusIdByCode(
+          ApptRequestStatusEnum.PENDING,
+          identity,
+        ),
+        clinicId: {
+          [Op.in]: clinicIds,
+        },
+      },
+      order: [['id', 'desc']],
+      transaction,
+    });
+    if (!apptRequest) {
+      throw new BadRequestException({
+        fields: ['id'],
+        code: '404',
+        message: 'appointmentRequest not found',
+      });
+    }
+
+    return apptRequest;
+  }
+
   public async getRequestById(id: number, identity: IIdentity, transaction: Transaction) {
     this.logger.log({ function: 'getRequestById', id });
     const {

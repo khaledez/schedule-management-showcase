@@ -48,6 +48,18 @@ export class AppointmentRequestsController {
   @Permissions(PermissionCode.APPT_REQUEST_READ)
   @UseInterceptors(DataResponseInterceptor)
   @UseInterceptors(TransactionInterceptor)
+  @Get('patient/:patientId')
+  getRequestByPatientId(
+    @TransactionParam() transaction: Transaction,
+    @Param('patientId', ParseIntPipe) patientId: number,
+    @Identity() identity: IIdentity,
+  ) {
+    return this.appointmentRequestsService.getRequestByPatientId(patientId, identity, transaction);
+  }
+
+  @Permissions(PermissionCode.APPT_REQUEST_READ)
+  @UseInterceptors(DataResponseInterceptor)
+  @UseInterceptors(TransactionInterceptor)
   @Get(':id')
   getRequestById(
     @TransactionParam() transaction: Transaction,
