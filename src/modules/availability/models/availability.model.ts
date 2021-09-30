@@ -95,8 +95,8 @@ export class AvailabilityModel
       AvailabilityEventName.AVAILABILITY_CREATED,
       instance,
       null,
-      instance.createdBy,
       instance.clinicId,
+      instance.createdBy,
     );
   }
 
@@ -107,8 +107,8 @@ export class AvailabilityModel
         AvailabilityEventName.AVAILABILITY_DELETED,
         updatedAvailability,
         null,
-        updatedAvailability.deletedBy,
         updatedAvailability.clinicId,
+        updatedAvailability.deletedBy,
       );
       return;
     }
@@ -116,8 +116,8 @@ export class AvailabilityModel
       AvailabilityEventName.AVAILABILITY_UPDATED,
       updatedAvailability,
       updatedAvailability._previousDataValues,
-      updatedAvailability.updatedBy,
       updatedAvailability.clinicId,
+      updatedAvailability.updatedBy,
     );
   }
 
@@ -128,8 +128,8 @@ export class AvailabilityModel
         AvailabilityEventName.AVAILABILITY_CREATED,
         instance,
         null,
-        instance.createdBy,
         instance.clinicId,
+        instance.createdBy,
       );
     });
   }
