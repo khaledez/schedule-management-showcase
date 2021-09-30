@@ -24,6 +24,7 @@ import { AvailabilityEventName, AvailabilityEventPublisher } from '../availabili
   attributes: {
     exclude: ['deletedAt', 'deletedBy'],
   },
+  individualHooks: true,
 }))
 @Scopes(() => ({
   full: {
