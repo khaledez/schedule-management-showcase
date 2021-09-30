@@ -44,6 +44,14 @@
         {
           "name": "S3_BUCKET_NAME",
           "value": "%S3_BUCKET_NAME%"
+        },
+        {
+          "name": "OTEL_LOG_LEVEL",
+          "value": "debug"
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "value": "http://0.0.0.0:55681/v1/traces"
         }
       ],
       "mountPoints": [],
@@ -71,10 +79,6 @@
       "portMappings": [
         {
           "containerPort": 55681,
-          "protocol": "tcp"
-        },
-        {
-          "containerPort": 4317,          
           "protocol": "tcp"
         }
       ],
