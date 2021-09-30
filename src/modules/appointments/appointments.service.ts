@@ -507,7 +507,7 @@ export class AppointmentsService {
 
       const createdAppointment = await this.createAppointment(identity, dto, upcomingAppointment, transaction);
 
-      if (rescheduledUppointment.appointmentRequestId) {
+      if (rescheduledUppointment?.appointmentRequestId) {
         await this.apptRequestServiceSvc.handleAppointmentRequest(
           rescheduledUppointment.id,
           ApptRequestTypesEnum.SCHEDULE,
