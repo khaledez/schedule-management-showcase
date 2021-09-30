@@ -418,10 +418,8 @@ export class AppointmentsService {
       const apptStatusCode = appt.status.code;
       const patientActions = [];
       const patientSecondaryActions = [];
-      if (
-        !appt.appointmentRequestId &&
-        [AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM2].includes(apptStatusCode)
-      ) {
+      const hasRequest = !!appt.appointmentRequestId;
+      if (!hasRequest && [AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM2].includes(apptStatusCode)) {
         if (apptStatusCode === AppointmentStatusEnum.SCHEDULE) {
           patientActions.push(CONFIRM1_action);
         } else if (apptStatusCode === AppointmentStatusEnum.CONFIRM2) {
@@ -429,12 +427,14 @@ export class AppointmentsService {
         }
       }
 
-      if (appt.appointmentRequestId) {
-        patientSecondaryActions.push(
-          patientApptSecondaryActionType.EDIT_REQUEST,
-          patientApptSecondaryActionType.CANCEL_REQUEST,
-        );
+      if (hasRequest) {
+        patientSecondaryActions.push(patientApptSecondaryActionType.CANCEL_REQUEST);
+
+        if ([AppointmentStatusEnum.WAIT_LIST].includes(apptStatusCode)) {
+          patientSecondaryActions.push(patientApptSecondaryActionType.EDIT_REQUEST);
+        }
       }
+
       if (
         [
           AppointmentStatusEnum.SCHEDULE,
@@ -445,7 +445,7 @@ export class AppointmentsService {
         ].includes(apptStatusCode)
       ) {
         patientSecondaryActions.push(patientApptSecondaryActionType.CANCEL_APPT);
-        if (!appt.appointmentRequestId) {
+        if (!hasRequest) {
           patientSecondaryActions.push(patientApptSecondaryActionType.RESCHEDULE);
         }
       }
