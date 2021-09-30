@@ -446,9 +446,7 @@ export class AppointmentsService {
         ].includes(apptStatusCode)
       ) {
         patientSecondaryActions.push(patientApptSecondaryActionType.CANCEL_APPT);
-        if (!hasRequest) {
-          patientSecondaryActions.push(patientApptSecondaryActionType.RESCHEDULE);
-        }
+        patientSecondaryActions.push(patientApptSecondaryActionType.RESCHEDULE);
       }
 
       return {
