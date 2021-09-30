@@ -1,10 +1,10 @@
 import { IConfirmCompleteVisitEvent, IIdentity } from '@monmedx/monmedx-common';
 import { AppointmentActionEnum, Order } from 'common/enums';
-import { AppointmentsModel, AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
+import { AppointmentsModelAttributes } from 'modules/appointments/appointments.model';
 import { AppointmentsService, AssociationFieldsSortCriteria } from 'modules/appointments/appointments.service';
 import { Key } from 'modules/appointments/dto/appointment-sort-dto';
-import { PatientInfoAttributes } from '../../patient-info/patient-info.model';
 import { getTestIdentity } from '../../../utils/test-helpers/common-data-helpers';
+import { PatientInfoAttributes } from '../../patient-info/patient-info.model';
 
 export function getReleasePatientInfoAfterCompleteVisit() {
   return {
