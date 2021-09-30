@@ -8,11 +8,25 @@
       "type": "node",
       "request": "launch",
       "name": "Launch with Breaking",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "program": "${workspaceFolder}/node_modules/.bin/nest",
-			"args": ["start"],
+      "args": [
+        "start"
+      ],
       "runtimeExecutable": "node",
-      "runtimeArgs": ["--inspect-brk"]
+      "runtimeArgs": [
+        "--inspect-brk"
+      ]
+    },
+    {
+      "name": "Docker Node.js Launch",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-run: debug",
+      "platform": "node"
     }
-  ]
+  ],
+  
 }

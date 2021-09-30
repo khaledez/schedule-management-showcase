@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENT_CHECKIN_STATUS_EVENT,
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CHECKIN_STATUS_EVENT,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -45,6 +45,7 @@ import { AppointmentVisitModeLookupModel } from 'modules/lookups/models/appointm
 import { PatientInfoAttributes, PatientInfoModel } from 'modules/patient-info/patient-info.model';
 import sequelize, { FindOptions, Op, QueryTypes, Sequelize, Transaction, WhereOptions } from 'sequelize';
 import { Includeable } from 'sequelize/types/lib/model';
+import { patientApptSecondaryActionType } from '../../common/enums/appointmnet-patient-secondary-action.enum';
 import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 import { WhereClauseBuilder } from '../../common/helpers/where-clause-builder';
 import { ChangeAssingedDoctorPayload } from '../../common/interfaces/change-assinged-doctor';
@@ -65,7 +66,6 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
-import { patientApptSecondaryActionType } from '../../common/enums/appointmnet-patient-secondary-action.enum';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -413,6 +413,7 @@ export class AppointmentsService {
       AppointmentActionEnum.CHECK_IN,
       identity,
     );
+    // eslint-disable-next-line complexity
     return appointments.map((e) => {
       const appt = e.get({ plain: true });
       const apptStatusCode = appt.status.code;
@@ -705,7 +706,6 @@ export class AppointmentsService {
 
   async releasePatientAppointments(identity: IIdentity, patientAttr: PatientInfoAttributes, transaction?: Transaction) {
     const { id: patientId, clinicId, statusCode } = patientAttr;
-    const statusReleasedId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED);
     const statusCanceledId = await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED);
     const appointmentFinalStateIds: number[] = await this.lookupsService.getAppointmentFinalStateIds();
 

@@ -40,7 +40,8 @@ import { GeneralHealthIndicator } from './general-health.provider';
     AppointmentCronJobModule,
     ClinicSettingsModule,
     TelemetryModule.register({
-      serviceName: `${process.env.NODE_ENV}-schedule-management`,
+      serviceName: `schedule-management`,
+      environment: process.env.NODE_ENV,
       routesToExclude: ['/health-check', '/metrics'],
     }),
   ],

@@ -1,45 +1,44 @@
-import { getTestIdentity } from '../../../utils/test-helpers/common-data-helpers';
-import { AppointmentsService } from '../appointments.service';
+import { HttpModule } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppointmentsModel } from '../appointments.model';
-import { ConfigurationModule } from '../../config/config.module';
-import { DatabaseModule } from '../../database/database.module';
-import { LookupsModule } from '../../lookups/lookups.module';
-import { EventsModule } from '../../events/events.module';
+import { Sequelize } from 'sequelize';
 import {
   APPOINTMENTS_REPOSITORY,
+  APPOINTMENT_CRON_JOB_REPOSITORY,
+  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
+  APPOINTMENT_REQUEST_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   PATIENT_INFO_REPOSITORY,
-  APPOINTMENT_REQUEST_REPOSITORY,
-  APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   SEQUELIZE,
-  APPOINTMENT_CRON_JOB_REPOSITORY,
 } from '../../../common/constants';
-import { AvailabilityModel } from '../../availability/models/availability.model';
+import { AppointmentStatusEnum } from '../../../common/enums';
+import { PatientStatus } from '../../../common/enums/patient-status';
+import { getTestIdentity } from '../../../utils/test-helpers/common-data-helpers';
+import { AppointmentCronJobModel } from '../../appointment-cron-job/appointment-cron-job.model';
+import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
+import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
+import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
 import { AvailabilityService } from '../../availability/availability.service';
 import { AvailabilityValidator } from '../../availability/availability.validator';
-import { PatientInfoModel } from '../../patient-info/patient-info.model';
+import { AvailabilityModel } from '../../availability/models/availability.model';
+import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
+import { ConfigurationModule } from '../../config/config.module';
+import { DatabaseModule } from '../../database/database.module';
+import { EventsModule } from '../../events/events.module';
+import { LookupsModule } from '../../lookups/lookups.module';
+import { LookupsService } from '../../lookups/lookups.service';
+import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 import { PatientInfoService } from '../../patient-info';
+import { PatientInfoModel } from '../../patient-info/patient-info.model';
+import { AppointmentEventPublisher } from '../appointments.event-publisher';
+import { AppointmentsListener } from '../appointments.listener';
+import { AppointmentsModel } from '../appointments.model';
+import { AppointmentsService } from '../appointments.service';
 import {
   buildICompleteVisitEventKeepOriginalAppointment,
   buildIConfirmCompleteVisitEvent,
   getProvisionalPatientInfoAfterCompleteVisit,
   getReleasePatientInfoAfterCompleteVisit,
 } from './appointment.data';
-import { AppointmentsListener } from '../appointments.listener';
-import { HttpModule } from '@nestjs/common';
-import { Sequelize } from 'sequelize';
-import { LookupsService } from '../../lookups/lookups.service';
-import { AppointmentStatusEnum } from '../../../common/enums';
-import { PatientStatus } from '../../../common/enums/patient-status';
-import { AppointmentEventPublisher } from '../appointments.event-publisher';
-import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
-import { AppointmentRequestsService } from '../../appointment-requests/appointment-requests.service';
-import { AppointmentRequestFeatureStatusModel, AppointmentRequestsModel } from '../../appointment-requests/models';
-import { ClinicSettingsModule } from '../../clinic-settings/clinic-settings.module';
-import { AppointmentCronJobModel } from '../../appointment-cron-job/appointment-cron-job.model';
-import { AppointmentCronJobService } from '../../appointment-cron-job/appointment-cron-job.service';
-import { AppointmentFilterDto } from '../dto/appointment-filter.dto';
 
 describe('# Appointment event listener', () => {
   let appointmentsService: AppointmentsService;
