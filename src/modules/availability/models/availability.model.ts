@@ -116,7 +116,7 @@ export class AvailabilityModel
       AvailabilityEventName.AVAILABILITY_UPDATED,
       updatedAvailability,
       updatedAvailability._previousDataValues,
-      updatedAvailability.createdBy,
+      updatedAvailability.updatedBy,
       updatedAvailability.clinicId,
     );
   }
