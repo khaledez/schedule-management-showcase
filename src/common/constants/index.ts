@@ -55,6 +55,9 @@ export const SCHEDULE_MGMT_TOPIC = 'schedule-management';
 export const VISIT_MGMT_TOPIC = 'visit-management';
 export const PATIENT_MGMT_TOPIC = 'patient-management';
 
+export const EVENT_EVERY_HOUR_TOPIC = 'handleEveryHour';
+export const EVENT_EVERY_MINITUE_TOPIC = 'handleEveryMinute';
+
 export const EVENT_PROVISIONAL_PAST = 'PROVISIONAL_PAST';
 export const EVENT_APPOINTMENT_NOT_CONFIRMED = 'APPOINTMENT_NOT_CONFIRMED';
 export const EVENT_APPOINTMENT_MISSED = 'APPOINTMENT_MISSED';

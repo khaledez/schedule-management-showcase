@@ -1,5 +1,5 @@
 import { Dialect } from 'sequelize/types';
-import { PATIENT_MGMT_TOPIC, VISIT_MGMT_TOPIC } from '../src/common/constants';
+import { EVENT_EVERY_HOUR_TOPIC, EVENT_EVERY_MINITUE_TOPIC, PATIENT_MGMT_TOPIC, VISIT_MGMT_TOPIC } from '../src/common/constants';
 
 // eslint-disable-next-line complexity
 export const config = () => ({
@@ -26,7 +26,7 @@ export const config = () => ({
       min: 2,
     },
   },
-  topicList: [VISIT_MGMT_TOPIC, PATIENT_MGMT_TOPIC],
+  topicList: [VISIT_MGMT_TOPIC, PATIENT_MGMT_TOPIC, EVENT_EVERY_HOUR_TOPIC, EVENT_EVERY_MINITUE_TOPIC],
   cognito: {
     userPoolId: process.env.userPoolId || 'ca-central-1_QCH72QhGJ',
     clientId: process.env.clientId || '4ot8uiknlo3l77dansic1u2vt3',
