@@ -402,29 +402,21 @@ export class AppointmentsService {
     }
   }
 
-  private async buildAppointmentConnectionResponseForPatient(appointments, identity: IIdentity) {
-    //TODO check if notification sent
-
-    const CONFIRM1_action = await this.lookupsService.findAppointmentActionByCode(
-      AppointmentActionEnum.CONFIRM1,
-      identity,
-    );
-    const CHECK_IN_action = await this.lookupsService.findAppointmentActionByCode(
-      AppointmentActionEnum.CHECK_IN,
-      identity,
-    );
+  private buildAppointmentConnectionResponseForPatient(appointments, identity: IIdentity) {
     // eslint-disable-next-line complexity
-    return appointments.map((e) => {
+    return appointments.map(async (e) => {
       const appt = e.get({ plain: true });
       const apptStatusCode = appt.status.code;
       const patientActions = [];
       const patientSecondaryActions = [];
       const hasRequest = !!appt.appointmentRequestId;
       if (!hasRequest && [AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM2].includes(apptStatusCode)) {
-        if (apptStatusCode === AppointmentStatusEnum.SCHEDULE) {
-          patientActions.push(CONFIRM1_action);
-        } else if (apptStatusCode === AppointmentStatusEnum.CONFIRM2) {
-          patientActions.push(CHECK_IN_action);
+        const lastEvent = await this.appointmentCronJobService.lastActionSent(appt.id);
+        if (
+          lastEvent &&
+          [AppointmentActionEnum.CONFIRM1, AppointmentActionEnum.CHECK_IN].includes(lastEvent.actionType)
+        ) {
+          patientActions.push(lastEvent.actionType);
         }
       }
 
@@ -949,7 +941,7 @@ export class AppointmentsService {
       });
     }
 
-    const lastEvent = await this.appointmentCronJobService.lastEventSent(appointment.id);
+    const lastEvent = await this.appointmentCronJobService.lastActionSent(appointment.id);
 
     if (!lastEvent) {
       throw new NotFoundException({

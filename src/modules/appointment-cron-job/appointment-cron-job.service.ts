@@ -341,7 +341,7 @@ export class AppointmentCronJobService {
     return result;
   }
 
-  async lastEventSent(appointmentId: number) {
+  async lastActionSent(appointmentId: number) {
     const result = await this.AppointmentCronJobRepo.findAll({
       where: {
         appointmentId,
@@ -352,7 +352,7 @@ export class AppointmentCronJobService {
     });
 
     this.logger.log({
-      function: 'lastEventSent',
+      function: 'lastActionSent',
       result,
       appointmentId,
     });
