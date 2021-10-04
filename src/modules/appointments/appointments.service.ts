@@ -66,6 +66,8 @@ import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import getInclusiveSQLDateCondition from './utils/get-whole-day-sql-condition';
 import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
+import { AppointmentEventPublisher, AppointmentsEventName } from './appointments.event-publisher';
+import { AppointmentRequestsModel } from '../appointment-requests/models';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { snsTopic } = require('pubsub-service');
 
@@ -107,6 +109,7 @@ export class AppointmentsService {
     private readonly appointmentCronJobService: AppointmentCronJobService,
     @Inject(forwardRef(() => AppointmentRequestsService))
     private readonly apptRequestServiceSvc: AppointmentRequestsService,
+    private readonly eventPublisher: AppointmentEventPublisher,
   ) {}
 
   private readonly associationFieldsSortNames: AssociationFieldsSortCriteria = {
@@ -1915,7 +1918,12 @@ export class AppointmentsService {
     });
   }
 
-  async updateAppointmentAddRequestData(appointmentId: number, requestData, transaction: Transaction) {
+  async updateAppointmentAddRequestData(
+    appointmentId: number,
+    requestData,
+    transaction: Transaction,
+    identity?: IIdentity,
+  ) {
     this.logger.log({ function: 'updateAppointmentAddRequestData', appointmentId, requestData });
 
     const { id: appointmentRequestId, date: appointmentRequestDate } = requestData;
@@ -1930,6 +1938,21 @@ export class AppointmentsService {
         },
         transaction,
       },
+    );
+
+    const appointment = await this.appointmentsRepository.findOne({
+      where: { id: appointmentId },
+      include: [{ model: AppointmentRequestsModel }],
+      transaction: transaction,
+    });
+
+    this.eventPublisher.publishAppointmentEvent(
+      AppointmentsEventName.APPOINTMENT_REQUEST_UPDATES,
+      appointment,
+      null,
+      null,
+      appointment.appointmentRequest || null,
+      identity,
     );
   }
 

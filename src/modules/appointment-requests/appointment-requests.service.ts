@@ -171,7 +171,12 @@ export class AppointmentRequestsService {
     );
 
     //update original appointment
-    await this.appointmentsService.updateAppointmentAddRequestData(originalAppointmentId, createdRequest, transaction);
+    await this.appointmentsService.updateAppointmentAddRequestData(
+      originalAppointmentId,
+      createdRequest,
+      transaction,
+      identity,
+    );
 
     return createdRequest;
   }
@@ -223,6 +228,7 @@ export class AppointmentRequestsService {
       appointmentRequest.originalAppointmentId,
       { id: appointmentRequest.id, date: appointmentRequest.date },
       transaction,
+      identity,
     );
     return appointmentRequest;
   }
@@ -281,6 +287,7 @@ export class AppointmentRequestsService {
       createdRequest.originalAppointmentId,
       { id: null, date: null },
       transaction,
+      identity,
     );
 
     return createdRequest.reload({ transaction });
@@ -361,7 +368,12 @@ export class AppointmentRequestsService {
     );
 
     //update original appointment
-    await this.appointmentsService.updateAppointmentAddRequestData(appointmentId, createdRequest, transaction);
+    await this.appointmentsService.updateAppointmentAddRequestData(
+      appointmentId,
+      createdRequest,
+      transaction,
+      identity,
+    );
 
     return createdRequest;
   }
@@ -426,6 +438,7 @@ export class AppointmentRequestsService {
       appointmentId,
       { id: null, date: null },
       transaction,
+      identity,
     );
 
     const appointment = await this.appointmentsService.getAppointmentById(identity, appointmentId, null, transaction);
@@ -530,6 +543,7 @@ export class AppointmentRequestsService {
       appointmentId,
       { id: null, date: null },
       transaction,
+      identity,
     );
 
     return true;
@@ -589,7 +603,12 @@ export class AppointmentRequestsService {
         },
       );
       //update original appointment
-      await this.appointmentsService.updateAppointmentAddRequestData(newAppointment.id, createdRequest, transaction);
+      await this.appointmentsService.updateAppointmentAddRequestData(
+        newAppointment.id,
+        createdRequest,
+        transaction,
+        identity,
+      );
     }
   }
 
