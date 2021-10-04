@@ -405,16 +405,7 @@ export class AppointmentsService {
     }
   }
 
-  private async buildAppointmentConnectionResponseForPatient(appointments, identity: IIdentity) {
-    const CONFIRM1_action = await this.lookupsService.findAppointmentActionByCode(
-      AppointmentActionEnum.CONFIRM1,
-      identity,
-    );
-    const CHECK_IN_action = await this.lookupsService.findAppointmentActionByCode(
-      AppointmentActionEnum.CHECK_IN,
-      identity,
-    );
-
+  private buildAppointmentConnectionResponseForPatient(appointments, identity: IIdentity) {
     // eslint-disable-next-line complexity
     const results = appointments.map(async (e) => {
       const appt = e.get({ plain: true });
@@ -428,11 +419,8 @@ export class AppointmentsService {
           lastEvent &&
           [AppointmentActionEnum.CONFIRM1, AppointmentActionEnum.CHECK_IN].includes(lastEvent.actionType)
         ) {
-          if (lastEvent.actionType === AppointmentActionEnum.SCHEDULE) {
-            patientActions.push(CONFIRM1_action);
-          } else if (lastEvent.actionType === AppointmentActionEnum.CONFIRM2) {
-            patientActions.push(CHECK_IN_action);
-          }
+          const target_action = await this.lookupsService.findAppointmentActionByCode(lastEvent.actionType, identity);
+          patientActions.push(target_action);
         }
       }
 
