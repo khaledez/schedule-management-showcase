@@ -176,7 +176,10 @@ export class AppointmentsService {
       const { rows: appointments } = await this.appointmentsRepository
         .scope([{ method: ['roleScope', identity] }])
         .findAndCountAll(options);
-      const searchResult = await this.buildAppointmentConnectionResponseForPatient(appointments, identity);
+      const searchResult = (await this.buildAppointmentConnectionResponseForPatient(
+        appointments,
+        identity,
+      )) as AppointmentsModelAttributes[];
 
       return [searchResult, appointments.length];
     } catch (error) {
@@ -404,7 +407,7 @@ export class AppointmentsService {
 
   private buildAppointmentConnectionResponseForPatient(appointments, identity: IIdentity) {
     // eslint-disable-next-line complexity
-    return appointments.map(async (e) => {
+    const results = appointments.map(async (e) => {
       const appt = e.get({ plain: true });
       const apptStatusCode = appt.status.code;
       const patientActions = [];
@@ -447,6 +450,8 @@ export class AppointmentsService {
         patientSecondaryActions,
       };
     });
+
+    return Promise.all(results);
   }
 
   private async buildAppointmentConnectionResponse(appointments) {
