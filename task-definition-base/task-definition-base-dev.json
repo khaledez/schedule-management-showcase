@@ -70,6 +70,14 @@
         {
           "name": "AWS_REGION",
           "value": "%AWS_DEFAULT_REGION%"
+        },
+        {
+          "name": "SERVICE",
+          "value": "schedule-management"
+        },
+        {
+          "name": "ENVIRONMENT",
+          "value": "dev"
         }
       ],
       "portMappings": [
