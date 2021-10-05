@@ -99,7 +99,7 @@ export class AppointmentCronJobService {
       include: [
         {
           model: AppointmentsModel,
-          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'appointmentToken', 'startDate'],
+          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'startDate'],
           where: {
             appointmentRequestId: null,
           },
@@ -149,7 +149,7 @@ export class AppointmentCronJobService {
       include: [
         {
           model: AppointmentsModel,
-          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'appointmentToken', 'startDate'],
+          attributes: ['id', 'patientId', 'staffId', 'clinicId', 'startDate'],
           where: {
             appointmentRequestId: null,
           },
@@ -237,6 +237,7 @@ export class AppointmentCronJobService {
             appointmentId: appointment.id,
             staffId: appointment.staffId,
             appointmentDateTime: appointment.startDate,
+            securityToken: appointment.appointmentToken,
           },
           ...metaData,
         });
