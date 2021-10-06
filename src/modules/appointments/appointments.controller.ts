@@ -211,7 +211,7 @@ export class AppointmentsController {
       cancelReasonId,
       'create new appointment',
     );
-    const isProvisional = !!dto.availabilityId;
+    const isProvisional = !dto.availabilityId;
     const eventName = isProvisional
       ? AppointmentsEventName.APPOINTMENT_SET_PROVISIONAL
       : AppointmentsEventName.APPOINTMENT_SCHEDULED;
