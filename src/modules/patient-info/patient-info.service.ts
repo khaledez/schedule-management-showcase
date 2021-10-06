@@ -28,7 +28,7 @@ import { ReactivatePatientDto } from './dto/reactivate-patient-dto';
 import { PatientInfoPayload, patientInfoPayloadToAttributes } from './patient-info.listener';
 import { PatientInfoAttributes, PatientInfoModel } from './patient-info.model';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { snsTopic } = require('pubsub-service');
+const { snsTopic } = require('@monmedx/monmedx-pubsub');
 
 @Injectable()
 export class PatientInfoService {

@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@monmedx/monmedx-common": "^4.2.3",
+    "@monmedx/monmedx-pubsub": "^2.0.1",
     "@monmedx/telemetry": "^0.3.6",
     "@nestjs/common": "^7.0.1",
     "@nestjs/config": "^0.6.1",
@@ -63,7 +64,6 @@
     "moment": "^2.29.1",
     "mysql2": "^2.2.5",
     "nanoid": "^3.1.25",
-    "pubsub-service": "npm:@monmedx/monmedx-pubsub@^1.0.11",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.6.7",
     "sequelize": "6.6.2",

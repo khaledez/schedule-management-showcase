@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SERVICE_NAME } from './common/constants';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { sqsQueue } = require('pubsub-service');
+const { sqsQueue } = require('@monmedx/monmedx-pubsub');
 
 @Injectable()
 export class FireEventService {

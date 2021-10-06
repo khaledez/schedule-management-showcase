@@ -4,7 +4,7 @@ import { SCHEDULE_MGMT_TOPIC } from '../../common/constants';
 import { AvailabilityModelAttributes } from './models/availability.interfaces';
 import { AvailabilityEventPayload } from './events/availability-event-payload';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { snsTopic } = require('pubsub-service');
+const { snsTopic } = require('@monmedx/monmedx-pubsub');
 
 export enum AvailabilityEventName {
   AVAILABILITY_DELETED = 'AVAILABILITY_DELETED',

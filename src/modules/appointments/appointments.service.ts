@@ -69,7 +69,7 @@ import { getQueryGenericSortMapper } from './utils/sequelize-sort.mapper';
 import { AppointmentEventPublisher, AppointmentsEventName } from './appointments.event-publisher';
 import { AppointmentRequestsModel } from '../appointment-requests/models';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { snsTopic } = require('pubsub-service');
+const { snsTopic } = require('@monmedx/monmedx-pubsub');
 
 export interface AssociationFieldsSortCriteria {
   [key: string]: {

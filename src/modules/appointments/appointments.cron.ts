@@ -12,7 +12,7 @@ import { DateTime } from 'luxon';
 import { AppointmentsModel } from 'modules/appointments/appointments.model';
 import { AppointmentsService } from 'modules/appointments/appointments.service';
 import { AppointmentNotificationEvent } from 'modules/appointments/dto/appointment-notification-event.dto';
-import { snsTopic } from 'pubsub-service';
+import { snsTopic } from '@monmedx/monmedx-pubsub';
 
 @Injectable()
 export class AppointmentsCron {

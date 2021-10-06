@@ -7,7 +7,7 @@ import { LookupsService } from '../lookups/lookups.service';
 import { AppointmentsModelAttributes } from './appointments.model';
 import { AppointmentsEventPayload, LookupModelPayload } from './events/appointments-event-payload';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { snsTopic } = require('pubsub-service');
+const { snsTopic } = require('@monmedx/monmedx-pubsub');
 
 export enum AppointmentsEventName {
   APPOINTMENT_SET_PROVISIONAL = 'APPOINTMENT_SET_PROVISIONAL',
