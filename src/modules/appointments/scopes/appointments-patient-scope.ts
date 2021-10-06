@@ -5,6 +5,7 @@ import { AppointmentTypesLookupsModel } from '../../lookups/models/appointment-t
 import { AppointmentStatusLookupsModel } from '../../lookups/models/appointment-status.model';
 import { AppointmentVisitModeLookupModel } from '../../lookups/models/appointment-visit-mode.model';
 import { AppointmentRequestsModel } from '../../appointment-requests/models';
+import { AppointmentCancelRescheduleReasonLookupModel } from '../../lookups/models/appointment-cancel-reschedule-reason.model';
 
 export const AppointmentsPatientScope = (identity: IIdentity) => {
   const { clinicIds, patientIds } = identity.userInfo;
@@ -29,6 +30,10 @@ export const AppointmentsPatientScope = (identity: IIdentity) => {
       },
       {
         model: AppointmentRequestsModel,
+        required: false,
+      },
+      {
+        model: AppointmentCancelRescheduleReasonLookupModel,
         required: false,
       },
     ],
