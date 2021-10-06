@@ -361,7 +361,7 @@ export function getAppointmentWithActionsTestCases() {
     {
       statusId: 1, //WAIT_LIST
       Primary: [AppointmentActionEnum.SCHEDULE],
-      Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE],
+      Secondary: [],
     },
     {
       statusId: 2, //SCHEDULE

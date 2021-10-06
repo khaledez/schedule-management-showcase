@@ -1017,6 +1017,8 @@ describe('Appointment service for patient scope', () => {
         'appointmentRequestId',
         'appointmentRequestDate',
         'appointmentToken',
+        'cancelRescheduleReasonId',
+        'cancelRescheduleText',
         'patient',
         'type',
         'status',
