@@ -280,7 +280,7 @@ export class LookupsService {
       const nextActions = {
         [AppointmentStatusEnum.WAIT_LIST]: {
           Primary: [AppointmentActionEnum.SCHEDULE],
-          Secondary: [AppointmentActionEnum.CHANGE_APPT_TYPE],
+          Secondary: [],
         },
         [AppointmentStatusEnum.SCHEDULE]: {
           Primary: [AppointmentActionEnum.CONFIRM1],
