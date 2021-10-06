@@ -1,6 +1,6 @@
 import { Dialect } from 'sequelize/types';
-import { PATIENT_MGMT_TOPIC, VISIT_MGMT_TOPIC } from '../src/common/constants';
 
+// eslint-disable-next-line complexity
 export const config = () => ({
   serviceName: 'schedule-management',
   apiURL: 'https://api.qa.monmedx.com',
@@ -24,12 +24,11 @@ export const config = () => ({
       min: 2,
     },
   },
-  topicList: [VISIT_MGMT_TOPIC, PATIENT_MGMT_TOPIC],
-    cognito: {
-        userPoolId: process.env.userPoolId ||'ca-central-1_P6vKnQ2LG',
-        clientId:process.env.clientId || '33qg4ep2bligir0h4l7nbdcjuj',
-        region: 'ca-central-1',
-    },
+  cognito: {
+    userPoolId: process.env.userPoolId || 'ca-central-1_P6vKnQ2LG',
+    clientId: process.env.clientId || '33qg4ep2bligir0h4l7nbdcjuj',
+    region: 'ca-central-1',
+  },
   paginationInfo: {
     default: 10,
     max: 100,
