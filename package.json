@@ -40,7 +40,7 @@
     "seed:generate": "npx sequelize-cli seed:generate --name ${1}"
   },
   "dependencies": {
-    "@monmedx/monmedx-common": "^4.2.3",
+    "@monmedx/monmedx-common": "^4.3.9",
     "@monmedx/monmedx-pubsub": "^2.0.1",
     "@monmedx/telemetry": "^0.3.6",
     "@nestjs/common": "^7.0.1",
