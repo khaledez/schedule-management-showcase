@@ -60,6 +60,7 @@ export class AppointmentsListener {
     const transaction: Transaction = await this.sequelizeInstance.transaction();
 
     try {
+      this.logger.log('Line: 63');
       const {
         clinicId,
         staffId,
@@ -74,6 +75,7 @@ export class AppointmentsListener {
           },
         },
       } = payload;
+      this.logger.log('Line: 78');
       await this.completeVisitFlow(
         clinicId,
         staffId,
@@ -87,11 +89,14 @@ export class AppointmentsListener {
         release,
         transaction,
       );
+      this.logger.log('Line: 92');
       await transaction.commit();
     } catch (error) {
       this.logger.error({
         function: 'handleCompleteVisitEvent',
         error,
+        message: error.message,
+        jsonError: JSON.stringify(error),
       });
       await transaction.rollback();
     }
