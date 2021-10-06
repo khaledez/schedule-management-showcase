@@ -123,6 +123,7 @@ export class AppointmentsListener {
           'visit aborted',
           true,
           payload.data.visit.id,
+          [],
           transaction,
         );
         // 3. create a provisional appointment with the same date as the cancelled appointment
@@ -178,6 +179,7 @@ export class AppointmentsListener {
       'visit completed',
       true,
       null,
+      [appointmentId],
       transaction,
     );
 

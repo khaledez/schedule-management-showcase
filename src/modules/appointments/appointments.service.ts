@@ -551,6 +551,7 @@ export class AppointmentsService {
         cancelDto.cancelReasonText,
         cancelDto.keepAvailabiltySlot,
         cancelDto.visitId,
+        [],
         transaction,
       );
 
@@ -590,6 +591,7 @@ export class AppointmentsService {
     cancelText: string,
     keepAvailabilitySlot: boolean,
     visitId: number,
+    excludedIds: number[],
     transaction?: Transaction,
   ) {
     await this.lookupsService.getCancelRescheduleReasonById(cancelReasonId);
@@ -610,6 +612,9 @@ export class AppointmentsService {
         clinicId: identity.clinicId,
         appointmentStatusId: {
           [Op.notIn]: appointmentFinalStateIds,
+        },
+        id: {
+          [Op.notIn]: excludedIds,
         },
       },
     };
@@ -1427,6 +1432,7 @@ export class AppointmentsService {
             'doctor changed permanently',
             true,
             null,
+            [],
             transaction,
           );
         }

@@ -552,6 +552,7 @@ describe('# Cancel appointment', () => {
       cancelReasonText,
       true,
       null,
+      [],
     );
     const updatedAppointment = await appointmentsService.findOne(identity, appt.id);
     expect(updatedAppointment.cancelRescheduleReasonId).toEqual(cancelReasonId);

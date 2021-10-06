@@ -2,10 +2,10 @@ import { HttpModule } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Sequelize } from 'sequelize';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CRON_JOB_REPOSITORY,
   APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   APPOINTMENT_REQUEST_REPOSITORY,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   PATIENT_INFO_REPOSITORY,
   SEQUELIZE,
@@ -39,6 +39,7 @@ import {
   getProvisionalPatientInfoAfterCompleteVisit,
   getReleasePatientInfoAfterCompleteVisit,
 } from './appointment.data';
+import { AppointmentStatusHistoryModel } from '../../appointment-history/models/appointment-status-history.model';
 
 describe('# Appointment event listener', () => {
   let appointmentsService: AppointmentsService;
@@ -120,6 +121,18 @@ describe('# Appointment event listener', () => {
     const createdAppointment = await appointmentsService.getAppointmentByPatientId(identity, patientInfo.id);
     const provisionalStatusId = await lookupsService.getProvisionalAppointmentStatusId(identity);
     expect(createdAppointment.appointmentStatusId).toEqual(provisionalStatusId);
+
+    const statusChanges = await AppointmentStatusHistoryModel.findAll({
+      where: {
+        appointmentId: appointment.id,
+      },
+    });
+
+    const waitListStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST);
+    const completeStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.COMPLETE);
+    expect(statusChanges.length).toEqual(2);
+    expect(statusChanges[0].appointmentStatusId).toEqual(waitListStatusId);
+    expect(statusChanges[1].appointmentStatusId).toEqual(completeStatusId);
   });
 
   test('# Complete visit flow: release patient', async () => {
