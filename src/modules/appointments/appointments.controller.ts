@@ -211,7 +211,10 @@ export class AppointmentsController {
       cancelReasonId,
       'create new appointment',
     );
-    const eventName = AppointmentsEventName.APPOINTMENT_SCHEDULED;
+    const isProvisional = !!dto.availabilityId;
+    const eventName = isProvisional
+      ? AppointmentsEventName.APPOINTMENT_SET_PROVISIONAL
+      : AppointmentsEventName.APPOINTMENT_SCHEDULED;
     this.eventPublisher.publishAppointmentEvent(eventName, appointment, previousAppointment, null, null, identity);
     return { appointment };
   }
