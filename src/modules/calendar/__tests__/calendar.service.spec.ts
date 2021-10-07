@@ -14,7 +14,7 @@ import { getTestIdentity } from 'utils/test-helpers/common-data-helpers';
 import { CalendarModule } from '../calendar.module';
 import { CalendarService } from '../calendar.service';
 import { LookupsService } from '../../lookups/lookups.service';
-import { AppointmentStatusEnum } from '../../../common/enums';
+import { AppointmentStatusEnum, CancelRescheduleReasonCode } from '../../../common/enums';
 
 const identity: IIdentity = getTestIdentity(17, 18);
 
@@ -213,6 +213,57 @@ describe('Calendar service', () => {
     expect(allEvents.entries).toHaveLength(3);
     const entryTypes = allEvents.entries.map((entry) => entry.entryType);
     const expectedAppointmentEntries = ['APPOINTMENT', 'EVENT', 'EVENT'];
+    expect(entryTypes.sort()).toEqual(expectedAppointmentEntries.sort());
+  });
+
+  test('Returns cancelled appointment with keptAvailabilityOnCancel=false only', async () => {
+    const appointmentWillReturn = await apptService.createAppointment(
+      identity,
+      {
+        staffId: 100,
+        patientId: 2,
+        appointmentTypeId: 1,
+        appointmentStatusId: 2,
+        durationMinutes: 120,
+        startDate: '2021-09-03',
+      },
+      true,
+    );
+    await apptService.cancelAppointment(identity, {
+      appointmentId: appointmentWillReturn.id,
+      cancelReasonId: await lookupService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.OTHER),
+      cancelReasonText: 'to keep availability',
+      keepAvailabiltySlot: true,
+      provisionalDate: '2021-11-03',
+    });
+    const appointmentWontReturn = await apptService.createAppointment(
+      identity,
+      {
+        staffId: 100,
+        patientId: 3,
+        appointmentTypeId: 1,
+        appointmentStatusId: 2,
+        durationMinutes: 120,
+        startDate: '2021-09-03',
+      },
+      true,
+    );
+    await apptService.cancelAppointment(identity, {
+      appointmentId: appointmentWontReturn.id,
+      cancelReasonId: await lookupService.getCancelRescheduleReasonByCode(identity, CancelRescheduleReasonCode.OTHER),
+      cancelReasonText: 'to delete availability',
+      keepAvailabiltySlot: false,
+      provisionalDate: '2021-11-03',
+    });
+    const allEvents = await calendarService.search(identity, {
+      appointmentStatusId: {
+        or: null,
+        in: [await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.CANCELED)],
+      },
+    });
+    expect(allEvents.entries).toHaveLength(2);
+    const entryTypes = allEvents.entries.map((entry) => entry.entryType);
+    const expectedAppointmentEntries = ['APPOINTMENT', 'AVAILABILITY'];
     expect(entryTypes.sort()).toEqual(expectedAppointmentEntries.sort());
   });
 });

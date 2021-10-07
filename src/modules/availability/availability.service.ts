@@ -91,7 +91,7 @@ export class AvailabilityService {
     if (!availability) {
       throw new NotFoundException({
         fields: [],
-        code: 'NOT_FOUND',
+        code: ErrorCodes.NOT_FOUND,
         message: 'This availability does not exits!',
       });
     }

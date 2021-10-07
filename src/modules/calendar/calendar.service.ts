@@ -139,6 +139,17 @@ export class CalendarService {
       };
     }
 
+    /*
+        Don't return appointments with keptAvailabilityOnCancel=true
+        Flag is set on appointment cancellation
+     */
+    appointmentWhereClauses = {
+      ...appointmentWhereClauses,
+      keptAvailabilityOnCancel: {
+        [Op.or]: [false, null],
+      },
+    };
+
     const appointments = await this.appointmentsRepository.findAll({
       where: appointmentWhereClauses,
       include: [

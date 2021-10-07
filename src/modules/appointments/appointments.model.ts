@@ -48,6 +48,7 @@ export interface AppointmentsModelAttributes extends CalendarEntry {
   appointmentRequestId?: number;
   appointmentRequestDate?: Date;
   appointmentToken?: string;
+  keptAvailabilityOnCancel?: boolean;
 
   type?: AppointmentTypesLookupsModel;
   availability?: AvailabilityModel;
@@ -152,6 +153,9 @@ export class AppointmentsModel
 
   @Column
   visitSummaryDocumentId: string;
+
+  @Column
+  keptAvailabilityOnCancel: boolean;
 
   @Column({
     defaultValue: () => nanoid(),

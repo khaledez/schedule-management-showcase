@@ -556,12 +556,57 @@ describe('# Cancel appointment', () => {
     const updatedAppointment = await appointmentsService.findOne(identity, appt.id);
     expect(updatedAppointment.cancelRescheduleReasonId).toEqual(cancelReasonId);
     expect(updatedAppointment.cancelRescheduleText).toEqual(cancelReasonText);
+    expect(updatedAppointment.keptAvailabilityOnCancel).toEqual(true);
 
     await expect(availabilityService.findOne(appt.availabilityId)).resolves.toMatchObject({
       isOccupied: false,
       appointmentTypeId: 3,
       clinicId: identity.clinicId,
     });
+  });
+
+  test('# appointment canceled and availability is deleted', async () => {
+    await createAppointment();
+    const appointment = await appointmentsService.createAppointment(
+      identity,
+      {
+        appointmentStatusId: 2,
+        appointmentTypeId: 3,
+        patientId: 15,
+        staffId: 20,
+        startDate: new Date().toISOString(),
+        durationMinutes: 15,
+      },
+      true,
+    );
+
+    const cancelReasonText = 'To delete availability';
+    const cancelReasonId = await lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.RELEASE_PATIENT,
+    );
+
+    await appointmentsService.cancelPatientAppointments(
+      identity,
+      appointment.patientId,
+      cancelReasonId,
+      cancelReasonText,
+      false,
+      null,
+    );
+    const updatedAppointment = await appointmentsService.findOne(identity, appointment.id);
+    expect(updatedAppointment.cancelRescheduleReasonId).toEqual(cancelReasonId);
+    expect(updatedAppointment.cancelRescheduleText).toEqual(cancelReasonText);
+    expect(updatedAppointment.keptAvailabilityOnCancel).toEqual(false);
+
+    try {
+      await availabilityService.findOne(appointment.availabilityId);
+      fail("Shouldn't have made it here");
+    } catch (err) {
+      expect(err).toBeInstanceOf(NotFoundException);
+      expect(err.response).toHaveProperty('code', ErrorCodes.NOT_FOUND);
+      expect(err.response).toHaveProperty('message', 'This availability does not exits!');
+    }
   });
 
   test('# Cancel appointment with reason RELEASE_PATIENT will set patient and appointment status to Cancelled then create a RELEASED appointment', async () => {
@@ -595,6 +640,7 @@ describe('# Cancel appointment', () => {
       keepAvailabiltySlot: false,
     });
     expect(updatedAppointment.appointmentStatusId).toEqual(canceledStatusId);
+    expect(updatedAppointment.keptAvailabilityOnCancel).toEqual(false);
     const updatedPatientInfo = await patientInfoService.getById(patientInfo.id);
     expect(updatedPatientInfo.statusCode).toEqual(PatientStatus.RELEASED);
     const releasedAppointment = await AppointmentsModel.findOne({ where: { upcomingAppointment: true } });
@@ -663,7 +709,6 @@ describe('# Cancel appointment', () => {
       rescheduleReasonId,
       rescheduleReasonText,
     );
-
     expect(newAppointment.appointmentStatusId).toEqual(scheduleStatusId);
 
     const rescheduledAppointment = await appointmentsService.findOne(identity, appointment.id);
@@ -1018,6 +1063,7 @@ describe('Appointment service for patient scope', () => {
         'appointmentRequestDate',
         'appointmentToken',
         'cancelRescheduleReasonId',
+        'cancelRescheduleReason',
         'cancelRescheduleText',
         'patient',
         'type',

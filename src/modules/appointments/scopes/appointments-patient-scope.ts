@@ -54,6 +54,7 @@ export const AppointmentsPatientScope = (identity: IIdentity) => {
         'actualStartDate',
         'actualEndDate',
         'visitId',
+        'keptAvailabilityOnCancel',
       ],
     },
   };

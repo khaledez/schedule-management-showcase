@@ -623,6 +623,7 @@ export class AppointmentsService {
       cancelRescheduleReasonId: cancelReasonId,
       cancelRescheduleText: cancelText,
       upcomingAppointment: false,
+      keptAvailabilityOnCancel: keepAvailabilitySlot,
       updatedBy: identity.userId,
       canceledBy: identity.userId,
       canceledAt: new Date(),
@@ -722,6 +723,7 @@ export class AppointmentsService {
       {
         updatedBy: identity.userId,
         appointmentStatusId: statusCanceledId,
+        keptAvailabilityOnCancel: false,
         cancelRescheduleText: statusCode,
         upcomingAppointment: false,
       },
