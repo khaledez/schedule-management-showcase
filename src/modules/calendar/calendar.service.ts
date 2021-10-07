@@ -1,6 +1,6 @@
 import { FilterStringInputDto, IIdentity } from '@monmedx/monmedx-common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CalendarType } from 'common/enums';
+import { AppointmentStatusEnum, CalendarType } from 'common/enums';
 import { processFilterIdsInput } from 'common/filters/basic-filter-to-query';
 import { CalendarEntry } from 'common/interfaces/calendar-entry';
 import { DateTime } from 'luxon';
@@ -118,10 +118,26 @@ export class CalendarService {
     }
 
     const provisionalStatusId = await this.lookupService.getProvisionalAppointmentStatusId(identity);
+    const releasedStatusId = await this.lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED);
     if (query.appointmentStatusId) {
       appointmentWhereClauses = {
         ...appointmentWhereClauses,
-        ...processFilterIdsInput('appointmentStatusId', 'appointmentStatusId', query.appointmentStatusId),
+        appointmentStatusId: {
+          [Op.and]: [
+            {
+              [Op.notIn]: [provisionalStatusId, releasedStatusId],
+            },
+            processFilterIdsInput('appointmentStatusId', 'appointmentStatusId', query.appointmentStatusId)
+              .appointmentStatusId,
+          ],
+        },
+      };
+    } else {
+      appointmentWhereClauses = {
+        ...appointmentWhereClauses,
+        appointmentStatusId: {
+          [Op.notIn]: [provisionalStatusId, releasedStatusId],
+        },
       };
     }
 

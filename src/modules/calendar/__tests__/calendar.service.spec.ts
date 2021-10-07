@@ -192,6 +192,18 @@ describe('Calendar service', () => {
       },
       false,
     );
+    // Released appointment
+    // Doesn't count
+    await apptService.createReleasedAppointment(identity, 199, 100, new Date('2021-09-05'));
+    // Provisional appointment
+    // (Does not count)
+    await apptService.createProvisionalAppointment(identity, {
+      staffId: 100,
+      patientId: 202,
+      appointmentTypeId: 1,
+      durationMinutes: 120,
+      startDate: new Date('2021-09-5'),
+    });
     const allEvents = await calendarService.search(identity, {
       staffId: {
         eq: 100,
@@ -207,7 +219,11 @@ describe('Calendar service', () => {
       },
       appointmentStatusId: {
         or: null,
-        in: [await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE)],
+        in: [
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.WAIT_LIST),
+          await lookupService.getStatusIdByCode(identity, AppointmentStatusEnum.RELEASED),
+        ],
       },
     });
     expect(allEvents.entries).toHaveLength(3);
