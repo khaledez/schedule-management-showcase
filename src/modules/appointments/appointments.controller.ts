@@ -125,7 +125,7 @@ export class AppointmentsController {
       null,
       identity,
     );
-    return appointment;
+    return { appointment };
   }
 
   /**
