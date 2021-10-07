@@ -11,8 +11,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CHECKIN_STATUS_EVENT,
+  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   BAD_REQUEST,
   DEFAULT_EVENT_DURATION_MINS,
@@ -199,7 +199,7 @@ export class AppointmentsService {
   }
 
   // eslint-disable-next-line complexity
-  private async appointmentSearchWhere(queryParams, identity: IIdentity) {
+  private async appointmentSearchWhere(queryParams: QueryParamsDto, identity: IIdentity) {
     const where: any = {
       clinicId: {
         [Op.in]: identity.userInfo.clinicIds,

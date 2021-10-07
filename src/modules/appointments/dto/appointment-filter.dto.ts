@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { IsArray, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { FilterTimeInputDto } from '../../../common/dtos';
 import { TimeScopesEnum } from '../../../common/enums';
+import { HasOne } from '../../../common/decorators/has-one';
 
 enum AppointmentCategoryKeys {
   WAITLIST,
@@ -32,6 +33,12 @@ export class AppointmentFilterDto {
   @ValidateNested()
   @Type(() => FilterDateInputDto)
   date?: FilterDateInputDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FilterDateInputDto)
+  @HasOne(['between'])
+  dateTime?: FilterDateInputDto;
 
   @IsOptional()
   @ValidateNested()
