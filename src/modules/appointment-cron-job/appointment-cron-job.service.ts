@@ -277,6 +277,9 @@ export class AppointmentCronJobService {
         targetDate: notificationDates.confirmBeforeApptDate,
         clinicId,
         appointmentId,
+        metaData: {
+          apptCheckinBeforeAppt_M: notificationDates.apptCheckinBeforeAppt_M,
+        },
       },
       {
         type: ClinicSettingsEnum.REMIND_BEFORE_APPT_H,
@@ -369,6 +372,7 @@ export class AppointmentCronJobService {
     } else if (confirm1Sent) {
       return {
         actionType: AppointmentActionEnum.CONFIRM1,
+        metaData: checkInSent?.metaData,
       };
     }
 
