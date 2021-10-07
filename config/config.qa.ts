@@ -33,4 +33,12 @@ export const config = () => ({
     default: 10,
     max: 100,
   },
+  clinicSettings: {
+    apptCheckinNotificationBeforeAppt_M: 15,
+    notifySecNotConfirmedBeforeAppt_H: 120,
+    apptCheckinBeforeAppt_M: 15,
+    appointmentRequestEnabled: true,
+    confirmBeforeAppt_H: 168,
+    remindBeforeAppt_H: 48,
+  },
 });
