@@ -507,23 +507,26 @@ export class AppointmentsService {
     transaction?: Transaction,
   ): Promise<AppointmentsModel> {
     const procedureInTx = async (transaction: Transaction) => {
-      const rescheduledUppointment = await this.reschedulePatientAppointments(
-        identity,
-        dto.patientId,
-        rescheduleReasonId,
-        rescheduleReasonText,
-        transaction,
-      );
-      //Get complaintsNotes from Waitlist appointment
-      if (!dto.complaintsNotes && rescheduledUppointment && rescheduledUppointment.complaintsNotes) {
-        dto.complaintsNotes = rescheduledUppointment.complaintsNotes;
+      let oldAppointment = await this.deleteProvisionalAppointment(identity, null, dto.patientId, transaction);
+      if (!oldAppointment) {
+        oldAppointment = await this.reschedulePatientAppointments(
+          identity,
+          dto.patientId,
+          rescheduleReasonId,
+          rescheduleReasonText,
+          transaction,
+        );
+      }
+      //Get complaintsNotes from WAIT_LIST appointment
+      if (!dto.complaintsNotes && oldAppointment && oldAppointment.complaintsNotes) {
+        dto.complaintsNotes = oldAppointment.complaintsNotes;
       }
 
       const createdAppointment = await this.createAppointment(identity, dto, upcomingAppointment, transaction);
 
-      if (rescheduledUppointment?.appointmentRequestId) {
+      if (oldAppointment?.appointmentRequestId) {
         await this.apptRequestServiceSvc.handleAppointmentRequest(
-          rescheduledUppointment.id,
+          oldAppointment.id,
           ApptRequestTypesEnum.SCHEDULE,
           createdAppointment?.id,
           identity,
@@ -547,6 +550,7 @@ export class AppointmentsService {
         code: ErrorCodes.BAD_REQUEST,
       });
     }
+    await this.deleteProvisionalAppointment(identity, appointment.id, appointment.patientId);
     const cancelReason = await this.lookupsService.getCancelRescheduleReasonById(cancelDto.cancelReasonId);
 
     const transaction = usedTransaction ? usedTransaction : await this.sequelizeInstance.transaction();
@@ -671,6 +675,9 @@ export class AppointmentsService {
     }
   }
 
+  /**
+   * Will reschedule patient appointments then return the rescheduled appointment.
+   */
   async reschedulePatientAppointments(
     identity: IIdentity,
     patientId: number,
@@ -1429,7 +1436,10 @@ export class AppointmentsService {
           });
         }
 
-        // 2. check if we need to change the doctor permanently
+        // 2. If appointment is provisional, then soft delete it
+        await this.deleteProvisionalAppointment(identity, appointment.id, appointment.patientId, transaction);
+
+        // 3. check if we need to change the doctor permanently
         let staffId = dto.staffId;
         if (dto.availabilityId) {
           const availability = await this.availabilityService.findOne(dto.availabilityId);
@@ -1460,7 +1470,7 @@ export class AppointmentsService {
           });
         }
 
-        // 3. cancel appointment and create a new appointment
+        // 4. cancel appointment and create a new appointment
         const scheduleStatusId =
           dto.appointmentStatusId ??
           (await this.lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE));
@@ -2156,6 +2166,43 @@ export class AppointmentsService {
   }
   private isPatientIdentity(identity: IIdentity): boolean {
     return identity.userInfo?.userType === UserTypeEnum.PATIENT;
+  }
+
+  async deleteProvisionalAppointment(
+    identity: IIdentity,
+    appointmentId: number,
+    patientId: number,
+    transaction?: Transaction,
+  ): Promise<AppointmentsModel> {
+    const options = {
+      transaction: transaction,
+      where: {
+        [Op.or]: [
+          {
+            id: appointmentId,
+          },
+          {
+            patientId: patientId,
+          },
+        ],
+        appointmentStatusId: await this.lookupsService.getProvisionalAppointmentStatusId(identity),
+      },
+    };
+    const appointment: AppointmentsModel = await this.appointmentsRepository
+      .scope([{ method: ['roleScope', identity] }])
+      .findOne(options);
+    if (!appointment) {
+      return null;
+    }
+
+    await this.appointmentsRepository.update(
+      {
+        deletedBy: identity.userId,
+        deletedAt: new Date(),
+      },
+      options,
+    );
+    return appointment;
   }
 }
 

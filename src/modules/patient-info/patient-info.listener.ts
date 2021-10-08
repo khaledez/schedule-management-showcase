@@ -72,6 +72,7 @@ export class PatientInfoListener {
           userId: payload.userId,
           userInfo: null,
         };
+        await this.appointmentsService.deleteProvisionalAppointment(identity, null, patientAttr.id);
         await this.appointmentsService.releasePatientAppointments(identity, patientAttr);
       }
     } catch (error) {
