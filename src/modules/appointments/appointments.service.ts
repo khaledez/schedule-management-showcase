@@ -91,6 +91,7 @@ export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
 
   static readonly DATE_COLUMN = 'start_date';
+  static readonly UPDATED_AT_COLUMN = 'updated_at';
 
   constructor(
     @Inject(SEQUELIZE)
@@ -119,6 +120,9 @@ export class AppointmentsService {
     },
     DATE: {
       column: AppointmentsService.DATE_COLUMN,
+    },
+    UPDATED_AT: {
+      column: AppointmentsService.UPDATED_AT_COLUMN,
     },
   };
 

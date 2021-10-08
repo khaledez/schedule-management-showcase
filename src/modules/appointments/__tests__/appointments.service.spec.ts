@@ -11,7 +11,13 @@ import {
   PATIENT_INFO_REPOSITORY,
   SEQUELIZE,
 } from 'common/constants';
-import { AppointmentStatusEnum, AppointmentVisitModeEnum, CancelRescheduleReasonCode, ErrorCodes } from 'common/enums';
+import {
+  AppointmentStatusEnum,
+  AppointmentVisitModeEnum,
+  CancelRescheduleReasonCode,
+  ErrorCodes,
+  Order,
+} from 'common/enums';
 import { DateTime } from 'luxon';
 import {
   getAppointmentByPatientIdTestCases,
@@ -46,6 +52,7 @@ import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments.
 import { AppointmentsService } from '../appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
+import { Key } from '../dto/appointment-sort-dto';
 
 const identity: IIdentity = getTestIdentity(42, 5000);
 
@@ -831,6 +838,7 @@ describe('# Cancel appointment', () => {
 describe('# Patient appointment history tests', () => {
   const identity = getTestIdentity(174, 174);
   let appointmentsService: AppointmentsService;
+  let lookupsService: LookupsService;
   let moduleRef: TestingModule;
   let repo: typeof AppointmentsModel;
   let createdAppointmentsIds = [];
@@ -838,6 +846,7 @@ describe('# Patient appointment history tests', () => {
   beforeAll(async () => {
     moduleRef = await createAppointmentTestModule();
     appointmentsService = moduleRef.get<AppointmentsService>(AppointmentsService);
+    lookupsService = moduleRef.get<LookupsService>(LookupsService);
     repo = moduleRef.get<typeof AppointmentsModel>(APPOINTMENTS_REPOSITORY);
     const creationAttributes: AppointmentsModelAttributes[] = getPatientHistoryTestData(identity);
     const createdAppointments = await repo.bulkCreate(creationAttributes);
@@ -846,11 +855,7 @@ describe('# Patient appointment history tests', () => {
 
   afterAll(async () => {
     await repo.destroy({
-      where: {
-        id: {
-          [Op.in]: createdAppointmentsIds,
-        },
-      },
+      where: {},
     });
     await moduleRef.close();
   });
@@ -866,6 +871,88 @@ describe('# Patient appointment history tests', () => {
       testCase.expectedResult.datesOrder,
     );
   });
+
+  test('# getPatientAppointmentHistory: default sort', async () => {
+    const patientId = 761;
+    const [appointmentA, appointmentB, appointmentC, appointmentD, upcomingAppointment] = await Promise.all([
+      await createPatientAppointmentForHistoryTest(patientId, '2021-04-04T00:00:00.000Z', 0),
+      await createPatientAppointmentForHistoryTest(patientId, '2021-03-03T00:00:00.000Z', 0),
+      await createPatientAppointmentForHistoryTest(patientId, '2021-02-02T00:00:00.000Z', 0),
+      await createPatientAppointmentForHistoryTest(patientId, '2021-02-02T00:00:00.000Z', 0),
+      await createPatientAppointmentForHistoryTest(patientId, '2021-01-01T00:00:00.000Z', 0),
+    ]);
+    const [appointments, count] = await appointmentsService.getPatientAppointmentHistory(identity, null, {
+      patientId: patientId,
+    });
+    expect(count).toEqual(4);
+    expect(appointments.map((appointment) => appointment.id)).toEqual([
+      appointmentA.id,
+      appointmentB.id,
+      appointmentD.id,
+      appointmentC.id,
+    ]);
+  });
+
+  test('# getPatientAppointmentHistory: Sort by update_date', async () => {
+    const patientId = 782;
+    const [appointmentA, appointmentB, appointmentC, upcomingAppointment] = await Promise.all([
+      await createPatientAppointmentForHistoryTest(patientId, '2021-04-04T00:00:00.000Z', 1000),
+      await createPatientAppointmentForHistoryTest(patientId, '2021-03-03T00:00:00.000Z', 1000),
+      await createPatientAppointmentForHistoryTest(patientId, '2021-02-02T00:00:00.000Z', 1000),
+      await createPatientAppointmentForHistoryTest(patientId, '2021-02-02T00:00:00.000Z', 1000),
+    ]);
+    const [appointments, count] = await appointmentsService.getPatientAppointmentHistory(identity, null, {
+      patientId: patientId,
+      sort: [{ key: Key.UPDATED_AT, order: Order.DESC }],
+    });
+    expect(count).toEqual(3);
+    expect(appointments.map((appointment) => appointment.id)).toEqual([
+      appointmentC.id,
+      appointmentB.id,
+      appointmentA.id,
+    ]);
+
+    const [reversedAppointments] = await appointmentsService.getPatientAppointmentHistory(identity, null, {
+      patientId: patientId,
+      sort: [{ key: Key.UPDATED_AT, order: Order.ASC }],
+    });
+    expect(count).toEqual(3);
+    expect(reversedAppointments.map((appointment) => appointment.id)).toEqual([
+      appointmentA.id,
+      appointmentB.id,
+      appointmentC.id,
+    ]);
+  });
+
+  async function createPatientAppointmentForHistoryTest(patientId: number, startDate: string, delay: number) {
+    sleep(delay);
+    const typeId = await lookupsService.getFUBAppointmentTypeId(identity);
+    const scheduleStatusId = await lookupsService.getStatusIdByCode(identity, AppointmentStatusEnum.SCHEDULE);
+    const rescheduleReasonId = await lookupsService.getCancelRescheduleReasonByCode(
+      identity,
+      CancelRescheduleReasonCode.OTHER,
+    );
+    return appointmentsService.createPatientAppointment(
+      identity,
+      {
+        appointmentStatusId: scheduleStatusId,
+        appointmentTypeId: typeId,
+        durationMinutes: 15,
+        patientId: patientId,
+        staffId: 816,
+        startDate: startDate,
+      },
+      true,
+      rescheduleReasonId,
+      'testing',
+    );
+  }
+
+  function sleep(delay) {
+    const start = new Date().getTime();
+    // eslint-disable-next-line no-empty
+    while (new Date().getTime() < start + delay) {}
+  }
 });
 
 describe('# reschedule appointment', () => {

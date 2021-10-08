@@ -3,6 +3,7 @@ import { Order } from 'common/enums';
 
 export enum Key {
   DATE = 'DATE',
+  UPDATED_AT = 'UPDATED_AT',
   STATUS = 'STATUS',
   ID = 'ID',
 }
