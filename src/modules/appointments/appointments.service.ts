@@ -385,6 +385,19 @@ export class AppointmentsService {
       const options: FindOptions = {
         where: {
           patientId: payload.patientId,
+          [Op.or]: [
+            {
+              upcomingAppointment: {
+                [Op.or]: [false, null],
+              },
+            },
+            {
+              appointmentStatusId: await this.lookupsService.getStatusIdByCode(
+                identity,
+                AppointmentStatusEnum.RELEASED,
+              ),
+            },
+          ],
         },
         order,
         limit,
