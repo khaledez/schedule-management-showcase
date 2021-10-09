@@ -767,7 +767,13 @@ export class AppointmentsService {
         transaction: transaction,
       },
     );
-    await this.createReleasedAppointment(identity, appointment.patientId, appointment.staffId, new Date(), transaction);
+    await this.createReleasedAppointment(
+      identity,
+      patientAttr.id,
+      appointment?.staffId ?? patientAttr.doctorId,
+      new Date(),
+      transaction,
+    );
   }
 
   /**
