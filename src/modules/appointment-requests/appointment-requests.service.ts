@@ -178,7 +178,7 @@ export class AppointmentRequestsService {
       identity,
     );
 
-    return createdRequest;
+    return createdRequest.reload({ plain: true, transaction });
   }
 
   public async update(requestDto: UpdateAppointmentRequestDto, identity: IIdentity, transaction: Transaction) {
