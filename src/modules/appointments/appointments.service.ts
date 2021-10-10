@@ -1991,6 +1991,7 @@ export class AppointmentsService {
       where: { id: appointmentId },
       include: [{ model: AppointmentRequestsModel }],
       transaction: transaction,
+      paranoid: false,
     });
 
     this.eventPublisher.publishAppointmentEvent(
@@ -1998,7 +1999,7 @@ export class AppointmentsService {
       appointment,
       null,
       null,
-      appointment.appointmentRequest || null,
+      appointment?.appointmentRequest || null,
       identity,
     );
   }
