@@ -10,7 +10,7 @@ import { AppointmentCancelRescheduleReasonLookupModel } from '../../lookups/mode
 export const AppointmentsPatientScope = (identity: IIdentity) => {
   const { clinicIds, patientIds } = identity.userInfo;
   return {
-    where: { clinicId: { [Op.in]: clinicIds }, deletedAt: null, deletedBy: null, patientId: { [Op.in]: patientIds } },
+    where: { clinicId: { [Op.in]: clinicIds }, patientId: { [Op.in]: patientIds } },
     include: [
       {
         model: PatientInfoModel,

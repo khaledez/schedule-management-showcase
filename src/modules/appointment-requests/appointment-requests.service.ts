@@ -500,6 +500,7 @@ export class AppointmentRequestsService {
       appointmentId,
       [{ model: AppointmentRequestsModel, as: 'appointmentRequest', required: false }],
       transaction,
+      true,
     );
 
     if (!appointment.appointmentRequestId) {

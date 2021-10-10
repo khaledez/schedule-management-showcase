@@ -24,7 +24,7 @@ export type BaseModelCreationAttributes = Optional<
     exclude: ['deletedAt', 'deletedBy'],
   },
   where: {
-    deletedBy: null,
+    //deletedBy: null,
   },
 }))
 export class BaseModel<T, U = T> extends Model<T, U> {

@@ -208,7 +208,7 @@ export class AppointmentsService {
       clinicId: {
         [Op.in]: identity.userInfo.clinicIds,
       },
-      deletedBy: null,
+      //deletedBy: null,
     };
 
     if (queryParams.filter?.id) {
@@ -1544,12 +1544,18 @@ export class AppointmentsService {
     appointmentId: number,
     include?: Includeable | Includeable[],
     transaction?: Transaction,
+    includeDeleted?: boolean,
   ) {
-    const appointment = await this.appointmentsRepository.findOne({
+    const options: FindOptions = {
       where: { id: appointmentId, clinicId: { [Op.in]: identity.userInfo.clinicIds } },
       include,
       transaction: transaction,
-    });
+    };
+
+    if (includeDeleted && includeDeleted === true) {
+      options.paranoid = false;
+    }
+    const appointment = await this.appointmentsRepository.findOne(options);
 
     if (!appointment) {
       throw new NotFoundException({
