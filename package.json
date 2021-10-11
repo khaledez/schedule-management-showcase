@@ -118,5 +118,8 @@
     "graphql/*.graphql": [
       "graphql-schema-linter graphql/schemas/appointment-all.graphql"
     ]
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
   }
 }
