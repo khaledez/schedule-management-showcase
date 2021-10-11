@@ -77,7 +77,7 @@
         },
         {
           "name": "ENVIRONMENT",
-          "value": "dev"
+          "value": "development"
         }
       ],
       "portMappings": [
