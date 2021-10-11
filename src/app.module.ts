@@ -42,7 +42,7 @@ import { GeneralHealthIndicator } from './general-health.provider';
     TelemetryModule.register({
       serviceName: `schedule-management`,
       environment: process.env.NODE_ENV,
-      routesToExclude: ['/health-check', '/metrics'],
+      routesToExclude: ['/health-check/', '/metrics'],
     }),
   ],
   controllers: [AppController],
