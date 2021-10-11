@@ -2,10 +2,10 @@ import { IIdentity, PagingInfoInterface } from '@monmedx/monmedx-common';
 import { BadRequestException, HttpModule, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  APPOINTMENTS_REPOSITORY,
   APPOINTMENT_CRON_JOB_REPOSITORY,
   APPOINTMENT_REQUEST_FEATURE_REPOSITORY,
   APPOINTMENT_REQUEST_REPOSITORY,
-  APPOINTMENTS_REPOSITORY,
   AVAILABILITY_REPOSITORY,
   DEFAULT_APPOINTMENT_THRESHOLD_DAYS,
   PATIENT_INFO_REPOSITORY,
@@ -50,9 +50,9 @@ import { PatientInfoModel } from '../../patient-info/patient-info.model';
 import { AppointmentEventPublisher } from '../appointments.event-publisher';
 import { AppointmentsModel, AppointmentsModelAttributes } from '../appointments.model';
 import { AppointmentsService } from '../appointments.service';
+import { Key } from '../dto/appointment-sort-dto';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { QueryParamsDto } from '../dto/query-params.dto';
-import { Key } from '../dto/appointment-sort-dto';
 
 const identity: IIdentity = getTestIdentity(42, 5000);
 
