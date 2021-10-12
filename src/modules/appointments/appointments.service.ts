@@ -1014,6 +1014,10 @@ export class AppointmentsService {
     startDate: Date,
     transaction: Transaction,
   ) {
+    // don't send notifcation for appointment in the past
+    if (startDate < new Date()) {
+      return Promise.resolve();
+    }
     // prepare notifications dates
     const notificationDates = await this.clinicSettingsService.prepareCronJobs(clinicId, startDate);
     // save notifications dates

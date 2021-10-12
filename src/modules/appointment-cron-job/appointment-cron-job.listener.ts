@@ -42,7 +42,7 @@ export class AppointmentCronJobListener {
     const startTime = DateTime.now();
     try {
       this.logger.log({
-        function: 'handleEveryHourNotification',
+        function: 'handleEveryMinuteNotification',
         message: `start execution hours crons at ${startTime}`,
       });
       await this.appointmentCronJobService.sendCheckinNotificationBeforeAppt();
