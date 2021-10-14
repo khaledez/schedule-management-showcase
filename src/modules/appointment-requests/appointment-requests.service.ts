@@ -7,7 +7,7 @@ import {
   APPOINTMENT_REQUEST_REPOSITORY,
   SEQUELIZE,
 } from '../../common/constants';
-import { AppointmentStatusEnum, AppointmentTypesEnum } from '../../common/enums';
+import { AppointmentStatusEnum, AppointmentTypesEnum, ErrorCodes } from '../../common/enums';
 import { ApptRequestStatusEnum } from '../../common/enums/appt-request-status.enum';
 import { ApptRequestTypesEnum } from '../../common/enums/appt-request-types.enum';
 import { AppointmentsService } from '../appointments/appointments.service';
@@ -136,7 +136,7 @@ export class AppointmentRequestsService {
       if (requestDto.originalAppointmentId !== originalAppointmentId) {
         throw new BadRequestException({
           fields: ['originalAppointmentId'],
-          code: 'Patient_has_appointment',
+          code: ErrorCodes.REQUEST_HAS_EXISTING_AAP,
           message: 'originalAppointmentId not equal upcomingAppointment Id',
         });
       }
@@ -144,7 +144,7 @@ export class AppointmentRequestsService {
     if (upcomingAppointment.appointmentStatusId !== appt_status_Waitlist_id && !requestDto.originalAppointmentId) {
       throw new BadRequestException({
         fields: ['originalAppointmentId'],
-        code: 'Patient_has_appointment',
+        code: ErrorCodes.REQUEST_HAS_EXISTING_AAP,
         message: 'Patient has an existing appointment',
         data: [{ upcomingAppointment }],
       });
@@ -659,7 +659,7 @@ export class AppointmentRequestsService {
       throw new BadRequestException({
         fields: ['patientId'],
         code: '410',
-        message: 'No Permission',
+        message: 'No Permission, ',
       });
     }
 
@@ -678,7 +678,7 @@ export class AppointmentRequestsService {
     if (checkIfHasRequest) {
       throw new BadRequestException({
         fields: ['originalAppointmentId'],
-        code: 'Appointment_has_Pending_Request',
+        code: ErrorCodes.APPT_REQUEST_HAS_EXIST,
         message: 'Cannot make additional requests to book an appointment if there is a pending request',
       });
     }

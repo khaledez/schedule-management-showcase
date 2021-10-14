@@ -7,4 +7,6 @@ export enum ErrorCodes {
   UNAUTHORIZED_ACCESS = 'UNAUTHORIZED_ACCESS',
   NOT_FOUND = 'NOT_FOUND',
   BAD_REQUEST = 'BAD_REQUEST',
+  REQUEST_HAS_EXISTING_AAP = 'REQUEST_HAS_EXISTING_AAP', //Patient has an existing appointment
+  APPT_REQUEST_HAS_EXIST = 'APPT_REQUEST_HAS_EXIST', //Cannot make additional requests to book an appointment if there is a pending request
 }

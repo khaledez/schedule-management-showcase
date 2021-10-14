@@ -10,7 +10,7 @@ export function IsPastDate(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       constraints: [],
       options: {
-        message: 'Please provide only future date',
+        message: 'date Please provide only future date',
         ...validationOptions,
       },
       validator: {
