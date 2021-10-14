@@ -253,7 +253,7 @@ export class AppointmentCronJobService {
       appointmentId,
     });
 
-    const cronJobs = [
+    let cronJobs = [
       {
         type: ClinicSettingsEnum.APPT_CHECKIN_NOTIFICATION_BEFORE_APPT_M,
         targetDate: notificationDates.apptCheckinNotificationBeforeApptDate,
@@ -288,6 +288,9 @@ export class AppointmentCronJobService {
         appointmentId,
       },
     ];
+
+    cronJobs = cronJobs.filter(({ targetDate }) => targetDate > new Date());
+
     return this.AppointmentCronJobRepo.bulkCreate(cronJobs, {
       transaction,
     });
