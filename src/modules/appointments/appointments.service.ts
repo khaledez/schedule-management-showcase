@@ -987,6 +987,19 @@ export class AppointmentsService {
       });
     }
 
+    //check appointment status
+    if (
+      ![AppointmentStatusEnum.SCHEDULE, AppointmentStatusEnum.CONFIRM1, AppointmentStatusEnum.CONFIRM2].includes(
+        appointment.status.code as AppointmentStatusEnum,
+      )
+    ) {
+      throw new NotFoundException({
+        fields: ['appointmentStatusId'],
+        message: `There is no avaliable action for Appointment with status: ${appointment.status.code}`,
+        code: ErrorCodes.CONFLICTS,
+      });
+    }
+
     const lastEvent = await this.appointmentCronJobService.lastActionSent(appointment.id);
 
     if (!lastEvent) {
