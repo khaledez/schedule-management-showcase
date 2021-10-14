@@ -1691,7 +1691,10 @@ export class AppointmentsService {
               identity,
               AppointmentStatusEnum.CHECK_IN,
             );
-            if (appointment.appointmentRequestId !== checkinStatusId) {
+            if (
+              appointment.appointmentRequestId !== updateDto.appointmentStatusId &&
+              appointment.appointmentRequestId !== checkinStatusId
+            ) {
               this.publishEventIfStatusMatches(
                 identity,
                 AppointmentStatusEnum.CHECK_IN,
@@ -1705,13 +1708,15 @@ export class AppointmentsService {
             }
           }
           // 4. publish event if status changed to check in
-          this.publishEventIfStatusMatches(
-            identity,
-            AppointmentStatusEnum.CHECK_IN,
-            updatedAppt,
-            updateDto,
-            APPOINTMENT_CHECKIN_STATUS_EVENT,
-          );
+          if (appointment.appointmentRequestId !== updateDto.appointmentStatusId) {
+            this.publishEventIfStatusMatches(
+              identity,
+              AppointmentStatusEnum.CHECK_IN,
+              updatedAppt,
+              updateDto,
+              APPOINTMENT_CHECKIN_STATUS_EVENT,
+            );
+          }
 
           if (appointment.appointmentRequestId) {
             await this.apptRequestServiceSvc.handleAppointmentRequest(
