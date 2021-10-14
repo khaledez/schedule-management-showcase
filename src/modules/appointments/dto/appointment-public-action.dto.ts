@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber } from 'class-validator';
+import { IsEnum, IsNumber, IsString } from 'class-validator';
 import { AppointmentActionEnum, AppointmentStatusEnum } from 'common/enums';
 
 export class AppointmentPublicActionDto {
@@ -7,6 +7,7 @@ export class AppointmentPublicActionDto {
   @Type(() => Number)
   appointmentId: number;
 
+  @IsString()
   appointmentToken: string;
 
   @IsEnum(AppointmentActionEnum)
