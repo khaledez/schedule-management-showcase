@@ -22,7 +22,7 @@ RUN apk add --no-cache \
         awscli \
     && rm -rf /var/cache/apk/*
 
-RUN aws --versio
+RUN aws --version
 
 WORKDIR /usr/app
 RUN chown node .

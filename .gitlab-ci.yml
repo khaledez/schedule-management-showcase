@@ -44,7 +44,7 @@ deploy:
   image: python:3.7.3
   environment:
     name: development
-    url: http://api.dev.monmedx.com
+    url: http://REDACTED
   except:
     - "qa"
   only:
@@ -69,7 +69,7 @@ QA:
   image: python:3.7.3
   environment:
     name: qa
-    url: http://api.qa.monmedx.com
+    url: http://REDACTED
   only:
     - "qa"
     - "development"
@@ -93,7 +93,7 @@ staging:
   image: python:3.7.3
   environment:
     name: staging
-    url: http://api.staging.monmedx.com
+    url: http://REDACTED
   only:
     - "stage"
     - "development"
@@ -118,7 +118,7 @@ PROD:
   image: python:3.7.3
   environment:
     name: PROD
-    url: http://api.monmedx.com
+    url: http://REDACTED
   only:
     - "development"
     - "prod"
